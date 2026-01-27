@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IPTV Link Scanner</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .card {
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            border: none;
+        }
+        .btn-primary {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            border: none;
+            transition: transform 0.3s;
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+        }
+        .link-item {
+            transition: all 0.3s;
+            border-left: 4px solid #667eea;
+        }
+        .link-item:hover {
+            transform: translateX(5px);
+            background-color: #f8f9fa;
+        }
+        .status-badge {
+            font-size: 0.8em;
+        }
+        #progressBar {
+            height: 20px;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        #results {
+            max-height: 500px;
+            overflow-y: auto;
+        }
+        .copy-btn {
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .copy-btn:hover {
+            transform: scale(1.1);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
+                <div class="card mt-4">
+                    <div class="card-header bg-white">
+                        <h1 class="h3 mb-0">
+                            <i class="fas fa-satellite-dish text-primary me-2"></i>
+                            IPTV Link Scanner
+                        </h1>
+                        <p class="text-muted mb-0">Testa och hitta fungerande IPTV-länkar</p>
+                    </div>
+                    
+                    <div class="card-body">
+                        <!-- Inställningar -->
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <label class="form-label">Startnummer</label>
+                                <input type="number" id="startNum" class="form-control" value="6140">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Slutnummer</label>
+                                <input type="number" id="endNum" class="form-control" value="6180">
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <label class="form-label">Filtyper att testa</label>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" value="1.m3u8" id="file1" checked>
+                                    <label class="form-check-label" for="file1">1.m3u8</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" value="2.m3u8" id="file2" checked>
+                                    <label class="form-check-label" for="file2">2.m3u8</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" value="3.m3u8" id="file3" checked>
+                                    <label class="form-check-label" for="file3">3.m3u8</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" value="index.m3u8" id="fileIndex" checked>
+                                    <label class="form-check-label" for="fileIndex">index.m3u8</label>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label class="form-label">Max samtidiga tester</label>
+                                <select id="maxWorkers" class="form-select">
+                                    <option value="5">5 (försiktigt)</option>
+                                    <option value="10" selected>10 (normal)</option>
+                                    <option value="15">15 (snabbt)</option>
+                                    <option value="20">20 (mycket snabbt)</option>
+                                </select>
+                                
+                                <div class="mt-3">
+                                    <button class="btn btn-outline-secondary btn-sm w-100" onclick="loadPreset('small')">
+                                        Litet test (6140-6180)
+                                    </button>
+                                    <button class="btn btn-outline-secondary btn-sm w-100 mt-2" onclick="loadPreset('medium')">
+                                        Mellanstort (6140-6250)
+                                    </button>
+                                    <button class="btn btn-outline-secondary btn-sm w-100 mt-2" onclick="loadPreset('large')">
+                                        Stort test (6000-6200)
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Knappar -->
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-center mb-4">
+                            <button id="startBtn" class="btn btn-primary btn-lg px-5" onclick="startScan()">
+                                <i class="fas fa-play me-2"></i>Starta Scanning
+                            </button>
+                            <button id="stopBtn" class="btn btn-danger btn-lg px-5" onclick="stopScan()" disabled>
+                                <i class="fas fa-stop me-2"></i>Stoppa
+                            </button>
+                        </div>
+                        
+                        <!-- Progress bar -->
+                        <div class="mb-4">
+                            <div class="d-flex justify-content-between mb-2">
+                                <span id="progressText">Väntar på start...</span>
+                                <span id="percentText">0%</span>
+                            </div>
+                            <div class="progress" id="progressBar">
+                                <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                                     role="progressbar" style="width: 0%"></div>
+                            </div>
+                        </div>
+                        
+                        <!-- Resultat -->
+                        <div class="card">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <span>
+                                    <i class="fas fa-list me-2"></i>
+                                    Resultat: <span id="resultCount">0</span> fungerande länkar
+                                </span>
+                                <button class="btn btn-sm btn-outline-primary" onclick="copyAllLinks()">
+                                    <i class="fas fa-copy me-1"></i>Kopiera alla
+                                </button>
+                            </div>
+                            <div class="card-body">
+                                <div id="results" class="list-group">
+                                    <!-- Länkar visas här dynamiskt -->
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Stats -->
+                        <div class="row mt-4">
+                            <div class="col-md-3">
+                                <div class="card text-center">
+                                    <div class="card-body">
+                                        <h5 id="testedCount">0</h5>
+                                        <p class="text-muted mb-0">Testade</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="card text-center">
+                                    <div class="card-body">
+                                        <h5 id="workingCount">0</h5>
+                                        <p class="text-muted mb-0">Fungerande</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="card text-center">
+                                    <div class="card-body">
+                                        <h5 id="failedCount">0</h5>
+                                        <p class="text-muted mb-0">Misslyckade</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="card text-center">
+                                    <div class="card-body">
+                                        <h5 id="timeElapsed">0s</h5>
+                                        <p class="text-muted mb-0">Tid</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card-footer text-center text-muted">
+                        <small>
+                            Denna sida körs helt i din webbläsare. Inga data skickas till någon server.
+                            <br>
+                            <a href="https://github.com/your-username/iptv-scanner" target="_blank" class="text-decoration-none">
+                                <i class="fab fa-github me-1"></i>Visa på GitHub
+                            </a>
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Main script -->
+    <script src="script.js"></script>
+</body>
+</html>
