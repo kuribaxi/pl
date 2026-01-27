@@ -2,7 +2,7 @@
 
 En webbaserad scanner för att hitta fungerande IPTV-länkar.
 
-🌐 **Live Demo**: [https://ditt-användarnamn.github.io/iptv-scanner](https://ditt-användarnamn.github.io/iptv-scanner)
+🌐 **Live Demo**: https://kuribaxi.github.io/iptv-scanner/
 
 ## Funktioner
 
@@ -16,7 +16,7 @@ En webbaserad scanner för att hitta fungerande IPTV-länkar.
 
 ## Användning
 
-1. Öppna [hemsidan](https://ditt-användarnamn.github.io/iptv-scanner)
+1. Öppna [hemsidan](https://kuribaxi.github.io/iptv-scanner)
 2. Ange start- och slutnummer (t.ex. 6140-6180)
 3. Välj vilka filtyper som ska testas (1.m3u8, 2.m3u8, etc.)
 4. Klicka på "Starta Scanning"
@@ -41,6 +41,6 @@ Denna sida använder:
 ## Installation lokalt
 
 ```bash
-git clone https://github.com/ditt-användarnamn/iptv-scanner.git
+git clone https://github.com/kuribaxi/iptv-scanner.git
 cd iptv-scanner
 # Öppna index.html i webbläsaren
