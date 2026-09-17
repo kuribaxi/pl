@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>IPTV Link Scanner</title>
+    <title>IPTV Link Scanner – flera bas-URL:er</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
@@ -28,10 +28,11 @@
         .link-item {
             transition: all 0.3s;
             border-left: 4px solid #667eea;
+            cursor: pointer;
         }
         .link-item:hover {
             transform: translateX(5px);
-            background-color: #f8f9fa;
+            background-color: #f0f4ff;
         }
         .status-badge {
             font-size: 0.8em;
@@ -42,7 +43,7 @@
             overflow: hidden;
         }
         #results {
-            max-height: 500px;
+            max-height: 450px;
             overflow-y: auto;
         }
         .copy-btn {
@@ -52,22 +53,71 @@
         .copy-btn:hover {
             transform: scale(1.1);
         }
+        .base-url-input {
+            font-family: monospace;
+            font-size: 0.9rem;
+        }
+        .url-tag {
+            background: #e9ecef;
+            border-radius: 20px;
+            padding: 3px 12px;
+            font-size: 0.85rem;
+            display: inline-flex;
+            align-items: center;
+            margin: 3px;
+        }
+        .url-tag .remove-url {
+            margin-left: 8px;
+            cursor: pointer;
+            color: #dc3545;
+            font-weight: bold;
+        }
+        .url-tag .remove-url:hover {
+            color: #a71d2a;
+        }
+        .modal-link {
+            word-break: break-all;
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid #dee2e6;
+            font-family: monospace;
+            font-size: 0.9rem;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="row justify-content-center">
-            <div class="col-lg-10">
+            <div class="col-lg-11">
                 <div class="card mt-4">
                     <div class="card-header bg-white">
                         <h1 class="h3 mb-0">
                             <i class="fas fa-satellite-dish text-primary me-2"></i>
-                            IPTV Link Scanner
+                            IPTV Link Scanner – flera bas-URL:er
                         </h1>
-                        <p class="text-muted mb-0">Testa och hitta fungerande IPTV-länkar</p>
+                        <p class="text-muted mb-0">Lägg till egna servrar och hitta fungerande länkar – klicka för att visa</p>
                     </div>
                     
                     <div class="card-body">
+                        <!-- Bas-URL:er -->
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">
+                                <i class="fas fa-server me-1"></i> Bas-URL:er (servrar)
+                            </label>
+                            <div class="input-group mb-2">
+                                <input type="text" id="newBaseUrl" class="form-control base-url-input" 
+                                       placeholder="https://example.com:8080/live" value="http://example.com:8080">
+                                <button class="btn btn-outline-primary" onclick="addBaseUrl()">
+                                    <i class="fas fa-plus me-1"></i>Lägg till
+                                </button>
+                            </div>
+                            <div id="baseUrlList" class="d-flex flex-wrap mb-2">
+                                <!-- Standard-URL:er läggs till via JS -->
+                            </div>
+                            <small class="text-muted">Standard: http://example.com:8080 (byt ut mot din server)</small>
+                        </div>
+
                         <!-- Inställningar -->
                         <div class="row mb-4">
                             <div class="col-md-6">
@@ -151,15 +201,24 @@
                             <div class="card-header d-flex justify-content-between align-items-center">
                                 <span>
                                     <i class="fas fa-list me-2"></i>
-                                    Resultat: <span id="resultCount">0</span> fungerande länkar
+                                    Fungerande länkar: <span id="resultCount">0</span>
                                 </span>
-                                <button class="btn btn-sm btn-outline-primary" onclick="copyAllLinks()">
-                                    <i class="fas fa-copy me-1"></i>Kopiera alla
-                                </button>
+                                <div>
+                                    <button class="btn btn-sm btn-outline-primary me-1" onclick="copyAllLinks()">
+                                        <i class="fas fa-copy me-1"></i>Kopiera alla
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-danger" onclick="clearResults()">
+                                        <i class="fas fa-trash me-1"></i>Rensa
+                                    </button>
+                                </div>
                             </div>
-                            <div class="card-body">
-                                <div id="results" class="list-group">
+                            <div class="card-body p-0">
+                                <div id="results" class="list-group list-group-flush">
                                     <!-- Länkar visas här dynamiskt -->
+                                </div>
+                                <div id="emptyResults" class="text-center text-muted py-4">
+                                    <i class="fas fa-search fa-2x mb-2 d-block"></i>
+                                    Inga fungerande länkar hittade ännu.
                                 </div>
                             </div>
                         </div>
@@ -204,10 +263,6 @@
                     <div class="card-footer text-center text-muted">
                         <small>
                             Denna sida körs helt i din webbläsare. Inga data skickas till någon server.
-                            <br>
-                            <a href="https://github.com/your-username/iptv-scanner" target="_blank" class="text-decoration-none">
-                                <i class="fab fa-github me-1"></i>Visa på GitHub
-                            </a>
                         </small>
                     </div>
                 </div>
@@ -215,9 +270,408 @@
         </div>
     </div>
 
+    <!-- Modal för visning av länk -->
+    <div class="modal fade" id="linkModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-link me-2"></i>Länkinformation</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Stäng"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="mb-1 fw-bold">Fullständig URL:</p>
+                    <div class="modal-link mb-3" id="modalLinkUrl"></div>
+                    <p class="mb-1 fw-bold">Server (bas-URL):</p>
+                    <div class="modal-link mb-3" id="modalLinkBase"></div>
+                    <p class="mb-1 fw-bold">Status:</p>
+                    <span class="badge bg-success">Fungerande</span>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Stäng</button>
+                    <a id="modalOpenLink" href="#" target="_blank" class="btn btn-primary">
+                        <i class="fas fa-external-link-alt me-1"></i>Öppna i ny flik
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-    <!-- Main script -->
-    <script src="script.js"></script>
+    <script>
+        // ========== GLOBALA VARIABLER ==========
+        let scanning = false;
+        let shouldStop = false;
+        let testedCount = 0;
+        let workingCount = 0;
+        let failedCount = 0;
+        let workingLinks = [];          // { url, baseUrl, type }
+        let startTime = null;
+        let timerInterval = null;
+        let baseUrls = [];              // aktiva bas-URL:er
+        
+        // DOM-referenser
+        const resultsDiv = document.getElementById('results');
+        const emptyResults = document.getElementById('emptyResults');
+        const testedSpan = document.getElementById('testedCount');
+        const workingSpan = document.getElementById('workingCount');
+        const failedSpan = document.getElementById('failedCount');
+        const timeElapsedSpan = document.getElementById('timeElapsed');
+        const progressBar = document.querySelector('#progressBar .progress-bar');
+        const progressText = document.getElementById('progressText');
+        const percentText = document.getElementById('percentText');
+        const resultCountSpan = document.getElementById('resultCount');
+        const startBtn = document.getElementById('startBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        const baseUrlList = document.getElementById('baseUrlList');
+        
+        // Modal
+        const linkModal = new bootstrap.Modal(document.getElementById('linkModal'));
+        
+        // ========== BAS-URL HANTERING ==========
+        function renderBaseUrls() {
+            baseUrlList.innerHTML = '';
+            baseUrls.forEach((url, index) => {
+                const tag = document.createElement('span');
+                tag.className = 'url-tag';
+                tag.innerHTML = `${url} <span class="remove-url" onclick="removeBaseUrl(${index})">&times;</span>`;
+                baseUrlList.appendChild(tag);
+            });
+        }
+        
+        function addBaseUrl() {
+            const input = document.getElementById('newBaseUrl');
+            let url = input.value.trim();
+            if (!url) return;
+            // Ta bort avslutande snedstreck
+            url = url.replace(/\/+$/, '');
+            if (!url.startsWith('http://') && !url.startsWith('https://')) {
+                alert('URL måste börja med http:// eller https://');
+                return;
+            }
+            if (baseUrls.includes(url)) {
+                alert('Denna URL finns redan i listan.');
+                return;
+            }
+            baseUrls.push(url);
+            renderBaseUrls();
+            input.value = '';
+        }
+        
+        function removeBaseUrl(index) {
+            baseUrls.splice(index, 1);
+            renderBaseUrls();
+        }
+        
+        // Initiera standard-URL:er
+        function initBaseUrls() {
+            baseUrls = [
+                'http://example.com:8080',
+                'http://iptv.example.org:8000',
+                'http://server.example.net:25461'
+            ];
+            renderBaseUrls();
+        }
+        
+        // ========== HJÄLPFUNKTIONER ==========
+        function getSelectedFileTypes() {
+            const types = [];
+            if (document.getElementById('file1').checked) types.push('1.m3u8');
+            if (document.getElementById('file2').checked) types.push('2.m3u8');
+            if (document.getElementById('file3').checked) types.push('3.m3u8');
+            if (document.getElementById('fileIndex').checked) types.push('index.m3u8');
+            return types;
+        }
+        
+        function formatTime(seconds) {
+            return seconds < 60 ? `${seconds}s` : `${Math.floor(seconds/60)}m ${seconds%60}s`;
+        }
+        
+        function updateStats() {
+            testedSpan.textContent = testedCount;
+            workingSpan.textContent = workingCount;
+            failedSpan.textContent = failedCount;
+            resultCountSpan.textContent = workingCount;
+        }
+        
+        function addResult(linkObj) {
+            workingLinks.push(linkObj);
+            workingCount++;
+            
+            // Ta bort "tomt"-meddelandet
+            emptyResults.style.display = 'none';
+            
+            const item = document.createElement('div');
+            item.className = 'list-group-item link-item d-flex justify-content-between align-items-center';
+            item.setAttribute('data-url', linkObj.url);
+            
+            // Klick för att visa modal
+            item.onclick = (e) => {
+                if (e.target.closest('.copy-single')) return; // ignorera kopieringsknapp
+                document.getElementById('modalLinkUrl').textContent = linkObj.url;
+                document.getElementById('modalLinkBase').textContent = linkObj.baseUrl;
+                document.getElementById('modalOpenLink').href = linkObj.url;
+                linkModal.show();
+            };
+            
+            const leftDiv = document.createElement('div');
+            leftDiv.className = 'text-truncate me-3';
+            leftDiv.style.maxWidth = '70%';
+            leftDiv.innerHTML = `<i class="fas fa-check-circle text-success me-2"></i>
+                                 <span class="fw-bold">${linkObj.type}</span> 
+                                 <small class="text-muted ms-2">${linkObj.baseUrl}</small>`;
+            
+            const rightDiv = document.createElement('div');
+            rightDiv.className = 'd-flex align-items-center';
+            rightDiv.innerHTML = `
+                <span class="badge bg-success status-badge me-2">Fungerar</span>
+                <i class="fas fa-copy copy-btn copy-single text-primary" 
+                   onclick="copySingleLink('${linkObj.url.replace(/'/g, "\\'")}')" title="Kopiera länk"></i>
+            `;
+            
+            item.appendChild(leftDiv);
+            item.appendChild(rightDiv);
+            resultsDiv.appendChild(item);
+            
+            updateStats();
+        }
+        
+        function copySingleLink(url) {
+            navigator.clipboard.writeText(url).then(() => {
+                // Liten visuell feedback
+                const toast = document.createElement('div');
+                toast.className = 'position-fixed bottom-0 end-0 m-3 p-2 bg-dark text-white rounded';
+                toast.style.zIndex = '9999';
+                toast.textContent = 'Kopierat!';
+                document.body.appendChild(toast);
+                setTimeout(() => toast.remove(), 1500);
+            }).catch(() => alert('Kunde inte kopiera'));
+        }
+        
+        window.copySingleLink = copySingleLink; // för inline onclick
+        
+        function copyAllLinks() {
+            if (workingLinks.length === 0) {
+                alert('Inga länkar att kopiera.');
+                return;
+            }
+            const text = workingLinks.map(l => l.url).join('\n');
+            navigator.clipboard.writeText(text).then(() => {
+                alert(`Kopierade ${workingLinks.length} länkar!`);
+            }).catch(() => alert('Kunde inte kopiera'));
+        }
+        
+        function clearResults() {
+            if (scanning) {
+                alert('Stoppa scanningen först.');
+                return;
+            }
+            workingLinks = [];
+            workingCount = 0;
+            resultsDiv.innerHTML = '';
+            emptyResults.style.display = 'block';
+            updateStats();
+            // Återställ även testade/misslyckade? Nej, de är kumulativa över körningar. 
+            // Men för tydlighetens skull kan vi nollställa dem vid rensning.
+            // testedCount = 0; failedCount = 0; workingCount = 0;
+            // updateStats();
+            // Men vi behåller dem för statistik. Användaren får starta om för rena siffror.
+        }
+        
+        // ========== SCANNING ==========
+        async function testUrl(url) {
+            try {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 5000);
+                
+                const response = await fetch(url, {
+                    method: 'HEAD',
+                    signal: controller.signal,
+                    mode: 'cors',
+                    cache: 'no-cache'
+                });
+                
+                clearTimeout(timeoutId);
+                // Vissa servrar svarar inte på HEAD, då testar vi GET med range
+                if (response.status === 405 || response.status === 501) {
+                    const getResponse = await fetch(url, {
+                        method: 'GET',
+                        headers: { 'Range': 'bytes=0-0' },
+                        signal: AbortSignal.timeout(5000)
+                    });
+                    return getResponse.status >= 200 && getResponse.status < 400;
+                }
+                return response.status >= 200 && response.status < 400;
+            } catch (error) {
+                // Timeout eller nätverksfel
+                return false;
+            }
+        }
+        
+        async function startScan() {
+            if (scanning) return;
+            if (baseUrls.length === 0) {
+                alert('Lägg till minst en bas-URL.');
+                return;
+            }
+            
+            const startNum = parseInt(document.getElementById('startNum').value);
+            const endNum = parseInt(document.getElementById('endNum').value);
+            const fileTypes = getSelectedFileTypes();
+            const maxWorkers = parseInt(document.getElementById('maxWorkers').value);
+            
+            if (isNaN(startNum) || isNaN(endNum) || startNum > endNum) {
+                alert('Ogiltigt nummerintervall.');
+                return;
+            }
+            if (fileTypes.length === 0) {
+                alert('Välj minst en filtyp.');
+                return;
+            }
+            
+            // Återställ stop-flagga
+            shouldStop = false;
+            scanning = true;
+            startBtn.disabled = true;
+            stopBtn.disabled = false;
+            
+            // Nollställ räknare (men behåll workingLinks? Nej, vi rensar tidigare resultat)
+            // Användaren kanske vill behålla? Vi rensar för enkelhet.
+            workingLinks = [];
+            workingCount = 0;
+            testedCount = 0;
+            failedCount = 0;
+            resultsDiv.innerHTML = '';
+            emptyResults.style.display = 'block';
+            updateStats();
+            
+            startTime = Date.now();
+            timerInterval = setInterval(() => {
+                const seconds = Math.floor((Date.now() - startTime) / 1000);
+                timeElapsedSpan.textContent = formatTime(seconds);
+            }, 1000);
+            
+            // Bygg uppgiftslista: varje kombination av bas-URL, nummer och filtyp
+            const tasks = [];
+            for (let num = startNum; num <= endNum; num++) {
+                for (const base of baseUrls) {
+                    for (const fileType of fileTypes) {
+                        // Konstruera URL: bas + / + num + / + fileType  (vanligt IPTV-mönster)
+                        // Men vissa servrar använder /live/ eller /movie/ etc. Vi kör på standard: /{num}/{fil}
+                        const url = `${base}/${num}/${fileType}`;
+                        tasks.push({ url, baseUrl: base, num, fileType });
+                    }
+                }
+            }
+            
+            const totalTasks = tasks.length;
+            let completedTasks = 0;
+            
+            // Funktion för att uppdatera progress
+            const updateProgress = () => {
+                const percent = totalTasks === 0 ? 100 : Math.round((completedTasks / totalTasks) * 100);
+                progressBar.style.width = percent + '%';
+                percentText.textContent = percent + '%';
+                progressText.textContent = `Testar ${completedTasks} av ${totalTasks}...`;
+            };
+            
+            // Worker-pool
+            let taskIndex = 0;
+            
+            const runWorker = async () => {
+                while (taskIndex < tasks.length && !shouldStop) {
+                    const currentIndex = taskIndex++;
+                    const task = tasks[currentIndex];
+                    
+                    if (!task) continue;
+                    
+                    // Testa URL:en
+                    const works = await testUrl(task.url);
+                    
+                    testedCount++;
+                    if (works) {
+                        addResult({
+                            url: task.url,
+                            baseUrl: task.baseUrl,
+                            type: task.fileType
+                        });
+                    } else {
+                        failedCount++;
+                    }
+                    
+                    completedTasks++;
+                    updateProgress();
+                    updateStats();
+                    
+                    // Liten fördröjning för att undvika överbelastning
+                    await new Promise(r => setTimeout(r, 30));
+                }
+            };
+            
+            // Starta workers
+            const workers = [];
+            for (let i = 0; i < maxWorkers; i++) {
+                workers.push(runWorker());
+            }
+            
+            // Vänta på alla workers
+            await Promise.all(workers);
+            
+            // Avsluta
+            clearInterval(timerInterval);
+            scanning = false;
+            startBtn.disabled = false;
+            stopBtn.disabled = true;
+            
+            if (shouldStop) {
+                progressText.textContent = `Stoppad! Testade ${completedTasks} av ${totalTasks}.`;
+                progressBar.style.width = '100%';
+                progressBar.classList.remove('progress-bar-animated');
+            } else {
+                progressText.textContent = `Klar! Testade ${completedTasks} länkar.`;
+                progressBar.style.width = '100%';
+                progressBar.classList.remove('progress-bar-animated');
+            }
+            
+            if (workingLinks.length === 0) {
+                emptyResults.style.display = 'block';
+            }
+        }
+        
+        function stopScan() {
+            shouldStop = true;
+            stopBtn.disabled = true;
+            progressText.textContent = 'Stoppar...';
+        }
+        
+        // ========== PRESETS ==========
+        function loadPreset(size) {
+            if (size === 'small') {
+                document.getElementById('startNum').value = 6140;
+                document.getElementById('endNum').value = 6180;
+            } else if (size === 'medium') {
+                document.getElementById('startNum').value = 6140;
+                document.getElementById('endNum').value = 6250;
+            } else if (size === 'large') {
+                document.getElementById('startNum').value = 6000;
+                document.getElementById('endNum').value = 6200;
+            }
+        }
+        
+        // ========== INIT ==========
+        window.onload = function() {
+            initBaseUrls();
+            // Se till att "tomt"-meddelandet syns
+            emptyResults.style.display = 'block';
+            // Gör funktioner globala
+            window.addBaseUrl = addBaseUrl;
+            window.removeBaseUrl = removeBaseUrl;
+            window.startScan = startScan;
+            window.stopScan = stopScan;
+            window.loadPreset = loadPreset;
+            window.copyAllLinks = copyAllLinks;
+            window.clearResults = clearResults;
+        };
+    </script>
 </body>
 </html>
