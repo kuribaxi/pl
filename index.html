@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>IPTV Link Scanner – flera bas-URL:er</title>
+    <title>IPTV Link Scanner – flera bas-URL:er & spellistor</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
@@ -84,6 +84,35 @@
             font-family: monospace;
             font-size: 0.9rem;
         }
+        .playlist-btn {
+            font-size: 0.8rem;
+            padding: 4px 10px;
+            margin: 3px;
+            border-radius: 20px;
+            transition: all 0.2s;
+        }
+        .playlist-btn:hover {
+            transform: scale(1.05);
+        }
+        .playlist-section {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 12px;
+            margin-bottom: 12px;
+            border: 1px solid #e9ecef;
+        }
+        .playlist-section h6 {
+            color: #495057;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        .flag-icon {
+            margin-right: 4px;
+        }
+        .accordion-button:not(.collapsed) {
+            background-color: #eef2ff;
+            color: #4c51bf;
+        }
     </style>
 </head>
 <body>
@@ -94,16 +123,351 @@
                     <div class="card-header bg-white">
                         <h1 class="h3 mb-0">
                             <i class="fas fa-satellite-dish text-primary me-2"></i>
-                            IPTV Link Scanner – flera bas-URL:er
+                            IPTV Link Scanner – flera bas-URL:er & spellistor
                         </h1>
-                        <p class="text-muted mb-0">Lägg till egna servrar och hitta fungerande länkar – klicka för att visa</p>
+                        <p class="text-muted mb-0">Lägg till egna servrar eller använd färdiga spellistor – klicka för att visa</p>
                     </div>
                     
                     <div class="card-body">
-                        <!-- Bas-URL:er -->
+                        <!-- Fördefinierade spellistor -->
                         <div class="mb-4">
                             <label class="form-label fw-bold">
-                                <i class="fas fa-server me-1"></i> Bas-URL:er (servrar)
+                                <i class="fas fa-globe me-1"></i> Fördefinierade spellistor (iptv-org & Free-TV)
+                            </label>
+                            <div class="accordion" id="playlistAccordion">
+                                <!-- Sverige -->
+                                <div class="accordion-item">
+                                    <h2 class="accordion-header">
+                                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseSE">
+                                            <span class="flag-icon">🇸🇪</span> Sverige (svenska)
+                                        </button>
+                                    </h2>
+                                    <div id="collapseSE" class="accordion-collapse collapse" data-bs-parent="#playlistAccordion">
+                                        <div class="accordion-body playlist-section">
+                                            <button class="btn btn-outline-primary playlist-btn" onclick="addPlaylistUrl('https://iptv-org.github.io/iptv/countries/se.m3u')">
+                                                <i class="fas fa-plus me-1"></i> iptv-org – Sverige (land)
+                                            </button>
+                                            <button class="btn btn-outline-primary playlist-btn" onclick="addPlaylistUrl('https://iptv-org.github.io/iptv/languages/swe.m3u')">
+                                                <i class="fas fa-plus me-1"></i> iptv-org – Svenska (språk)
+                                            </button>
+                                            <button class="btn btn-outline-success playlist-btn" onclick="addPlaylistUrl('https://raw.githubusercontent.com/Free-TV/IPTV/master/playlist.m3u8')">
+                                                <i class="fas fa-plus me-1"></i> Free-TV – Alla fria kanaler
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Norge -->
+                                <div class="accordion-item">
+                                    <h2 class="accordion-header">
+                                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseNO">
+                                            <span class="flag-icon">🇳🇴</span> Norge (norska)
+                                        </button>
+                                    </h2>
+                                    <div id="collapseNO" class="accordion-collapse collapse" data-bs-parent="#playlistAccordion">
+                                        <div class="accordion-body playlist-section">
+                                            <button class="btn btn-outline-primary playlist-btn" onclick="addPlaylistUrl('https://iptv-org.github.io/iptv/countries/no.m3u')">
+                                                <i class="fas fa-plus me-1"></i> iptv-org – Norge (land)
+                                            </button>
+                                            <button class="btn btn-outline-primary playlist-btn" onclick="addPlaylistUrl('https://iptv-org.github.io/iptv/languages/nor.m3u')">
+                                                <i class="fas fa-plus me-1"></i> iptv-org – Norska (språk)
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Danmark -->
+                                <div class="accordion-item">
+                                    <h2 class="accordion-header">
+                                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseDK">
+                                            <span class="flag-icon">🇩🇰</span> Danmark (danska)
+                                        </button>
+                                    </h2>
+                                    <div id="collapseDK" class="accordion-collapse collapse" data-bs-parent="#playlistAccordion">
+                                        <div class="accordion-body playlist-section">
+                                            <button class="btn btn-outline-primary playlist-btn" onclick="addPlaylistUrl('https://iptv-org.github.io/iptv/countries/dk.m3u')">
+                                                <i class="fas fa-plus me-1"></i> iptv-org – Danmark (land)
+                                            </button>
+                                            <button class="btn btn-outline-primary playlist-btn" onclick="addPlaylistUrl('https://iptv-org.github.io/iptv/languages/dan.m3u')">
+                                                <i class="fas fa-plus me-1"></i> iptv-org – Danska (språk)
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Finland -->
+                                <div class="accordion-item">
+                                    <h2 class="accordion-header">
+                                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseFI">
+                                            <span class="flag-icon">🇫🇮</span> Finland (finska)
+                                        </button>
+                                    </h2>
+                                    <div id="collapseFI" class="accordion-collapse collapse" data-bs-parent="#playlistAccordion">
+                                        <div class="accordion-body playlist-section">
+                                            <button class="btn btn-outline-primary playlist-btn" onclick="addPlaylistUrl('https://iptv-org.github.io/iptv/countries/fi.m3u')">
+                                                <i class="fas fa-plus me-1"></i> iptv-org – Finland (land)
+                                            </button>
+                                            <button class="btn btn-outline-primary playlist-btn" onclick="addPlaylistUrl('https://iptv-org.github.io/iptv/languages/fin.m3u')">
+                                                <i class="fas fa-plus me-1"></i> iptv-org – Finska (språk)
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Storbritannien -->
+                                <div class="accordion-item">
+                                    <h2 class="accordion-header">
+                                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseGB">
+                                            <span class="flag-icon">🇬🇧</span> Storbritannien (engelska)
+                                        </button>
+                                    </h2>
+                                    <div id="collapseGB" class="accordion-collapse collapse" data-bs-parent="#playlistAccordion">
+                                        <div class="accordion-body playlist-section">
+                                            <button class="btn btn-outline-primary playlist-btn" onclick="addPlaylistUrl('https://iptv-org.github.io/iptv/countries/uk.m3u')">
+                                                <i class="fas fa-plus me-1"></i> iptv-org – Storbritannien (land)
+                                            </button>
+                                            <button class="btn btn-outline-primary playlist-btn" onclick="addPlaylistUrl('https://iptv-org.github.io/iptv/languages/eng.m3u')">
+                                                <i class="fas fa-plus me-1"></i> iptv-org – Engelska (språk)
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Tyskland -->
+                                <div class="accordion-item">
+                                    <h2 class="accordion-header">
+                                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseDE">
+                                            <span class="flag-icon">🇩🇪</span> Tyskland (tyska)
+                                        </button>
+                                    </h2>
+                                    <div id="collapseDE" class="accordion-collapse collapse" data-bs-parent="#playlistAccordion">
+                                        <div class="accordion-body playlist-section">
+                                            <button class="btn btn-outline-primary playlist-btn" onclick="addPlaylistUrl('https://iptv-org.github.io/iptv/countries/de.m3u')">
+                                                <i class="fas fa-plus me-1"></i> iptv-org – Tyskland (land)
+                                            </button>
+                                            <button class="btn btn-outline-primary playlist-btn" onclick="addPlaylistUrl('https://iptv-org.github.io/iptv/languages/deu.m3u')">
+                                                <i class="fas fa-plus me-1"></i> iptv-org – Tyska (språk)
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Frankrike -->
+                                <div class="accordion-item">
+                                    <h2 class="accordion-header">
+                                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseFR">
+                                            <span class="flag-icon">🇫🇷</span> Frankrike (franska)
+                                        </button>
+                                    </h2>
+                                    <div id="collapseFR" class="accordion-collapse collapse" data-bs-parent="#playlistAccordion">
+                                        <div class="accordion-body playlist-section">
+                                            <button class="btn btn-outline-primary playlist-btn" onclick="addPlaylistUrl('https://iptv-org.github.io/iptv/countries/fr.m3u')">
+                                                <i class="fas fa-plus me-1"></i> iptv-org – Frankrike (land)
+                                            </button>
+                                            <button class="btn btn-outline-primary playlist-btn" onclick="addPlaylistUrl('https://iptv-org.github.io/iptv/languages/fra.m3u')">
+                                                <i class="fas fa-plus me-1"></i> iptv-org – Franska (språk)
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Spanien -->
+                                <div class="accordion-item">
+                                    <h2 class="accordion-header">
+                                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseES">
+                                            <span class="flag-icon">🇪🇸</span> Spanien (spanska)
+                                        </button>
+                                    </h2>
+                                    <div id="collapseES" class="accordion-collapse collapse" data-bs-parent="#playlistAccordion">
+                                        <div class="accordion-body playlist-section">
+                                            <button class="btn btn-outline-primary playlist-btn" onclick="addPlaylistUrl('https://iptv-org.github.io/iptv/countries/es.m3u')">
+                                                <i class="fas fa-plus me-1"></i> iptv-org – Spanien (land)
+                                            </button>
+                                            <button class="btn btn-outline-primary playlist-btn" onclick="addPlaylistUrl('https://iptv-org.github.io/iptv/languages/spa.m3u')">
+                                                <i class="fas fa-plus me-1"></i> iptv-org – Spanska (språk)
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Italien -->
+                                <div class="accordion-item">
+                                    <h2 class="accordion-header">
+                                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseIT">
+                                            <span class="flag-icon">🇮🇹</span> Italien (italienska)
+                                        </button>
+                                    </h2>
+                                    <div id="collapseIT" class="accordion-collapse collapse" data-bs-parent="#playlistAccordion">
+                                        <div class="accordion-body playlist-section">
+                                            <button class="btn btn-outline-primary playlist-btn" onclick="addPlaylistUrl('https://iptv-org.github.io/iptv/countries/it.m3u')">
+                                                <i class="fas fa-plus me-1"></i> iptv-org – Italien (land)
+                                            </button>
+                                            <button class="btn btn-outline-primary playlist-btn" onclick="addPlaylistUrl('https://iptv-org.github.io/iptv/languages/ita.m3u')">
+                                                <i class="fas fa-plus me-1"></i> iptv-org – Italienska (språk)
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Polen -->
+                                <div class="accordion-item">
+                                    <h2 class="accordion-header">
+                                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapsePL">
+                                            <span class="flag-icon">🇵🇱</span> Polen (polska)
+                                        </button>
+                                    </h2>
+                                    <div id="collapsePL" class="accordion-collapse collapse" data-bs-parent="#playlistAccordion">
+                                        <div class="accordion-body playlist-section">
+                                            <button class="btn btn-outline-primary playlist-btn" onclick="addPlaylistUrl('https://iptv-org.github.io/iptv/countries/pl.m3u')">
+                                                <i class="fas fa-plus me-1"></i> iptv-org – Polen (land)
+                                            </button>
+                                            <button class="btn btn-outline-primary playlist-btn" onclick="addPlaylistUrl('https://iptv-org.github.io/iptv/languages/pol.m3u')">
+                                                <i class="fas fa-plus me-1"></i> iptv-org – Polska (språk)
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Nederländerna -->
+                                <div class="accordion-item">
+                                    <h2 class="accordion-header">
+                                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseNL">
+                                            <span class="flag-icon">🇳🇱</span> Nederländerna (nederländska)
+                                        </button>
+                                    </h2>
+                                    <div id="collapseNL" class="accordion-collapse collapse" data-bs-parent="#playlistAccordion">
+                                        <div class="accordion-body playlist-section">
+                                            <button class="btn btn-outline-primary playlist-btn" onclick="addPlaylistUrl('https://iptv-org.github.io/iptv/countries/nl.m3u')">
+                                                <i class="fas fa-plus me-1"></i> iptv-org – Nederländerna (land)
+                                            </button>
+                                            <button class="btn btn-outline-primary playlist-btn" onclick="addPlaylistUrl('https://iptv-org.github.io/iptv/languages/nld.m3u')">
+                                                <i class="fas fa-plus me-1"></i> iptv-org – Nederländska (språk)
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Ryssland -->
+                                <div class="accordion-item">
+                                    <h2 class="accordion-header">
+                                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseRU">
+                                            <span class="flag-icon">🇷🇺</span> Ryssland (ryska)
+                                        </button>
+                                    </h2>
+                                    <div id="collapseRU" class="accordion-collapse collapse" data-bs-parent="#playlistAccordion">
+                                        <div class="accordion-body playlist-section">
+                                            <button class="btn btn-outline-primary playlist-btn" onclick="addPlaylistUrl('https://iptv-org.github.io/iptv/countries/ru.m3u')">
+                                                <i class="fas fa-plus me-1"></i> iptv-org – Ryssland (land)
+                                            </button>
+                                            <button class="btn btn-outline-primary playlist-btn" onclick="addPlaylistUrl('https://iptv-org.github.io/iptv/languages/rus.m3u')">
+                                                <i class="fas fa-plus me-1"></i> iptv-org – Ryska (språk)
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Arabiska -->
+                                <div class="accordion-item">
+                                    <h2 class="accordion-header">
+                                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseAR">
+                                            <span class="flag-icon">🇸🇦</span> Arabiska (Mellanöstern)
+                                        </button>
+                                    </h2>
+                                    <div id="collapseAR" class="accordion-collapse collapse" data-bs-parent="#playlistAccordion">
+                                        <div class="accordion-body playlist-section">
+                                            <button class="btn btn-outline-primary playlist-btn" onclick="addPlaylistUrl('https://iptv-org.github.io/iptv/languages/ara.m3u')">
+                                                <i class="fas fa-plus me-1"></i> iptv-org – Arabiska (språk)
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Kina -->
+                                <div class="accordion-item">
+                                    <h2 class="accordion-header">
+                                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseCN">
+                                            <span class="flag-icon">🇨🇳</span> Kina (kinesiska)
+                                        </button>
+                                    </h2>
+                                    <div id="collapseCN" class="accordion-collapse collapse" data-bs-parent="#playlistAccordion">
+                                        <div class="accordion-body playlist-section">
+                                            <button class="btn btn-outline-primary playlist-btn" onclick="addPlaylistUrl('https://iptv-org.github.io/iptv/countries/cn.m3u')">
+                                                <i class="fas fa-plus me-1"></i> iptv-org – Kina (land)
+                                            </button>
+                                            <button class="btn btn-outline-primary playlist-btn" onclick="addPlaylistUrl('https://iptv-org.github.io/iptv/languages/zho.m3u')">
+                                                <i class="fas fa-plus me-1"></i> iptv-org – Kinesiska (språk)
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Japan -->
+                                <div class="accordion-item">
+                                    <h2 class="accordion-header">
+                                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseJP">
+                                            <span class="flag-icon">🇯🇵</span> Japan (japanska)
+                                        </button>
+                                    </h2>
+                                    <div id="collapseJP" class="accordion-collapse collapse" data-bs-parent="#playlistAccordion">
+                                        <div class="accordion-body playlist-section">
+                                            <button class="btn btn-outline-primary playlist-btn" onclick="addPlaylistUrl('https://iptv-org.github.io/iptv/countries/jp.m3u')">
+                                                <i class="fas fa-plus me-1"></i> iptv-org – Japan (land)
+                                            </button>
+                                            <button class="btn btn-outline-primary playlist-btn" onclick="addPlaylistUrl('https://iptv-org.github.io/iptv/languages/jpn.m3u')">
+                                                <i class="fas fa-plus me-1"></i> iptv-org – Japanska (språk)
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Indien -->
+                                <div class="accordion-item">
+                                    <h2 class="accordion-header">
+                                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseIN">
+                                            <span class="flag-icon">🇮🇳</span> Indien (hindi)
+                                        </button>
+                                    </h2>
+                                    <div id="collapseIN" class="accordion-collapse collapse" data-bs-parent="#playlistAccordion">
+                                        <div class="accordion-body playlist-section">
+                                            <button class="btn btn-outline-primary playlist-btn" onclick="addPlaylistUrl('https://iptv-org.github.io/iptv/countries/in.m3u')">
+                                                <i class="fas fa-plus me-1"></i> iptv-org – Indien (land)
+                                            </button>
+                                            <button class="btn btn-outline-primary playlist-btn" onclick="addPlaylistUrl('https://iptv-org.github.io/iptv/languages/hin.m3u')">
+                                                <i class="fas fa-plus me-1"></i> iptv-org – Hindi (språk)
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Brasilien -->
+                                <div class="accordion-item">
+                                    <h2 class="accordion-header">
+                                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseBR">
+                                            <span class="flag-icon">🇧🇷</span> Brasilien (portugisiska)
+                                        </button>
+                                    </h2>
+                                    <div id="collapseBR" class="accordion-collapse collapse" data-bs-parent="#playlistAccordion">
+                                        <div class="accordion-body playlist-section">
+                                            <button class="btn btn-outline-primary playlist-btn" onclick="addPlaylistUrl('https://iptv-org.github.io/iptv/countries/br.m3u')">
+                                                <i class="fas fa-plus me-1"></i> iptv-org – Brasilien (land)
+                                            </button>
+                                            <button class="btn btn-outline-primary playlist-btn" onclick="addPlaylistUrl('https://iptv-org.github.io/iptv/languages/por.m3u')">
+                                                <i class="fas fa-plus me-1"></i> iptv-org – Portugisiska (språk)
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <small class="text-muted d-block mt-2">
+                                <i class="fas fa-info-circle me-1"></i>
+                                Klicka på en spellista för att lägga till dess bas-URL i skannern. Länkarna är community-drivna och kan ändras.
+                            </small>
+                        </div>
+
+                        <!-- Manuella bas-URL:er -->
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">
+                                <i class="fas fa-server me-1"></i> Egna bas-URL:er (servrar)
                             </label>
                             <div class="input-group mb-2">
                                 <input type="text" id="newBaseUrl" class="form-control base-url-input" 
@@ -363,6 +727,18 @@
             renderBaseUrls();
         }
         
+        // Lägg till spellista som bas-URL
+        function addPlaylistUrl(url) {
+            if (baseUrls.includes(url)) {
+                alert('Denna spellista finns redan i listan.');
+                return;
+            }
+            baseUrls.push(url);
+            renderBaseUrls();
+            // Scrolla till bas-URL-listan
+            document.getElementById('baseUrlList').scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+        
         // Initiera standard-URL:er
         function initBaseUrls() {
             baseUrls = [
@@ -471,11 +847,6 @@
             resultsDiv.innerHTML = '';
             emptyResults.style.display = 'block';
             updateStats();
-            // Återställ även testade/misslyckade? Nej, de är kumulativa över körningar. 
-            // Men för tydlighetens skull kan vi nollställa dem vid rensning.
-            // testedCount = 0; failedCount = 0; workingCount = 0;
-            // updateStats();
-            // Men vi behåller dem för statistik. Användaren får starta om för rena siffror.
         }
         
         // ========== SCANNING ==========
@@ -535,8 +906,7 @@
             startBtn.disabled = true;
             stopBtn.disabled = false;
             
-            // Nollställ räknare (men behåll workingLinks? Nej, vi rensar tidigare resultat)
-            // Användaren kanske vill behålla? Vi rensar för enkelhet.
+            // Nollställ räknare
             workingLinks = [];
             workingCount = 0;
             testedCount = 0;
@@ -551,13 +921,11 @@
                 timeElapsedSpan.textContent = formatTime(seconds);
             }, 1000);
             
-            // Bygg uppgiftslista: varje kombination av bas-URL, nummer och filtyp
+            // Bygg uppgiftslista
             const tasks = [];
             for (let num = startNum; num <= endNum; num++) {
                 for (const base of baseUrls) {
                     for (const fileType of fileTypes) {
-                        // Konstruera URL: bas + / + num + / + fileType  (vanligt IPTV-mönster)
-                        // Men vissa servrar använder /live/ eller /movie/ etc. Vi kör på standard: /{num}/{fil}
                         const url = `${base}/${num}/${fileType}`;
                         tasks.push({ url, baseUrl: base, num, fileType });
                     }
@@ -567,7 +935,6 @@
             const totalTasks = tasks.length;
             let completedTasks = 0;
             
-            // Funktion för att uppdatera progress
             const updateProgress = () => {
                 const percent = totalTasks === 0 ? 100 : Math.round((completedTasks / totalTasks) * 100);
                 progressBar.style.width = percent + '%';
@@ -575,7 +942,6 @@
                 progressText.textContent = `Testar ${completedTasks} av ${totalTasks}...`;
             };
             
-            // Worker-pool
             let taskIndex = 0;
             
             const runWorker = async () => {
@@ -585,7 +951,6 @@
                     
                     if (!task) continue;
                     
-                    // Testa URL:en
                     const works = await testUrl(task.url);
                     
                     testedCount++;
@@ -603,21 +968,17 @@
                     updateProgress();
                     updateStats();
                     
-                    // Liten fördröjning för att undvika överbelastning
                     await new Promise(r => setTimeout(r, 30));
                 }
             };
             
-            // Starta workers
             const workers = [];
             for (let i = 0; i < maxWorkers; i++) {
                 workers.push(runWorker());
             }
             
-            // Vänta på alla workers
             await Promise.all(workers);
             
-            // Avsluta
             clearInterval(timerInterval);
             scanning = false;
             startBtn.disabled = false;
@@ -661,11 +1022,10 @@
         // ========== INIT ==========
         window.onload = function() {
             initBaseUrls();
-            // Se till att "tomt"-meddelandet syns
             emptyResults.style.display = 'block';
-            // Gör funktioner globala
             window.addBaseUrl = addBaseUrl;
             window.removeBaseUrl = removeBaseUrl;
+            window.addPlaylistUrl = addPlaylistUrl;
             window.startScan = startScan;
             window.stopScan = stopScan;
             window.loadPreset = loadPreset;
