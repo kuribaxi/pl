@@ -7,6 +7,7 @@
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
 <style>
+
 html,body{height:100%;overflow:hidden;margin:0;background:#0a0a12;color:#e5e7eb;font-family:Inter,system-ui}
 ::-webkit-scrollbar{width:8px;height:8px}::-webkit-scrollbar-thumb{background:#2a2a40;border-radius:4px}
 .toggle{width:44px;height:24px;background:#2a2a40;border-radius:999px;position:relative;cursor:pointer;transition:.2s}
@@ -14,10 +15,20 @@ html,body{height:100%;overflow:hidden;margin:0;background:#0a0a12;color:#e5e7eb;
 .toggle:after{content:'';position:absolute;top:2px;left:2px;width:20px;height:20px;background:#fff;border-radius:50%;transition:.2s}
 .toggle.on:after{left:22px}
 .badge{font-size:10px;padding:2px 6px;border-radius:999px;background:#1f1f30}
+@media (max-width: 1024px){
+  body{overflow:hidden}
+  #rightPanel{position:fixed !important; top:56px; left:0; right:0; height:56vw; max-height:42vh; z-index:40; background:#000; border-bottom:2px solid #22223a;}
+  #leftPanel{margin-top:calc(56vw + 56px); height:calc(100vh - 56vw - 56px) !important; width:100% !important;}
+  .channelRow{padding:12px !important;}
+  .channelRow .text-xs{font-size:13px !important;}
+  #search{font-size:16px !important; padding:14px 16px !important;} /* avoid iOS zoom */
+  .chip{font-size:13px !important; padding:8px 12px !important;}
+}
+
 </style>
 </head>
 <body class="flex flex-col">
-<header class="flex-shrink-0 h-14 flex items-center justify-between px-4 bg-[#11111c] border-b border-[#22223a]">
+<header class="flex-shrink-0 h-[56px] flex items-center justify-between px-4 bg-[#11111c] border-b border-[#22223a]">
 <div class="flex items-center gap-3"><span class="text-xl">📺</span><b>IPTV Kurdistan + World</b><span id="stats" class="text-xs opacity-60 ml-2">0 kanaler</span></div>
 <div class="flex gap-2"><button id="exportFav" class="text-xs bg-[#1e1e33] px-3 py-1.5 rounded">⭐ Exportera favoriter</button><button id="exportM3U" class="text-xs bg-[#2a2250] px-3 py-1.5 rounded">💾 Exportera valda</button></div>
 </header>
@@ -45,7 +56,7 @@ html,body{height:100%;overflow:hidden;margin:0;background:#0a0a12;color:#e5e7eb;
 </div>
 </div>
 <div id="channelList" class="flex-1 overflow-y-auto p-2 space-y-1">
-<div class="text-center opacity-60 py-20 text-sm">👆 Välj spellistor och klicka <b>Ladda kanaler</b><br/>Dina val sparas automatiskt</div>
+<div class="text-center py-10 px-4"><div class="text-5xl mb-4">📺</div><div class="font-bold text-base mb-2">Ingen spellista vald än</div><div class="text-sm opacity-70 mb-4">Bocka i en eller flera spellistor ovan<br/>och klicka på <b class="text-violet-400">Ladda kanaler</b></div><div class="text-xs opacity-50">Dina val sparas automatiskt till nästa gång</div></div>
 </div>
 </div>
 <div id="rightPanel" class="w-full lg:flex-1 bg-[#0a0a12] flex flex-col overflow-y-auto order-1 lg:order-2 lg:h-screen">
@@ -97,7 +108,7 @@ let groupF = '';
 let showFavOnly = false;
 let currentChannel = null;
 let hls = null;
-if(active.size===0){ PLAYLISTS.forEach(p=>{ if(!removed.has(p.id)) active.add(p.id); }); }
+if(active.size===0){ /* starta tomt - ingen förvald */ } // user must choose
 
 function save(){
  localStorage.setItem('iptv_active_playlists', JSON.stringify([...active]));
@@ -107,7 +118,7 @@ function save(){
 }
 function updateSummary(){
  const total = PLAYLISTS.filter(p=>!removed.has(p.id)).length;
- document.getElementById('manageSummary').textContent = `${active.size}/${total} aktiva • sparas auto`;
+ document.getElementById('manageSummary').textContent = `${active.size}/${total} valda • ${loaded.size} laddade`;
  document.getElementById('loadBtn').textContent = `▶️ Ladda kanaler (${active.size} valda)`;
  document.getElementById('stats').textContent = `${getAllActiveChannels().length} kanaler • ${loaded.size} listor laddade`;
 }
@@ -116,35 +127,55 @@ function getAllActiveChannels(){
  for(let id of active){ if(channelsByPlaylist[id]) arr = arr.concat(channelsByPlaylist[id]); }
  return arr;
 }
-const proxies = [u=>u, u=>`https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`, u=>`https://corsproxy.io/?${encodeURIComponent(u)}`, u=>`https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(u)}`];
+
+const proxies = [
+  u=>u,
+  u=>`https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`,
+  u=>`https://corsproxy.io/?${encodeURIComponent(u)}`,
+  u=>`https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(u)}`,
+  u=>`https://thingproxy.freeboard.io/fetch/${u}`
+];
 async function fetchM3U(url){
- for(let p of proxies){
+ console.log('Försöker ladda', url);
+ for(let i=0;i<proxies.length;i++){
+  const proxied = proxies[i](url);
   try{
-   const r = await fetch(p(url), {cache:'no-store'});
-   if(!r.ok) continue;
+   const r = await fetch(proxied, {cache:'no-store'});
+   if(!r.ok){ console.log('Proxy',i,'status',r.status); continue; }
    const t = await r.text();
-   if(t && t.includes('#EXT')) return t;
-  }catch(e){}
+   if(t && t.length>50 && (t.includes('#EXTINF') || t.includes('#EXTM3U'))){
+     console.log('Lyckades via proxy',i,'len',t.length);
+     return t;
+   } else {
+     console.log('Proxy',i,'fick ej M3U, len',t.length);
+   }
+  }catch(e){ console.log('Proxy',i,'error',e.message); }
  }
  throw new Error('Kunde inte ladda '+url);
 }
+
 function parseM3U(text, playlistId){
- const lines = text.split('\n');
+ text = text.replace(/^\uFEFF/, '');
+ const lines = text.split(/\r?\n/);
  const out=[]; let cur=null;
- for(let line of lines){
-  line=line.trim();
+ for(let raw of lines){
+  let line=raw.trim();
+  if(!line) continue;
   if(line.startsWith('#EXTINF')){
    const nameMatch = line.split(',').slice(1).join(',').trim() || 'Okänd';
    const logo = (line.match(/tvg-logo="([^"]*)"/)||[])[1]||'';
    const group = (line.match(/group-title="([^"]*)"/)||[])[1]||'';
    cur={name:nameMatch, logo, group, playlistId, url:''};
-  }else if(line && !line.startsWith('#') && cur){
+  }else if(!line.startsWith('#') && cur){
+   // URL line
    cur.url=line;
    const pl = PLAYLISTS.find(p=>p.id===playlistId);
    cur.country = pl?pl.country:''; cur.flag = pl?pl.flag:'';
-   out.push(cur); cur=null;
+   if(cur.url.startsWith('http')) out.push(cur);
+   cur=null;
   }
  }
+ console.log(`Parsade ${out.length} kanaler från ${playlistId}`);
  return out;
 }
 async function loadPlaylist(id){
@@ -189,9 +220,12 @@ function renderManager(){
      save(); rebuild(); showToast('Dold från sök - avbockad');
    }else{
      active.add(id); t.classList.add('on'); t.closest('[data-row]').classList.remove('opacity-50');
-     save();
-     if(!loaded.has(id)){ showToast('Laddar ny spellista...'); await loadPlaylist(id); }
-     rebuild(); showToast('Ny spellista tillagd och laddad');
+     save(); 
+     showToast('Laddar ny spellista...');
+     await loadPlaylist(id);
+     renderManager(); // uppdatera status badge
+     rebuild();
+     showToast(`${channelsByPlaylist[id]?.length||0} kanaler tillagda`);
    }
   };
  });
@@ -211,7 +245,7 @@ function rebuild(){
  const uniqCountries = [...new Set(PLAYLISTS.filter(p=>active.has(p.id)).map(p=>p.country))];
  const countryData = uniqCountries.map(c=>{ const pl=PLAYLISTS.find(p=>p.country===c && active.has(p.id)); return {country:c, flag:pl?pl.flag:'', count: all.filter(ch=>ch.country===c).length}; });
  chips.innerHTML = `<button data-c="Alla" class="chip px-3 py-1 rounded-full text-xs ${currentFilterCountry==='Alla'?'bg-violet-600':'bg-[#1e1e33]'}">Alla (${all.length})</button>` + countryData.map(cd=>`<button data-c="${cd.country}" class="chip px-3 py-1 rounded-full text-xs ${currentFilterCountry===cd.country?'bg-violet-600':'bg-[#1e1e33]'}">${cd.flag} ${cd.country} (${cd.count})</button>`).join('');
- chips.querySelectorAll('.chip').forEach(ch=>ch.onclick=()=>{ currentFilterCountry=ch.dataset.c; rebuild(); });
+ chips.querySelectorAll('.chip').forEach(ch=>{ ch.onclick=()=>{ currentFilterCountry=ch.dataset.c; rebuild(); if(navigator.vibrate) navigator.vibrate(20); }; });
  renderChannelList();
  updateSummary();
 }
@@ -270,11 +304,16 @@ document.getElementById('exportFav').onclick=()=>{ const chans = getAllActiveCha
 document.getElementById('exportM3U').onclick=()=>{ const chans = getAllActiveChannels(); let m3u='#EXTM3U\n'; chans.forEach(c=>{ m3u+=`#EXTINF:-1 tvg-logo="${c.logo}" group-title="${c.group}",${c.name}\n${c.url}\n`; }); const blob=new Blob([m3u],{type:'text/plain'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='valda_spellistor.m3u'; a.click(); };
 document.getElementById('loadBtn').onclick=async ()=>{
  const btn=document.getElementById('loadBtn');
+ if(active.size===0){ showToast('Välj minst en spellista först!'); return; }
  btn.disabled=true; const original=btn.textContent; btn.textContent='⏳ Laddar...';
  const ids = [...active];
- for(let i=0;i<ids.length;i++){ const id=ids[i]; btn.textContent=`Laddar ${i+1}/${ids.length}...`; if(!loaded.has(id)) await loadPlaylist(id); }
+ let totalNew=0;
+ for(let i=0;i<ids.length;i++){ const id=ids[i]; btn.textContent=`Laddar ${i+1}/${ids.length}...`; const before=(channelsByPlaylist[id]?.length||0); const chans=await loadPlaylist(id); totalNew+=chans.length; }
  btn.disabled=false; btn.textContent=original;
- rebuild(); showToast(`${getAllActiveChannels().length} kanaler laddade`);
+ rebuild();
+ const total = getAllActiveChannels().length;
+ if(total===0){ showToast('Inga kanaler hittades - testa annan spellista eller proxy'); document.getElementById('channelList').innerHTML=`<div class="text-center py-20 text-sm opacity-70">Kunde inte ladda kanaler.<br/>Prova igen eller testa Kurdistan-listan.<br/><br/><button onclick="document.getElementById('loadBtn').click()" class="bg-violet-600 px-4 py-2 rounded">Försök igen</button></div>`; }
+ else { showToast(`${total} kanaler laddade från ${ids.length} listor`); }
 };
 document.querySelectorAll('[data-preset]').forEach(b=>{
  b.onclick=async ()=>{
@@ -300,8 +339,9 @@ document.getElementById('fileInput').onchange=async (e)=>{
 document.getElementById('autoLoadCheck').onchange=(e)=>{ localStorage.setItem('iptv_autoload', e.target.checked?'1':'0'); };
 document.getElementById('autoLoadCheck').checked = localStorage.getItem('iptv_autoload')==='1';
 renderManager(); rebuild();
-if(localStorage.getItem('iptv_autoload')==='1'){ document.getElementById('loadBtn').click(); }
-function adjustMobile(){ if(window.innerWidth<1024){ document.getElementById('leftPanel').style.marginTop='56vw'; }else{ document.getElementById('leftPanel').style.marginTop='0'; } }
+// Ingen auto-laddning som standard - användaren måste själv klicka Ladda kanaler
+if(localStorage.getItem('iptv_autoload')==='1' && active.size>0){ document.getElementById('loadBtn').click(); }
+function adjustMobile(){ if(window.innerWidth<1024){ const playerH = document.getElementById('rightPanel').offsetHeight || (window.innerWidth*0.56); document.getElementById('leftPanel').style.marginTop = playerH + 'px'; document.getElementById('leftPanel').style.height = `calc(100vh - ${playerH}px - 56px)`; }else{ document.getElementById('leftPanel').style.marginTop='0'; document.getElementById('leftPanel').style.height=''; } }
 window.addEventListener('resize', adjustMobile); adjustMobile();
 </script>
 </body>
