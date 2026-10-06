@@ -802,12 +802,25 @@ const STREAM_PROXIES = [
   {id:'wsrv',      name:'wsrv.nl',     build:u=>`https://wsrv.nl/?url=${encodeURIComponent(u)}`},
   {id:'thingproxy',name:'thingproxy',  build:u=>`https://thingproxy.freeboard.io/fetch/${u}`},
 ];
+// FIX (telewebion): dessa spelade tidigare direkt i spelaren –
+// testa DIREKT först, proxys bara som fallback.
+function prefersDirect(url){
+  if(!url) return false;
+  return /telewebion|ncdn\.telewebion/i.test(url);
+}
 function needsRefererProxy(url){
   if(!url) return false;
-  return /karwan\.tv|telewebion|persiana|iraninternational|mypsx\.net|mmn\.|ncdn\./i.test(url);
+  if(prefersDirect(url)) return false; // telewebion: ingen proxy-tvång
+  return /karwan\.tv|persiana|iraninternational|mypsx\.net|mmn\./i.test(url);
 }
 function buildStreamCandidates(url){
   const out = [];
+  if(prefersDirect(url)){
+    // Direkt först (som tidigare), sedan proxys som fallback
+    out.push({id:'direct', url});
+    STREAM_PROXIES.forEach(p=>out.push({id:p.id, url:p.build(url)}));
+    return out;
+  }
   if(needsRefererProxy(url)){
     // Kräver Referer – proxys först, direct som sista utväg
     STREAM_PROXIES.forEach(p=>out.push({id:p.id, url:p.build(url)}));
@@ -1285,17 +1298,10 @@ function tryNextCandidate(c, candidates, idx){
       lowLatencyMode:true,
       xhrSetup: function(xhr){
         try{
-          if(/karwan\.tv/i.test(c.url)){
-            xhr.setRequestHeader('Referer', 'https://karwan.tv/');
-            xhr.setRequestHeader('Origin', 'https://karwan.tv');
-          } else if(/mypsx\.net/i.test(c.url)){
-            xhr.setRequestHeader('Referer', 'http://mmn.mypsx.net/');
-            xhr.setRequestHeader('Origin', 'http://mmn.mypsx.net');
-          } else if(refererHeaders && needsRefererProxy(c.url)){
-            xhr.setRequestHeader('Referer', refererHeaders.referer);
-            xhr.setRequestHeader('Origin', refererHeaders.origin);
-          }
-        }catch(e){ /* vissa webbläsare blockerar dessa headers – ignorera */ }
+          // OBS: Referer/Origin är förbjudna headers i webbläsaren och
+          // kan inte sättas här – sätt dem därför INTE (Telewebion spelar
+          // direkt utan dem, som tidigare). xhrSetup lämnas tom med vilja.
+        }catch(e){ /* ignorera */ }
       },
     });
     hls.loadSource(url); hls.attachMedia(els.video);
