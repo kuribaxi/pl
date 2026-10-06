@@ -716,7 +716,7 @@ function showToast(msg){
 }
 
 /* ============================================================
-   SPÄRRAD EXTERN-MINNE
+   SPÄRRAD EXTERN-MINNE (används numera bara som visuell markering)
    ============================================================ */
 const NEVER_EXTERNAL_PATTERNS = [
   'ncdn.telewebion.ir',
@@ -733,6 +733,7 @@ function isExternalOnly(url){
   return extOnly.has(url);
 }
 function markExternalOnly(url){
+  // Behåll för visuell markering men blockera aldrig
   if(!url || extOnly.has(url)) return;
   if(isNeverExternal(url)) return;
   extOnly.add(url); save();
@@ -752,13 +753,16 @@ const STREAM_PROXIES = [
 
 // Kanaler som kräver Referer – proxas alltid
 function needsRefererProxy(url){
-  return /karwan\.tv|telewebion|persiana|iraninternational/i.test(url||'');
+  if(!url) return false;
+  return /karwan\.tv|telewebion|persiana|iraninternational|mypsx\.net|mmn\.|ncdn\./i.test(url);
 }
 function buildStreamCandidates(url){
   const out = [];
   if(needsRefererProxy(url)){
-    // Kräver Referer – kör proxy först
+    // Kräver Referer – kör proxy först (hoppa över "direct")
     STREAM_PROXIES.forEach(p=>out.push({id:p.id, url:p.build(url)}));
+    // Lägg till direct sist som absolut sista utväg
+    out.push({id:'direct', url});
     return out;
   }
   if(proxyMode === 'always'){
@@ -1201,12 +1205,8 @@ function playChannel(c){
   updateActiveChannelRow();
   renderFavPanel();
 
-  if(isExternalOnly(c.url)){
-    showExternalFallback(c, 'Känd för att kräva extern flik (CORS)', true);
-    renderEPG(); renderGrid();
-    return;
-  }
-
+  // Ge ALLTID kanalen en ny chans i spelaren – även om den är markerad EXT
+  // (extOnly används nu bara som visuell markering)
   const candidates = buildStreamCandidates(c.url);
   playChannel._attempts = [];
   tryNextCandidate(c, candidates, 0);
@@ -1214,24 +1214,7 @@ function playChannel(c){
 function tryNextCandidate(c, candidates, idx){
   if(idx >= candidates.length){
     const tried = playChannel._attempts.map(a=>a.id).join(' → ');
-    if(isNeverExternal(c.url)){
-      showOverlay(
-        '🚫 <b>Kanalen kunde inte spelas just nu.</b><br>'+
-        `<span style="color:#94a3b8;font-size:13px">Testade: ${escapeHtml(tried)}</span><br><br>`+
-        'Servern kan vara tillfälligt överbelastad.<br>'+
-        'Prova igen om en stund, eller öppna manuellt.',
-        true,
-        [
-          {label:'🔄 Försök igen', primary:true, action:()=>{ hideOverlay(); playChannel(c); }},
-          {label:'🔗 Öppna externt', action:()=>openStreamExternal(c, true)},
-          {label:'📋 Kopiera URL', action:()=>{ navigator.clipboard.writeText(c.url); showToast('URL kopierad'); }},
-          {label:'✖ Stäng', action:()=>hideOverlay()}
-        ]
-      );
-    } else {
-      markExternalOnly(c.url);
-      showExternalFallback(c, 'Testade: '+tried, true);
-    }
+    showExternalFallback(c, 'Testade: '+tried, true);
     stopPlayer();
     updateActiveChannelRow();
     renderChannelList();
@@ -1260,18 +1243,36 @@ function tryNextCandidate(c, candidates, idx){
   };
 
   const url = cand.url;
+
+  // Bygg Referer/Origin baserat på original-URL
+  const refererHeaders = (() => {
+    try{
+      const u = new URL(c.url);
+      return {
+        referer: u.origin + '/',
+        origin: u.origin
+      };
+    }catch(e){ return null; }
+  })();
+
   if(url.includes('.m3u8') && window.Hls && Hls.isSupported()){
     hls = new Hls({
       enableWorker:true,
       lowLatencyMode:true,
-      // Skicka Referer/Origin för servrar som karwan.tv
+      // Skicka Referer/Origin för servrar som kräver det
       xhrSetup: function(xhr){
         try{
-          if(needsRefererProxy(c.url)){
+          if(/karwan\.tv/i.test(c.url)){
             xhr.setRequestHeader('Referer', 'https://karwan.tv/');
             xhr.setRequestHeader('Origin', 'https://karwan.tv');
+          } else if(/mypsx\.net/i.test(c.url)){
+            xhr.setRequestHeader('Referer', 'http://mmn.mypsx.net/');
+            xhr.setRequestHeader('Origin', 'http://mmn.mypsx.net');
+          } else if(refererHeaders && needsRefererProxy(c.url)){
+            xhr.setRequestHeader('Referer', refererHeaders.referer);
+            xhr.setRequestHeader('Origin', refererHeaders.origin);
           }
-        }catch(e){}
+        }catch(e){ /* Ignorera header-fel */ }
       },
     });
     hls.loadSource(url); hls.attachMedia(els.video);
@@ -1316,17 +1317,16 @@ function showExternalFallback(c, reason, autoOpen){
     '🚫 <b>Kanalen kan inte spelas i sidan.</b><br>'+
     `<span style="color:#94a3b8;font-size:13px">${escapeHtml(reason||'CORS-skydd hos streamservern')}</span><br><br>`+
     'Detta beror oftast på att servern blockerar uppspelning i webbläsaren.<br>'+
-    'Kanalen öppnas därför i en ny flik.',
+    'Kanalen kan öppnas i en ny flik eller i VLC.',
     true,
     [
-      {label:'🔗 Öppna externt', primary:true, action:()=>openStreamExternal(c, true)},
+      {label:'🎬 Öppna i VLC', primary:true, action:()=>{ hideOverlay(); openInVlc(); }},
+      {label:'🔗 Öppna externt', action:()=>openStreamExternal(c, true)},
       {label:'📋 Kopiera URL', action:()=>{ navigator.clipboard.writeText(c.url); showToast('URL kopierad'); }},
       {label:'✖ Stäng', action:()=>hideOverlay()}
     ]
   );
-  if(autoOpen){
-    setTimeout(()=>openStreamExternal(c, true), 500);
-  }
+  // Ingen automatisk öppning – användaren får välja
 }
 
 function showOverlay(html, sticky, actions){
@@ -1505,8 +1505,8 @@ function clearExternalOnly(){
   if(!extOnly.size){ showToast('Inget att rensa'); return; }
   showOverlay(
     `♻ <b>Rensa extern-minne?</b><br><br>`+
-    `<span style="font-size:13px;color:#94a3b8">${extOnly.size} kanaler är markerade som "kräver extern flik".<br>`+
-    `Efter rensning försöker spelaren igen.</span>`,
+    `<span style="font-size:13px;color:#94a3b8">${extOnly.size} kanaler är markerade med EXT-badge.<br>`+
+    `Efter rensning försvinner markeringen.</span>`,
     true,
     [
       {label:'♻ Ja, rensa', primary:true, action:()=>{
