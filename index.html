@@ -739,15 +739,28 @@ function markExternalOnly(url){
 }
 
 /* ============================================================
-   CORS-PROXY-FALLBACK
+   CORS-PROXY-FALLBACK – utökad med Referer-stöd
    ============================================================ */
 const STREAM_PROXIES = [
-  {id:'allorig',   name:'AllOrigins',  build:u=>`https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`},
-  {id:'corsproxy', name:'corsproxy',   build:u=>`https://corsproxy.io/?${encodeURIComponent(u)}`},
-  {id:'codetabs',  name:'codetabs',    build:u=>`https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(u)}`},
+  {id:'workers',    name:'CF Worker',   build:u=>`https://test.cors.workers.dev/?${u}`},
+  {id:'allorig',    name:'AllOrigins',  build:u=>`https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`},
+  {id:'corsproxy',  name:'corsproxy',   build:u=>`https://corsproxy.io/?${encodeURIComponent(u)}`},
+  {id:'codetabs',   name:'codetabs',    build:u=>`https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(u)}`},
+  {id:'wsrv',       name:'wsrv.nl',     build:u=>`https://wsrv.nl/?url=${encodeURIComponent(u)}`},
+  {id:'thingproxy', name:'thingproxy',  build:u=>`https://thingproxy.freeboard.io/fetch/${u}`},
 ];
+
+// Kanaler som kräver Referer – proxas alltid
+function needsRefererProxy(url){
+  return /karwan\.tv|telewebion|persiana|iraninternational/i.test(url||'');
+}
 function buildStreamCandidates(url){
   const out = [];
+  if(needsRefererProxy(url)){
+    // Kräver Referer – kör proxy först
+    STREAM_PROXIES.forEach(p=>out.push({id:p.id, url:p.build(url)}));
+    return out;
+  }
   if(proxyMode === 'always'){
     STREAM_PROXIES.forEach(p=>out.push({id:p.id, url:p.build(url)}));
   } else if(proxyMode === 'auto'){
@@ -1162,7 +1175,7 @@ function renderFavPanel(){
 }
 
 /* ============================================================
-   PLAYBACK – HLS med automatisk CORS-fallback
+   PLAYBACK – HLS med Referer-stöd och CORS-fallback
    ============================================================ */
 function stopPlayer(){
   clearTimeout(playChannel._timeout);
@@ -1201,7 +1214,6 @@ function playChannel(c){
 function tryNextCandidate(c, candidates, idx){
   if(idx >= candidates.length){
     const tried = playChannel._attempts.map(a=>a.id).join(' → ');
-    markExternalOnly(c.url);
     if(isNeverExternal(c.url)){
       showOverlay(
         '🚫 <b>Kanalen kunde inte spelas just nu.</b><br>'+
@@ -1217,6 +1229,7 @@ function tryNextCandidate(c, candidates, idx){
         ]
       );
     } else {
+      markExternalOnly(c.url);
       showExternalFallback(c, 'Testade: '+tried, true);
     }
     stopPlayer();
@@ -1248,7 +1261,19 @@ function tryNextCandidate(c, candidates, idx){
 
   const url = cand.url;
   if(url.includes('.m3u8') && window.Hls && Hls.isSupported()){
-    hls = new Hls({enableWorker:true, lowLatencyMode:true});
+    hls = new Hls({
+      enableWorker:true,
+      lowLatencyMode:true,
+      // Skicka Referer/Origin för servrar som karwan.tv
+      xhrSetup: function(xhr){
+        try{
+          if(needsRefererProxy(c.url)){
+            xhr.setRequestHeader('Referer', 'https://karwan.tv/');
+            xhr.setRequestHeader('Origin', 'https://karwan.tv');
+          }
+        }catch(e){}
+      },
+    });
     hls.loadSource(url); hls.attachMedia(els.video);
     hls.on(Hls.Events.MANIFEST_PARSED, ()=>{ els.video.play().then(success).catch(success); });
     hls.on(Hls.Events.ERROR, (_, d)=>{
