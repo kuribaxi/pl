@@ -1351,4 +1351,588 @@ function openStreamExternal(channel, silent){
     showOverlay(
       '🔗 <b>Öppna stream externt?</b><br><br>'+
       '<span style="font-size:13px;color:#94a3b8">Du lämnar appen och öppnar streamen i TV:ns webbläsare.</span><br><br>'+
-      '<span style="font-size:11px;color
+      '<span style="font-size:11px;color:#4b5563;word-break:break-all">'+escapeHtml(c.url)+'</span>',
+      true,
+      [
+        {label:'✅ Öppna', primary:true, action:()=>{ window.location.href = c.url; }},
+        {label:'📋 Kopiera', action:()=>{ navigator.clipboard.writeText(c.url); showToast('URL kopierad'); }},
+        {label:'✖ Avbryt', action:()=>hideOverlay()}
+      ]
+    );
+    return;
+  }
+  const win = window.open(c.url, '_blank', 'noopener,noreferrer');
+  if(win){ if(!silent) showToast('Öppnar externt: '+c.name); }
+  else {
+    showOverlay(
+      '🚫 <b>Popup blockerades.</b><br><br>'+
+      '<span style="font-size:11px;color:#94a3b8;word-break:break-all">'+escapeHtml(c.url)+'</span>',
+      true,
+      [
+        {label:'📋 Kopiera URL', primary:true, action:()=>{ navigator.clipboard.writeText(c.url); showToast('URL kopierad'); }},
+        {label:'✖ Stäng', action:()=>hideOverlay()}
+      ]
+    );
+  }
+}
+function openInVlc(){
+  const c = currentChannel;
+  if(!c?.url){ showToast('Ingen kanal vald'); return; }
+  window.location.href = 'vlc://' + c.url;
+  showToast('Försöker öppna i VLC');
+}
+function openAllVisibleTabs(){
+  const list = filtered.slice(0, 15);
+  if(!list.length){ showToast('Inga kanaler synliga'); return; }
+  showOverlay(
+    `🔗 <b>Öppna ${list.length} kanaler externt?</b>`,
+    true,
+    [
+      {label:'✅ Öppna alla', primary:true, action:()=>{
+        hideOverlay();
+        if(isTvEnvironment()){
+          showToast('Öppnar första kanalen (TV-läge)');
+          window.location.href = list[0].url;
+        } else {
+          list.forEach((c, i)=>{
+            setTimeout(()=>{
+              const w = window.open(c.url, '_blank', 'noopener,noreferrer');
+              if(!w) showToast('🚫 Popup blockerades vid kanal '+(i+1));
+            }, i * 250);
+          });
+          showToast(`Öppnar ${list.length} flikar...`);
+        }
+      }},
+      {label:'✖ Avbryt', action:()=>hideOverlay()}
+    ]
+  );
+}
+function clearExternalOnly(){
+  if(!extOnly.size){ showToast('Inget att rensa'); return; }
+  showOverlay(
+    `♻ <b>Rensa extern-minne?</b><br><br>`+
+    `<span style="font-size:13px;color:#94a3b8">${extOnly.size} kanaler är markerade som "kräver extern flik".<br>`+
+    `Efter rensning försöker spelaren igen.</span>`,
+    true,
+    [
+      {label:'♻ Ja, rensa', primary:true, action:()=>{
+        const count = extOnly.size;
+        extOnly.clear();
+        save();
+        renderChannelList();
+        hideOverlay();
+        showToast(count + ' kanaler återställda');
+      }},
+      {label:'✖ Avbryt', action:()=>hideOverlay()}
+    ]
+  );
+}
+
+function parseXMLTVDate(s){
+  if(!s) return null;
+  const m = s.match(/^(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})/);
+  if(m) return new Date(Date.UTC(+m[1],+m[2]-1,+m[3],+m[4],+m[5],+m[6]));
+  return new Date(s);
+}
+function parseXMLTV(xmlText){
+  const doc = new DOMParser().parseFromString(xmlText,'text/xml');
+  const map = {};
+  doc.querySelectorAll('channel').forEach(ch=>{ map[ch.getAttribute('id')] = { programs:[] }; });
+  doc.querySelectorAll('programme').forEach(p=>{
+    const ch = p.getAttribute('channel');
+    if(!map[ch]) map[ch] = { programs:[] };
+    map[ch].programs.push({
+      start: parseXMLTVDate(p.getAttribute('start')),
+      stop:  parseXMLTVDate(p.getAttribute('stop')),
+      title: p.querySelector('title')?.textContent?.trim() || 'Okänt program',
+      desc:  p.querySelector('desc')?.textContent?.trim() || ''
+    });
+  });
+  Object.values(map).forEach(v=>v.programs.sort((a,b)=>a.start-b.start));
+  return map;
+}
+async function loadEPG(){
+  if(epgLoading) return;
+  const url = els.epgUrl.value.trim();
+  localStorage.setItem(LS.epg, url);
+  if(!url){
+    epg={}; setEPGStatus('EPG ej laddad','warn');
+    renderChannelList(); renderEPG(); renderGrid(); return;
+  }
+  epgLoading = true; setEPGStatus('Laddar EPG...','warn');
+  for(const p of proxies){
+    try{
+      const r = await fetch(p(url), {cache:'no-store'});
+      if(!r.ok) continue;
+      epg = parseXMLTV(await r.text());
+      setEPGStatus('EPG klar','ok');
+      break;
+    }catch(e){}
+  }
+  if(!Object.keys(epg).length) setEPGStatus('EPG misslyckades','warn');
+  epgLoading = false;
+  renderChannelList(); renderEPG(); renderGrid();
+}
+function setEPGStatus(text, cls){ els.epgStatus.textContent = text; els.epgStatus.className = 'epgBadge'+(cls==='ok'?' ok':''); }
+function renderEPG(){
+  if(!currentChannel){ els.programs.innerHTML='<div class="note">Välj en kanal för att se program.</div>'; els.programCount.textContent='0 program'; return; }
+  const data = epg[currentChannel.tvgId];
+  const now = new Date();
+  if(!data || !data.programs.length){
+    els.programs.innerHTML='<div class="note">Ingen EPG hittades för den här kanalen.</div>';
+    els.programCount.textContent='0 program'; return;
+  }
+  const programs = data.programs.filter(p=>p.stop && p.stop>now).slice(0,12);
+  els.programCount.textContent = programs.length+' program';
+  els.programs.innerHTML = programs.map(p=>{
+    const active = p.start<=now && p.stop>now;
+    return `<div class="program ${active?'nowplaying':''}">
+      <div class="ptime">${fmtDay(p.start)}–${fmtTime(p.stop)}</div>
+      <div><div class="ptitle">${escapeHtml(p.title)}</div><div class="pdesc">${escapeHtml(p.desc)}</div></div>
+    </div>`;
+  }).join('');
+}
+
+function renderGrid(){
+  const now = new Date();
+  let chans = filtered.filter(c=>epg[c.tvgId]?.programs?.length);
+  if(gridFilter!=='Alla') chans = chans.filter(c=>c.lang===gridFilter);
+  chans = chans.slice(0,10);
+  if(!chans.length){
+    els.grid.innerHTML = '<div class="note" style="padding:12px">Ingen grid-data – ladda en EPG.</div>';
+    return;
+  }
+  const start = new Date(now.getTime()-30*60000);
+  const slotMin=30, slots=6;
+  const slotTimes = Array.from({length:slots},(_,i)=>new Date(start.getTime()+i*slotMin*60000));
+  const end = new Date(start.getTime()+slots*slotMin*60000);
+
+  let html = '<div class="grid">';
+  html += `<div class="gridHead"><div class="gridHeadCell left">Kanal</div>${slotTimes.map(d=>`<div class="gridHeadCell">${fmtTime(d)}</div>`).join('')}</div>`;
+  for(const c of chans){
+    const progs = epg[c.tvgId].programs.filter(p=>p.stop>start && p.start<end);
+    html += '<div class="gridRow">';
+    html += `<div class="gridCell left" data-key="${escapeHtml(channelKey(c))}" tabindex="0">
+      <div style="min-width:0"><div class="gName">${escapeHtml(c.name)}</div>
+      <div class="gSub">${escapeHtml(c.lang)} · ${escapeHtml(c.country)}</div></div></div>`;
+    for(const slot of slotTimes){
+      const p = progs.find(p=>p.start<=slot && p.stop>slot);
+      if(p){
+        const active = p.start<=now && p.stop>now;
+        html += `<div class="gridCell"><div class="progCard ${active?'now':''}" data-key="${escapeHtml(channelKey(c))}" tabindex="0">
+          <div class="t">${fmtTime(p.start)}–${fmtTime(p.stop)}</div>
+          <div class="n">${escapeHtml(p.title)}</div></div></div>`;
+      } else html += '<div class="gridCell"></div>';
+    }
+    html += '</div>';
+  }
+  html += '</div>';
+  els.grid.innerHTML = html;
+  els.grid.querySelectorAll('.gridCell.left').forEach(el=>el.onclick=()=>{
+    const ch=findChannelByKey(el.dataset.key); if(ch) playChannel(ch);
+  });
+  els.grid.querySelectorAll('.progCard').forEach(el=>{
+    let longPressT;
+    el.onclick = ()=>{ const ch=findChannelByKey(el.dataset.key); if(ch) playChannel(ch); };
+    el.oncontextmenu = e=>{ e.preventDefault(); const ch=findChannelByKey(el.dataset.key); if(ch) openStreamExternal(ch); };
+    el.addEventListener('touchstart', ()=>{
+      longPressT = setTimeout(()=>{ const ch=findChannelByKey(el.dataset.key); if(ch) openStreamExternal(ch); }, 800);
+    });
+    el.addEventListener('touchend', ()=>clearTimeout(longPressT));
+  });
+}
+
+const tvNav = {
+  zones: ['leftPanel','rightPanel'],
+  currentZone: 0,
+  focusIndex: 0,
+  elements: [],
+  getZoneEl(){ return document.getElementById(this.zones[this.currentZone]); },
+  refresh(){
+    const zone = this.getZoneEl();
+    const sel = 'button:not([disabled]), [tabindex]:not([tabindex="-1"]), input, select, .channelRow, .progCard, .gridCell.left, .chip, .toggle, .favItem, .favTab';
+    this.elements = [...zone.querySelectorAll(sel)].filter(el=>{
+      if(el.offsetParent === null) return false;
+      if(el.closest('#loadingOverlay')) return false;
+      return true;
+    });
+    if(this.focusIndex >= this.elements.length) this.focusIndex = 0;
+    this.applyFocus();
+  },
+  applyFocus(){
+    this.elements.forEach((el, i)=>{ el.classList.toggle('tv-focus', i === this.focusIndex); });
+    const el = this.elements[this.focusIndex];
+    if(el) el.scrollIntoView({block:'nearest', behavior:'smooth'});
+    document.getElementById('leftPanel').classList.toggle('tv-zone-active', this.zones[this.currentZone]==='leftPanel');
+    document.getElementById('rightPanel').classList.toggle('tv-zone-active', this.zones[this.currentZone]==='rightPanel');
+  },
+  move(dir){
+    if(!this.elements.length) this.refresh();
+    const el = this.elements[this.focusIndex];
+    if(!el) return;
+    if(dir === 'right'){
+      if(this.currentZone === 0){ this.switchZone(1); return; }
+      this.focusIndex = Math.min(this.focusIndex+1, this.elements.length-1);
+    } else if(dir === 'left'){
+      if(this.currentZone === 1){ this.switchZone(0); return; }
+      this.focusIndex = Math.max(this.focusIndex-1, 0);
+    } else if(dir === 'down'){
+      const rect = el.getBoundingClientRect();
+      let best = null, bestDist = Infinity;
+      this.elements.forEach((cand, i)=>{
+        if(cand === el) return;
+        const r = cand.getBoundingClientRect();
+        if(r.top < rect.bottom - 5) return;
+        const dx = Math.abs((r.left+r.width/2) - (rect.left+rect.width/2));
+        const dy = r.top - rect.bottom;
+        const dist = dx + dy*0.5;
+        if(dist < bestDist){ bestDist = dist; best = i; }
+      });
+      if(best !== null) this.focusIndex = best;
+    } else if(dir === 'up'){
+      const rect = el.getBoundingClientRect();
+      let best = null, bestDist = Infinity;
+      this.elements.forEach((cand, i)=>{
+        if(cand === el) return;
+        const r = cand.getBoundingClientRect();
+        if(r.bottom > rect.top + 5) return;
+        const dx = Math.abs((r.left+r.width/2) - (rect.left+rect.width/2));
+        const dy = rect.top - r.bottom;
+        const dist = dx + dy*0.5;
+        if(dist < bestDist){ bestDist = dist; best = i; }
+      });
+      if(best !== null) this.focusIndex = best;
+    }
+    this.applyFocus();
+  },
+  switchZone(idx){ this.currentZone = idx; this.focusIndex = 0; this.refresh(); },
+  activate(){
+    if(!this.elements.length) this.refresh();
+    const el = this.elements[this.focusIndex];
+    if(!el) return;
+    if(el.tagName === 'INPUT' || el.tagName === 'SELECT'){
+      el.focus();
+      if(el.tagName === 'SELECT') el.click();
+      return;
+    }
+    el.click();
+  },
+  back(){
+    if(els.overlay.classList.contains('show')){ hideOverlay(); return; }
+    if(document.body.classList.contains('tv-player-mode')){ toggleTvMode(); return; }
+    if(this.currentZone === 1){ this.switchZone(0); return; }
+  }
+};
+
+function toggleTvMode(){
+  const on = document.body.classList.toggle('tv-player-mode');
+  localStorage.setItem(LS.tvMode, on?'1':'0');
+  showToast(on?'🖥️ TV-läge PÅ':'🖥️ TV-läge AV');
+  if(on) els.video.focus();
+  tvNav.refresh();
+}
+
+document.addEventListener('keydown', e=>{
+  const key = e.key;
+  const code = e.keyCode;
+
+  if(els.overlay.classList.contains('show')){
+    const btns = [...els.overlay.querySelectorAll('.actBtn')];
+    if(!btns.length) return;
+    let idx = btns.findIndex(b=>b === document.activeElement);
+    if(idx < 0) idx = 0;
+    if(key === 'ArrowRight'){ e.preventDefault(); btns[(idx+1)%btns.length].focus(); return; }
+    if(key === 'ArrowLeft'){ e.preventDefault(); btns[(idx-1+btns.length)%btns.length].focus(); return; }
+    if(key === 'Enter' || code === 13){ e.preventDefault(); btns[idx].click(); return; }
+    if(key === 'Escape' || code === 8 || code === 461){ e.preventDefault(); hideOverlay(); return; }
+    return;
+  }
+
+  if(code === 403){ e.preventDefault(); tvNav.switchZone(0); showToast('🔴 Hem'); return; }
+  if(code === 404){ e.preventDefault(); if(currentChannel) playChannel(currentChannel); showToast('🟢 Spela'); return; }
+  if(code === 405){ e.preventDefault(); els.favBtn.click(); showToast('🟡 Favorit'); return; }
+  if(code === 406){ e.preventDefault(); toggleTvMode(); return; }
+
+  if(code >= 49 && code <= 57){
+    e.preventDefault();
+    const n = code - 49;
+    const favList = allChannels.filter(c=>favs.has(c.url));
+    if(favList[n]){ playChannel(favList[n]); showToast('Favorit '+(n+1)); }
+    else showToast('Ingen favorit '+(n+1));
+    return;
+  }
+
+  if(code === 8 || code === 461 || key === 'Escape'){
+    e.preventDefault();
+    tvNav.back();
+    return;
+  }
+
+  if(key === 'ArrowUp'){ e.preventDefault(); tvNav.move('up'); return; }
+  if(key === 'ArrowDown'){ e.preventDefault(); tvNav.move('down'); return; }
+  if(key === 'ArrowLeft'){ e.preventDefault(); tvNav.move('left'); return; }
+  if(key === 'ArrowRight'){ e.preventDefault(); tvNav.move('right'); return; }
+
+  if(code === 13 || key === 'Enter'){
+    e.preventDefault();
+    tvNav.activate();
+    return;
+  }
+
+  if((e.ctrlKey || e.metaKey) && key === 'Enter'){
+    e.preventDefault();
+    openStreamExternal();
+    return;
+  }
+});
+
+els.search.oninput = e=>{ searchQ=e.target.value; applyFilters(); };
+els.groupSelect.onchange = e=>{ groupF=e.target.value; applyFilters(); };
+els.favFilter.onchange = e=>{ showFavOnly = e.target.value === 'fav' ? 'fav' : e.target.value === 'sel' ? 'sel' : false; applyFilters(); };
+els.favBtn.onclick = ()=>{
+  if(!currentChannel) return;
+  if(favs.has(currentChannel.url)) favs.delete(currentChannel.url); else favs.add(currentChannel.url);
+  save(); updateFavBtn(); updateSummary(); renderFavPanel();
+  const row = els.channelList.querySelector('.channelRow.active');
+  if(row){
+    const star = row.querySelector('.favStar');
+    if(star){
+      star.textContent = favs.has(currentChannel.url)?'⭐':'☆';
+      star.classList.toggle('notFav', !favs.has(currentChannel.url));
+    }
+  }
+  showToast(favs.has(currentChannel.url)?'⭐ Tillagd':'Borttagen');
+};
+els.openExternalBtn.onclick = ()=> openStreamExternal();
+els.vlcBtn.onclick = openInVlc;
+els.copyBtn.onclick = ()=>{ if(currentChannel){ navigator.clipboard.writeText(currentChannel.url); showToast('Länk kopierad'); } };
+els.loadEPGBtn.onclick = loadEPG;
+els.epgUrl.value = localStorage.getItem(LS.epg)||'';
+els.epgUrl.onchange = loadEPG;
+els.proxySelect.value = proxyMode;
+els.proxySelect.onchange = e=>{
+  proxyMode = e.target.value;
+  localStorage.setItem(LS.proxyMode, proxyMode);
+  const map = {off:'Ingen proxy', auto:'Auto-proxy', always:'Tvinga proxy'};
+  showToast('Proxy: '+map[proxyMode]);
+  updateSummary();
+};
+els.openAllBtn.onclick = openAllVisibleTabs;
+els.tvModeBtn.onclick = toggleTvMode;
+els.clearExtOnlyBtn.onclick = clearExternalOnly;
+
+document.querySelectorAll('.favTab').forEach(t=>{
+  t.onclick = ()=>{ favTab = t.dataset.favtab; renderFavPanel(); };
+});
+els.playAllFavs.onclick = ()=>{
+  const urls = favTab === 'favs' ? [...favs] : [...selected];
+  const first = urls.map(u=>allChannels.find(c=>c.url===u)).filter(Boolean)[0];
+  if(first) playChannel(first);
+  else showToast('Inga kanaler i listan');
+};
+els.openAllFavs.onclick = ()=>{
+  const urls = favTab === 'favs' ? [...favs] : [...selected];
+  const chans = urls.map(u=>allChannels.find(c=>c.url===u)).filter(Boolean);
+  if(!chans.length){ showToast('Inga kanaler i listan'); return; }
+  showOverlay(
+    `🔗 <b>Öppna ${chans.length} kanaler externt?</b>`,
+    true,
+    [
+      {label:'✅ Öppna alla', primary:true, action:()=>{
+        hideOverlay();
+        if(isTvEnvironment()){
+          window.location.href = chans[0].url;
+        } else {
+          chans.forEach((c, i)=>{
+            setTimeout(()=>window.open(c.url, '_blank', 'noopener,noreferrer'), i * 250);
+          });
+          showToast(`Öppnar ${chans.length} flikar...`);
+        }
+      }},
+      {label:'✖ Avbryt', action:()=>hideOverlay()}
+    ]
+  );
+};
+els.exportFavsList.onclick = ()=>{
+  const urls = favTab === 'favs' ? [...favs] : [...selected];
+  const chans = urls.map(u=>allChannels.find(c=>c.url===u)).filter(Boolean);
+  if(!chans.length){ showToast('Inga kanaler att exportera'); return; }
+  exportM3U(chans, favTab === 'favs' ? 'favoriter.m3u' : 'valda.m3u');
+  showToast(chans.length + ' kanaler exporterade');
+};
+els.clearFavsList.onclick = ()=>{
+  const label = favTab === 'favs' ? 'favoriter' : 'valda kanaler';
+  showOverlay(
+    `🗑️ <b>Rensa alla ${label}?</b><br><br>`+
+    `<span style="font-size:13px;color:#94a3b8">Detta kan inte ångras.</span>`,
+    true,
+    [
+      {label:'🗑️ Ja, rensa', primary:true, action:()=>{
+        if(favTab === 'favs') favs.clear(); else selected.clear();
+        save(); updateSummary(); renderChannelList(); renderFavPanel();
+        hideOverlay(); showToast('Rensat');
+      }},
+      {label:'✖ Avbryt', action:()=>hideOverlay()}
+    ]
+  );
+};
+
+function exportM3U(chans, filename){
+  let m3u='#EXTM3U\n';
+  chans.forEach(c=>{ m3u+=`#EXTINF:-1 tvg-logo="${c.logo||''}" tvg-id="${c.tvgId||''}" group-title="${c.group||''}",${c.name}\n${c.url}\n`; });
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([m3u],{type:'text/plain'}));
+  a.download=filename; a.click();
+}
+els.exportFav.onclick = ()=>{ exportM3U(allChannels.filter(c=>favs.has(c.url)),'favoriter.m3u'); showToast('Favoriter exporterade'); };
+els.exportM3U.onclick = ()=>{ exportM3U(allChannels.filter(c=>selected.has(c.url)),'valda.m3u'); showToast('Valda exporterade'); };
+
+els.loadBtn.onclick = async ()=>{
+  if(!active.size){ showToast('Välj minst en spellista först!'); return; }
+  els.loadBtn.disabled=true;
+  const ids=[...active];
+  for(let i=0;i<ids.length;i++){
+    els.loadBtn.textContent=`⏳ Laddar ${i+1}/${ids.length}...`;
+    await loadPlaylist(ids[i]);
+  }
+  els.loadBtn.disabled=false;
+  renderManager(); rebuildAll();
+  showToast(allChannels.length+' kanaler laddade');
+  tvNav.refresh();
+};
+document.querySelectorAll('[data-preset]').forEach(b=>{
+  b.onclick = ()=>{
+    active.clear();
+    const p=b.dataset.preset;
+    if(p==='kurd') ['kurdistan','sdh','enigma','movies','series','kids'].forEach(id=>active.add(id));
+    else if(p==='tr') ['turk1','turk2'].forEach(id=>active.add(id));
+    else PLAYLISTS.forEach(pl=>{ if(!removed.has(pl.id)) active.add(pl.id); });
+    save(); renderManager(); els.loadBtn.click();
+  };
+});
+
+$('toggleAddPl').onclick = e=>{
+  e.stopPropagation();
+  const body = $('addPlBody');
+  const toggle = $('toggleAddPl');
+  const open = body.classList.toggle('open');
+  toggle.classList.toggle('open', open);
+  toggle.textContent = open ? '−' : '+';
+  tvNav.refresh();
+};
+$('addPlHead').addEventListener('click', e=>{
+  if(e.target.closest('#toggleAddPl')) return;
+  $('toggleAddPl').click();
+});
+
+$('addNewPl').onclick = async ()=>{
+  const name = $('newPlName').value;
+  const url = $('newPlUrl').value;
+  const flag = $('newPlFlag').value;
+  const country = $('newPlCountry').value;
+  const id = await addCustomPlaylist({name, url, flag, country});
+  if(id){
+    $('newPlName').value = '';
+    $('newPlUrl').value = '';
+    $('newPlFlag').value = '';
+    $('newPlCountry').value = '';
+  }
+};
+
+$('addPlFile').onchange = async e=>{
+  const file = e.target.files[0];
+  if(!file) return;
+  const name = file.name.replace(/\.(m3u8?|txt)$/i,'') || 'Egen fil';
+  const id = 'file_' + Date.now();
+  try{
+    const chans = parseM3U(await file.text(), { id, country: 'Fil', flag: '📁' });
+    channelsByPlaylist[id] = chans;
+    loaded.add(id);
+    active.add(id);
+    PLAYLISTS.push({id, name, country:'Fil', flag:'📁', url:'', custom:true});
+    savePlaylistMeta();
+    saveCustomPlaylists();
+    save();
+    renderManager();
+    rebuildAll();
+    showToast(chans.length+' kanaler från fil');
+  }catch(err){
+    showToast('Kunde inte läsa filen');
+  }
+  e.target.value = '';
+};
+
+$('restoreRemoved').onclick = ()=>{
+  if(!removed.size) return;
+  showOverlay(
+    `↺ <b>Återställ ${removed.size} borttagna spellistor?</b>`,
+    true,
+    [
+      {label:'↺ Återställ', primary:true, action:()=>{
+        removed.clear();
+        save();
+        renderManager();
+        rebuildAll();
+        hideOverlay();
+        showToast('Spellistor återställda');
+      }},
+      {label:'✖ Avbryt', action:()=>hideOverlay()}
+    ]
+  );
+};
+
+els.addCustom.onclick = async ()=>{
+  const url = els.customUrl.value.trim();
+  if(!url) return;
+  const id = await addCustomPlaylist({
+    name: 'Snabbval ' + new Date().toLocaleTimeString('sv-SE',{hour:'2-digit',minute:'2-digit'}),
+    url,
+    flag: '🔗',
+    country: 'Egen'
+  });
+  if(id) els.customUrl.value = '';
+};
+els.fileInput.onchange = async e=>{
+  const file=e.target.files[0]; if(!file) return;
+  const id='file_'+Date.now();
+  try{
+    const chans = parseM3U(await file.text(), {id, country:'Fil', flag:'📁'});
+    channelsByPlaylist[id]=chans; loaded.add(id); active.add(id);
+    PLAYLISTS.push({id, name:file.name, country:'Fil', flag:'📁', url:'', custom:true});
+    savePlaylistMeta();
+    saveCustomPlaylists();
+    save(); renderManager(); rebuildAll();
+    showToast(chans.length+' kanaler från fil');
+  }catch(err){
+    showToast('Kunde inte läsa filen');
+  }
+  e.target.value = '';
+};
+els.autoLoadCheck.onchange = e=>localStorage.setItem(LS.autoload, e.target.checked?'1':'0');
+els.autoLoadCheck.checked = localStorage.getItem(LS.autoload)==='1';
+$('clearFilters').onclick = ()=>{
+  searchQ=''; groupF=''; showFavOnly=false;
+  countryFilter='Alla'; langFilter='Alla'; gridFilter='Alla';
+  els.search.value=''; els.groupSelect.value=''; els.favFilter.value='all';
+  showToast('Filter rensade');
+  applyFilters();
+};
+
+/* ================= Init ================= */
+renderManager(); rebuildAll(); setEPGStatus('EPG ej laddad','warn');
+applyAccordion();
+renderFavPanel();
+if(localStorage.getItem(LS.autoload)==='1' && active.size>0) els.loadBtn.click();
+if(localStorage.getItem(LS.tvMode)==='1') toggleTvMode();
+setTimeout(()=>tvNav.refresh(), 200);
+
+(async ()=>{
+  try{
+    await fetch('https://iptv-org.github.io/iptv/categories/movies.m3u', {method:'GET', cache:'no-store'});
+  }catch(e){
+    document.getElementById('netWarning').style.display='block';
+  }
+})();
+</script>
+</body>
+</html>
