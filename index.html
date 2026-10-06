@@ -251,6 +251,8 @@ select{background:var(--panel3);border:2px solid var(--line);border-radius:10px;
 #toast.show{opacity:1}
 .extOnlyTag{font-size:10px;padding:2px 7px;border-radius:6px;background:rgba(249,115,22,.2);
   color:#fdba74;font-weight:700;margin-left:5px}
+.proxyTag{font-size:10px;padding:2px 7px;border-radius:6px;background:rgba(139,92,246,.25);
+  color:#c4b5fd;font-weight:700;margin-left:5px}
 .tvHint{font-size:12px;color:var(--muted);margin-top:10px;line-height:1.7}
 .tvHint kbd{background:#1e1e33;border:1px solid var(--line);border-radius:6px;padding:2px 7px;
   font-family:monospace;font-size:11px;color:#e5e7eb}
@@ -512,10 +514,16 @@ select{background:var(--panel3);border:2px solid var(--line);border-radius:10px;
           </div>
         </div>
         <div class="pRow">
+          <input id="proxyBaseUrl" type="url" placeholder="http://localhost:3000/proxy?url="
+            style="flex:1;min-width:200px;background:var(--panel3);border:2px solid var(--line);border-radius:10px;padding:11px 14px;color:var(--text);font-size:14px;outline:none;min-height:44px"/>
+          <span id="proxyStatus" class="epgBadge" style="background:rgba(239,68,68,.15);color:#fca5a5">Proxy: ej testad</span>
+          <button id="testProxyBtn" class="miniBtn">🔌 Testa</button>
+        </div>
+        <div class="pRow">
           <select id="proxySelect" title="Proxy-läge" style="flex:0 0 auto;min-width:170px">
-            <option value="auto">🌐 Auto-proxy</option>
+            <option value="auto">🌐 Auto-proxy (publika)</option>
             <option value="off">🚫 Ingen proxy</option>
-            <option value="always">🔁 Tvinga proxy</option>
+            <option value="always">🔁 Tvinga publik proxy</option>
           </select>
           <input id="epgUrl" type="url" placeholder="EPG XMLTV URL"/>
           <button id="loadEPGBtn" class="miniBtn">📡 EPG</button>
@@ -577,7 +585,8 @@ const LS = {
   favs:'iptv_favorites', selected:'iptv_selected', autoload:'iptv_autoload',
   epg:'iptv_epg_url', extOnly:'iptv_external_only', proxyMode:'iptv_proxy_mode',
   tvMode:'iptv_tv_mode', accOpen:'iptv_acc_open',
-  customPls:'iptv_custom_playlists', plMeta:'iptv_playlist_meta'
+  customPls:'iptv_custom_playlists', plMeta:'iptv_playlist_meta',
+  proxyBase:'iptv_proxy_base'
 };
 let active   = new Set(JSON.parse(localStorage.getItem(LS.active)  ||'[]'));
 let removed  = new Set(JSON.parse(localStorage.getItem(LS.removed) ||'[]'));
@@ -595,6 +604,7 @@ let hls = null;
 let epg = {};
 let epgLoading = false;
 let proxyMode = localStorage.getItem(LS.proxyMode) || 'auto';
+let proxyBase = localStorage.getItem(LS.proxyBase) || 'http://localhost:3000/proxy?url=';
 let favTab = 'favs';
 
 let searchQ='', groupF='', showFavOnly=false;
@@ -609,6 +619,7 @@ channelsByPlaylist[BUILTIN_ID] = [
   {name:'France 24 English', group:'Nyheter', lang:'eng', country:'FR', plCountry:'Internationell', flag:'🌍', tvgId:'', logo:'', playlistId:'builtin', url:'https://static.france24.com/live/F24_EN_LO_HLS/live_web.m3u8'},
   {name:'TRT World', group:'Nyheter', lang:'eng', country:'TR', plCountry:'Turkiet', flag:'🇹🇷', tvgId:'', logo:'', playlistId:'builtin', url:'https://tv-trtworld.live.trt.com.tr/master.m3u8'},
   {name:'CGTN Documentary', group:'Dokumentär', lang:'eng', country:'CN', plCountry:'Internationell', flag:'🌍', tvgId:'', logo:'', playlistId:'builtin', url:'https://livedoc.cgtn.com/500d/prog_index.m3u8'},
+  {name:'Telewebion Hamoon', group:'Nyheter', lang:'fas', country:'IR', plCountry:'Iran', flag:'🇮🇷', tvgId:'', logo:'', playlistId:'builtin', url:'https://ncdn.telewebion.ir/hamoon/live/playlist.m3u8'},
 ];
 loaded.add(BUILTIN_ID);
 if(active.size===0){ active.add(BUILTIN_ID); }
@@ -653,7 +664,8 @@ const els = {
   filterSummary:$('filterSummary'), proxyBadge:$('proxyBadge'),
   favSummary:$('favSummary'), tabFavCount:$('tabFavCount'), tabSelCount:$('tabSelCount'),
   favList:$('favList'), playAllFavs:$('playAllFavs'), openAllFavs:$('openAllFavs'),
-  exportFavsList:$('exportFavsList'), clearFavsList:$('clearFavsList')
+  exportFavsList:$('exportFavsList'), clearFavsList:$('clearFavsList'),
+  proxyBaseUrl:$('proxyBaseUrl'), proxyStatus:$('proxyStatus'), testProxyBtn:$('testProxyBtn')
 };
 
 function save(){
@@ -663,6 +675,7 @@ function save(){
   localStorage.setItem(LS.selected, JSON.stringify([...selected]));
   localStorage.setItem(LS.extOnly, JSON.stringify([...extOnly]));
   localStorage.setItem(LS.proxyMode, proxyMode);
+  localStorage.setItem(LS.proxyBase, proxyBase);
   localStorage.setItem(LS.accOpen, JSON.stringify(accOpen));
   savePlaylistMeta();
   saveCustomPlaylists();
@@ -716,53 +729,29 @@ function showToast(msg){
 }
 
 /* ============================================================
-   SPÄRRAD EXTERN-MINNE (används numera bara som visuell markering)
+   EGEN PROXY – för Telewebion, karwan.tv m.fl.
    ============================================================ */
-const NEVER_EXTERNAL_PATTERNS = [
-  'ncdn.telewebion.ir',
-  'ncdn.telewebion.net',
-  'telewebion.ir',
-  'telewebion.net'
-];
-function isNeverExternal(url){
+function needsLocalProxy(url){
   if(!url) return false;
-  return NEVER_EXTERNAL_PATTERNS.some(p => url.includes(p));
+  return /telewebion\.ir|karwan\.tv|mypsx\.net|persiana|iraninternational/i.test(url);
 }
-function isExternalOnly(url){
-  if(isNeverExternal(url)) return false;
-  return extOnly.has(url);
-}
-function markExternalOnly(url){
-  // Behåll för visuell markering men blockera aldrig
-  if(!url || extOnly.has(url)) return;
-  if(isNeverExternal(url)) return;
-  extOnly.add(url); save();
+function buildLocalProxyUrl(url){
+  return proxyBase + encodeURIComponent(url);
 }
 
-/* ============================================================
-   CORS-PROXY-FALLBACK – utökad med Referer-stöd
-   ============================================================ */
+/* Publika proxys som fallback (används ej för Telewebion) */
 const STREAM_PROXIES = [
   {id:'workers',    name:'CF Worker',   build:u=>`https://test.cors.workers.dev/?${u}`},
   {id:'allorig',    name:'AllOrigins',  build:u=>`https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`},
   {id:'corsproxy',  name:'corsproxy',   build:u=>`https://corsproxy.io/?${encodeURIComponent(u)}`},
   {id:'codetabs',   name:'codetabs',    build:u=>`https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(u)}`},
-  {id:'wsrv',       name:'wsrv.nl',     build:u=>`https://wsrv.nl/?url=${encodeURIComponent(u)}`},
-  {id:'thingproxy', name:'thingproxy',  build:u=>`https://thingproxy.freeboard.io/fetch/${u}`},
 ];
 
-// Kanaler som kräver Referer – proxas alltid
-function needsRefererProxy(url){
-  if(!url) return false;
-  return /karwan\.tv|telewebion|persiana|iraninternational|mypsx\.net|mmn\.|ncdn\./i.test(url);
-}
 function buildStreamCandidates(url){
   const out = [];
-  if(needsRefererProxy(url)){
-    // Kräver Referer – kör proxy först (hoppa över "direct")
-    STREAM_PROXIES.forEach(p=>out.push({id:p.id, url:p.build(url)}));
-    // Lägg till direct sist som absolut sista utväg
-    out.push({id:'direct', url});
+  // Lokal proxy för kanaler som kräver det
+  if(needsLocalProxy(url)){
+    out.push({id:'local-proxy', url: buildLocalProxyUrl(url)});
     return out;
   }
   if(proxyMode === 'always'){
@@ -775,6 +764,39 @@ function buildStreamCandidates(url){
   }
   return out;
 }
+
+async function testProxy(){
+  const base = els.proxyBaseUrl.value.trim() || 'http://localhost:3000/proxy?url=';
+  proxyBase = base.endsWith('=') ? base : base + (base.includes('?')?'&':'?') + 'url=';
+  els.proxyBaseUrl.value = proxyBase;
+  localStorage.setItem(LS.proxyBase, proxyBase);
+  els.proxyStatus.textContent = 'Testar...';
+  els.proxyStatus.className = 'epgBadge';
+  try{
+    const testUrl = 'https://ncdn.telewebion.ir/hamoon/live/playlist.m3u8';
+    const r = await fetch(proxyBase + encodeURIComponent(testUrl), {cache:'no-store'});
+    if(r.ok){
+      const txt = await r.text();
+      if(txt.includes('#EXTM3U') || txt.includes('#EXTINF')){
+        els.proxyStatus.textContent = '✅ Proxy OK';
+        els.proxyStatus.className = 'epgBadge ok';
+        showToast('✅ Proxy fungerar!');
+      } else {
+        els.proxyStatus.textContent = '⚠️ Fel svar';
+        showToast('⚠️ Proxy svarade men utan M3U8');
+      }
+    } else {
+      els.proxyStatus.textContent = '❌ HTTP ' + r.status;
+      els.proxyStatus.className = 'epgBadge';
+      showToast('❌ Proxy svarade HTTP ' + r.status);
+    }
+  }catch(e){
+    els.proxyStatus.textContent = '❌ Ej ansluten';
+    els.proxyStatus.className = 'epgBadge';
+    showToast('❌ Kan inte nå proxy: ' + e.message);
+  }
+}
+
 function showProxyBadge(text){
   if(!els.proxyBadge) return;
   els.proxyBadge.textContent = text;
@@ -828,9 +850,7 @@ async function loadPlaylist(id){
   if(loaded.has(id) && channelsByPlaylist[id]) return channelsByPlaylist[id];
   const pl = PLAYLISTS.find(p=>p.id===id);
   if(!pl) return [];
-  if(!pl.url){
-    return channelsByPlaylist[id] || [];
-  }
+  if(!pl.url){ return channelsByPlaylist[id] || []; }
   setRowStatus(id,'Laddar...','loading');
   try{
     const chans = parseM3U(await fetchM3U(pl.url), pl);
@@ -855,42 +875,26 @@ async function addCustomPlaylist({name, url, flag, country, silent}){
   if(!name){ showToast('Ange ett namn'); return null; }
   if(!url){ showToast('Ange en URL'); return null; }
   if(!/^https?:\/\//i.test(url)){ showToast('URL måste börja med http:// eller https://'); return null; }
-  if(PLAYLISTS.find(p=>p.url === url)){
-    showToast('Denna URL finns redan');
-    return null;
-  }
+  if(PLAYLISTS.find(p=>p.url === url)){ showToast('Denna URL finns redan'); return null; }
   const id = 'custom_' + Date.now() + '_' + Math.random().toString(36).slice(2,6);
-  const pl = {
-    id, name,
-    country: (country||'Egen').trim() || 'Egen',
-    flag: (flag||'🔗').trim() || '🔗',
-    url,
-    custom: true
-  };
+  const pl = { id, name, country: (country||'Egen').trim() || 'Egen',
+    flag: (flag||'🔗').trim() || '🔗', url, custom: true };
   PLAYLISTS.push(pl);
   active.add(id);
-  savePlaylistMeta();
-  saveCustomPlaylists();
-  save();
+  savePlaylistMeta(); saveCustomPlaylists(); save();
   if(!silent) showToast('Laddar lista…');
   await loadPlaylist(id);
-  renderManager();
-  rebuildAll();
+  renderManager(); rebuildAll();
   if(!silent) showToast((channelsByPlaylist[id]?.length||0)+' kanaler tillagda');
   return id;
 }
-
 function deleteCustomPlaylist(id){
   const idx = PLAYLISTS.findIndex(p=>p.id===id);
   if(idx >= 0 && PLAYLISTS[idx].custom){
     PLAYLISTS.splice(idx, 1);
-    delete channelsByPlaylist[id];
-    loaded.delete(id);
-    active.delete(id);
-    removed.delete(id);
-    savePlaylistMeta();
-    saveCustomPlaylists();
-    save();
+    delete channelsByPlaylist[id]; loaded.delete(id);
+    active.delete(id); removed.delete(id);
+    savePlaylistMeta(); saveCustomPlaylists(); save();
   }
 }
 
@@ -953,23 +957,16 @@ function renderManager(){
           true,
           [
             {label:'🗑️ Ja, radera', primary:true, action:()=>{
-              deleteCustomPlaylist(id);
-              renderManager();
-              rebuildAll();
-              hideOverlay();
-              showToast('Lista raderad');
+              deleteCustomPlaylist(id); renderManager(); rebuildAll();
+              hideOverlay(); showToast('Lista raderad');
             }},
             {label:'✖ Avbryt', action:()=>hideOverlay()}
           ]
         );
       } else {
-        removed.add(id);
-        active.delete(id);
-        delete channelsByPlaylist[id];
-        loaded.delete(id);
-        save();
-        renderManager();
-        rebuildAll();
+        removed.add(id); active.delete(id);
+        delete channelsByPlaylist[id]; loaded.delete(id);
+        save(); renderManager(); rebuildAll();
         showToast('Lista borttagen (kan återställas)');
       }
     };
@@ -1058,14 +1055,14 @@ function renderChannelList(){
   els.channelList.innerHTML = filtered.slice(0,600).map(c=>{
     const isFav = favs.has(c.url);
     const isSel = selected.has(c.url);
-    const isExt = isExternalOnly(c.url);
+    const isProxy = needsLocalProxy(c.url);
     const progs = epg[c.tvgId]?.programs;
     const nowP  = progs?.find(p=>p.start<=now && p.stop>now);
     const nextP = progs?.find(p=>p.start>now);
     return `<div class="channelRow ${currentChannel?.url===c.url?'active':''}" data-key="${escapeHtml(channelKey(c))}" tabindex="0">
       <img class="cLogo" src="${escapeHtml(c.logo)}" onerror="this.style.visibility='hidden'" alt=""/>
       <div class="cMeta">
-        <div class="cName">${escapeHtml(c.name)}${isExt?'<span class="extOnlyTag">EXT</span>':''}</div>
+        <div class="cName">${escapeHtml(c.name)}${isProxy?'<span class="proxyTag">PROXY</span>':''}</div>
         <div class="cSub">
           <span>${c.flag} ${escapeHtml(c.plCountry||c.country)}</span>
           <span class="badge langTag">${escapeHtml(c.lang)}</span>
@@ -1141,9 +1138,7 @@ function renderFavPanel(){
     </div>`;
     return;
   }
-  const chans = urls
-    .map(u => allChannels.find(c => c.url === u))
-    .filter(Boolean);
+  const chans = urls.map(u => allChannels.find(c => c.url === u)).filter(Boolean);
   if(!chans.length){
     els.favList.innerHTML = '<div class="note" style="padding:12px;text-align:center">Kanaler är inte laddade</div>';
     return;
@@ -1179,7 +1174,7 @@ function renderFavPanel(){
 }
 
 /* ============================================================
-   PLAYBACK – HLS med Referer-stöd och CORS-fallback
+   PLAYBACK – använder lokal proxy för Telewebion m.fl.
    ============================================================ */
 function stopPlayer(){
   clearTimeout(playChannel._timeout);
@@ -1205,8 +1200,6 @@ function playChannel(c){
   updateActiveChannelRow();
   renderFavPanel();
 
-  // Ge ALLTID kanalen en ny chans i spelaren – även om den är markerad EXT
-  // (extOnly används nu bara som visuell markering)
   const candidates = buildStreamCandidates(c.url);
   playChannel._attempts = [];
   tryNextCandidate(c, candidates, 0);
@@ -1214,7 +1207,7 @@ function playChannel(c){
 function tryNextCandidate(c, candidates, idx){
   if(idx >= candidates.length){
     const tried = playChannel._attempts.map(a=>a.id).join(' → ');
-    showExternalFallback(c, 'Testade: '+tried, true);
+    showExternalFallback(c, 'Testade: '+tried);
     stopPlayer();
     updateActiveChannelRow();
     renderChannelList();
@@ -1223,15 +1216,15 @@ function tryNextCandidate(c, candidates, idx){
   const cand = candidates[idx];
   playChannel._attempts.push({id:cand.id});
 
-  const statusLabel = cand.id==='direct' ? 'direkt' : 'via '+cand.id;
+  const statusLabel = cand.id==='direct' ? 'direkt' : (cand.id==='local-proxy' ? 'lokal proxy' : 'via '+cand.id);
   showOverlay(`⏳ Laddar (${statusLabel})…`);
-  showProxyBadge(cand.id==='direct' ? '🛰 Direkt…' : '🛰 Proxy: '+cand.id+'…');
+  showProxyBadge(cand.id==='direct' ? '🛰 Direkt…' : (cand.id==='local-proxy' ? '🏠 Lokal proxy…' : '🛰 Proxy: '+cand.id+'…'));
 
   let resolved = false;
   const success = ()=>{
     if(resolved) return; resolved = true;
     hideOverlay();
-    showProxyBadge(cand.id==='direct' ? '🛰 Direkt' : '🛰 Proxy: '+cand.id);
+    showProxyBadge(cand.id==='direct' ? '🛰 Direkt' : (cand.id==='local-proxy' ? '🏠 Lokal proxy' : '🛰 Proxy: '+cand.id));
   };
   const failNext = (reason)=>{
     if(resolved) return; resolved = true;
@@ -1244,36 +1237,10 @@ function tryNextCandidate(c, candidates, idx){
 
   const url = cand.url;
 
-  // Bygg Referer/Origin baserat på original-URL
-  const refererHeaders = (() => {
-    try{
-      const u = new URL(c.url);
-      return {
-        referer: u.origin + '/',
-        origin: u.origin
-      };
-    }catch(e){ return null; }
-  })();
-
   if(url.includes('.m3u8') && window.Hls && Hls.isSupported()){
     hls = new Hls({
       enableWorker:true,
       lowLatencyMode:true,
-      // Skicka Referer/Origin för servrar som kräver det
-      xhrSetup: function(xhr){
-        try{
-          if(/karwan\.tv/i.test(c.url)){
-            xhr.setRequestHeader('Referer', 'https://karwan.tv/');
-            xhr.setRequestHeader('Origin', 'https://karwan.tv');
-          } else if(/mypsx\.net/i.test(c.url)){
-            xhr.setRequestHeader('Referer', 'http://mmn.mypsx.net/');
-            xhr.setRequestHeader('Origin', 'http://mmn.mypsx.net');
-          } else if(refererHeaders && needsRefererProxy(c.url)){
-            xhr.setRequestHeader('Referer', refererHeaders.referer);
-            xhr.setRequestHeader('Origin', refererHeaders.origin);
-          }
-        }catch(e){ /* Ignorera header-fel */ }
-      },
     });
     hls.loadSource(url); hls.attachMedia(els.video);
     hls.on(Hls.Events.MANIFEST_PARSED, ()=>{ els.video.play().then(success).catch(success); });
@@ -1312,12 +1279,14 @@ function tryNextCandidate(c, candidates, idx){
   renderEPG(); renderGrid();
 }
 
-function showExternalFallback(c, reason, autoOpen){
+function showExternalFallback(c, reason){
   showOverlay(
     '🚫 <b>Kanalen kan inte spelas i sidan.</b><br>'+
     `<span style="color:#94a3b8;font-size:13px">${escapeHtml(reason||'CORS-skydd hos streamservern')}</span><br><br>`+
-    'Detta beror oftast på att servern blockerar uppspelning i webbläsaren.<br>'+
-    'Kanalen kan öppnas i en ny flik eller i VLC.',
+    (needsLocalProxy(c.url) ? 
+      '<span style="color:#fcd34d;font-size:13px">⚠️ Denna kanal kräver din lokala proxy.<br>Se till att <code>node server.js</code> körs och att proxy-URL:en är korrekt.</span><br><br>' 
+      : '')+
+    'Du kan öppna kanalen i en ny flik eller i VLC.',
     true,
     [
       {label:'🎬 Öppna i VLC', primary:true, action:()=>{ hideOverlay(); openInVlc(); }},
@@ -1326,7 +1295,6 @@ function showExternalFallback(c, reason, autoOpen){
       {label:'✖ Stäng', action:()=>hideOverlay()}
     ]
   );
-  // Ingen automatisk öppning – användaren får välja
 }
 
 function showOverlay(html, sticky, actions){
@@ -1370,8 +1338,7 @@ function openStreamExternal(channel, silent){
   if(isTvEnvironment()){
     showOverlay(
       '🔗 <b>Öppna stream externt?</b><br><br>'+
-      '<span style="font-size:13px;color:#94a3b8">Du lämnar appen och öppnar streamen i TV:ns webbläsare.</span><br><br>'+
-      '<span style="font-size:11px;color:#4b5563;word-break:break-all">'+escapeHtml(c.url)+'</span>',
+      '<span style="font-size:13px;color:#94a3b8">Du lämnar appen och öppnar streamen i TV:ns webbläsare.</span>',
       true,
       [
         {label:'✅ Öppna', primary:true, action:()=>{ window.location.href = c.url; }},
@@ -1411,16 +1378,13 @@ function downloadM3UAsFallback(c){
   setTimeout(()=>URL.revokeObjectURL(a.href), 5000);
   showToast('📁 .m3u nedladdad – öppna den i VLC');
 }
-
 function openInVlc(){
   const c = currentChannel;
   if(!c?.url){ showToast('Ingen kanal vald'); return; }
-
   const ua = navigator.userAgent;
   const isMac = /Macintosh|Mac OS X/i.test(ua);
   const isWin = /Windows/i.test(ua);
   const isLinux = /Linux/i.test(ua) && !/Android/i.test(ua);
-
   const nativeUrl = 'vlc://' + c.url;
 
   if(isMac){
@@ -1430,8 +1394,7 @@ function openInVlc(){
       'Om inget händer är <code>vlc://</code>-protokollet inte registrerat på din Mac.<br><br>'+
       'Installera det en gång med Homebrew:<br>'+
       '<code style="display:block;background:#0a0a12;padding:8px;border-radius:6px;margin-top:6px;font-size:11px;color:#c4b5fd;word-break:break-all">brew install --cask stefansundin/tap/vlc-protocol</code><br>'+
-      'Eller ladda ner .m3u-filen nedan och öppna i VLC.</span><br><br>'+
-      '<span style="font-size:11px;color:#4b5563;word-break:break-all">'+escapeHtml(c.url)+'</span>',
+      'Eller ladda ner .m3u-filen nedan och öppna i VLC.</span>',
       true,
       [
         {label:'▶️ Öppna i VLC', primary:true, action:()=>{ hideOverlay(); window.location.href = nativeUrl; }},
@@ -1441,7 +1404,6 @@ function openInVlc(){
     );
     return;
   }
-
   if(isWin){
     window.location.href = nativeUrl;
     showToast('Försöker öppna i VLC...');
@@ -1449,8 +1411,7 @@ function openInVlc(){
       if(!document.hidden){
         showOverlay(
           '🎬 <b>Öppnade VLC sig?</b><br><br>'+
-          '<span style="font-size:13px;color:#94a3b8">Om inte är protokollet inte registrerat i Windows.<br>'+
-          'Använd .m3u-filen nedan istället – den öppnar VLC automatiskt.</span>',
+          '<span style="font-size:13px;color:#94a3b8">Om inte är protokollet inte registrerat i Windows.<br>Använd .m3u-filen istället.</span>',
           true,
           [
             {label:'🔄 Försök igen', primary:true, action:()=>{ hideOverlay(); window.location.href = nativeUrl; }},
@@ -1462,16 +1423,12 @@ function openInVlc(){
     }, 1500);
     return;
   }
-
   if(isLinux){
     window.location.href = nativeUrl;
     showToast('Försöker öppna i VLC...');
-    setTimeout(()=>{
-      if(!document.hidden) downloadM3UAsFallback(c);
-    }, 1500);
+    setTimeout(()=>{ if(!document.hidden) downloadM3UAsFallback(c); }, 1500);
     return;
   }
-
   downloadM3UAsFallback(c);
 }
 
@@ -1484,15 +1441,10 @@ function openAllVisibleTabs(){
     [
       {label:'✅ Öppna alla', primary:true, action:()=>{
         hideOverlay();
-        if(isTvEnvironment()){
-          showToast('Öppnar första kanalen (TV-läge)');
-          window.location.href = list[0].url;
-        } else {
+        if(isTvEnvironment()){ window.location.href = list[0].url; }
+        else {
           list.forEach((c, i)=>{
-            setTimeout(()=>{
-              const w = window.open(c.url, '_blank', 'noopener,noreferrer');
-              if(!w) showToast('🚫 Popup blockerades vid kanal '+(i+1));
-            }, i * 250);
+            setTimeout(()=>window.open(c.url, '_blank', 'noopener,noreferrer'), i * 250);
           });
           showToast(`Öppnar ${list.length} flikar...`);
         }
@@ -1503,23 +1455,11 @@ function openAllVisibleTabs(){
 }
 function clearExternalOnly(){
   if(!extOnly.size){ showToast('Inget att rensa'); return; }
-  showOverlay(
-    `♻ <b>Rensa extern-minne?</b><br><br>`+
-    `<span style="font-size:13px;color:#94a3b8">${extOnly.size} kanaler är markerade med EXT-badge.<br>`+
-    `Efter rensning försvinner markeringen.</span>`,
-    true,
-    [
-      {label:'♻ Ja, rensa', primary:true, action:()=>{
-        const count = extOnly.size;
-        extOnly.clear();
-        save();
-        renderChannelList();
-        hideOverlay();
-        showToast(count + ' kanaler återställda');
-      }},
-      {label:'✖ Avbryt', action:()=>hideOverlay()}
-    ]
-  );
+  const count = extOnly.size;
+  extOnly.clear();
+  save();
+  renderChannelList();
+  showToast(count + ' kanaler återställda');
 }
 
 function parseXMLTVDate(s){
@@ -1726,21 +1666,14 @@ function toggleTvMode(){
   tvNav.refresh();
 }
 
-/* ============================================================
-   KEYDOWN – med fix för textinmatning i sökfält
-   ============================================================ */
 document.addEventListener('keydown', e=>{
   const key = e.key;
   const code = e.keyCode;
   const tag = (e.target.tagName || '').toUpperCase();
   const isTyping = tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || e.target.isContentEditable;
 
-  // När användaren skriver i ett fält – låt webbläsaren sköta allt
   if(isTyping){
-    if(key === 'Escape'){
-      e.target.blur();
-      tvNav.refresh();
-    }
+    if(key === 'Escape'){ e.target.blur(); tvNav.refresh(); }
     return;
   }
 
@@ -1771,9 +1704,7 @@ document.addEventListener('keydown', e=>{
   }
 
   if(code === 8 || code === 461 || key === 'Escape'){
-    e.preventDefault();
-    tvNav.back();
-    return;
+    e.preventDefault(); tvNav.back(); return;
   }
 
   if(key === 'ArrowUp'){ e.preventDefault(); tvNav.move('up'); return; }
@@ -1781,16 +1712,10 @@ document.addEventListener('keydown', e=>{
   if(key === 'ArrowLeft'){ e.preventDefault(); tvNav.move('left'); return; }
   if(key === 'ArrowRight'){ e.preventDefault(); tvNav.move('right'); return; }
 
-  if(code === 13 || key === 'Enter'){
-    e.preventDefault();
-    tvNav.activate();
-    return;
-  }
+  if(code === 13 || key === 'Enter'){ e.preventDefault(); tvNav.activate(); return; }
 
   if((e.ctrlKey || e.metaKey) && key === 'Enter'){
-    e.preventDefault();
-    openStreamExternal();
-    return;
+    e.preventDefault(); openStreamExternal(); return;
   }
 });
 
@@ -1821,10 +1746,20 @@ els.proxySelect.value = proxyMode;
 els.proxySelect.onchange = e=>{
   proxyMode = e.target.value;
   localStorage.setItem(LS.proxyMode, proxyMode);
-  const map = {off:'Ingen proxy', auto:'Auto-proxy', always:'Tvinga proxy'};
+  const map = {off:'Ingen proxy', auto:'Auto-proxy', always:'Tvinga publik proxy'};
   showToast('Proxy: '+map[proxyMode]);
   updateSummary();
 };
+els.proxyBaseUrl.value = proxyBase;
+els.proxyBaseUrl.onchange = e=>{
+  proxyBase = e.target.value.trim();
+  if(!proxyBase.endsWith('=')) proxyBase = proxyBase + (proxyBase.includes('?')?'&':'?') + 'url=';
+  e.target.value = proxyBase;
+  localStorage.setItem(LS.proxyBase, proxyBase);
+  els.proxyStatus.textContent = 'Proxy: ej testad';
+  els.proxyStatus.className = 'epgBadge';
+};
+els.testProxyBtn.onclick = testProxy;
 els.openAllBtn.onclick = openAllVisibleTabs;
 els.tvModeBtn.onclick = toggleTvMode;
 els.clearExtOnlyBtn.onclick = clearExternalOnly;
@@ -1848,9 +1783,8 @@ els.openAllFavs.onclick = ()=>{
     [
       {label:'✅ Öppna alla', primary:true, action:()=>{
         hideOverlay();
-        if(isTvEnvironment()){
-          window.location.href = chans[0].url;
-        } else {
+        if(isTvEnvironment()){ window.location.href = chans[0].url; }
+        else {
           chans.forEach((c, i)=>{
             setTimeout(()=>window.open(c.url, '_blank', 'noopener,noreferrer'), i * 250);
           });
@@ -1940,10 +1874,8 @@ $('addNewPl').onclick = async ()=>{
   const country = $('newPlCountry').value;
   const id = await addCustomPlaylist({name, url, flag, country});
   if(id){
-    $('newPlName').value = '';
-    $('newPlUrl').value = '';
-    $('newPlFlag').value = '';
-    $('newPlCountry').value = '';
+    $('newPlName').value = ''; $('newPlUrl').value = '';
+    $('newPlFlag').value = ''; $('newPlCountry').value = '';
   }
 };
 
@@ -1954,19 +1886,12 @@ $('addPlFile').onchange = async e=>{
   const id = 'file_' + Date.now();
   try{
     const chans = parseM3U(await file.text(), { id, country: 'Fil', flag: '📁' });
-    channelsByPlaylist[id] = chans;
-    loaded.add(id);
-    active.add(id);
+    channelsByPlaylist[id] = chans; loaded.add(id); active.add(id);
     PLAYLISTS.push({id, name, country:'Fil', flag:'📁', url:'', custom:true});
-    savePlaylistMeta();
-    saveCustomPlaylists();
-    save();
-    renderManager();
-    rebuildAll();
+    savePlaylistMeta(); saveCustomPlaylists(); save();
+    renderManager(); rebuildAll();
     showToast(chans.length+' kanaler från fil');
-  }catch(err){
-    showToast('Kunde inte läsa filen');
-  }
+  }catch(err){ showToast('Kunde inte läsa filen'); }
   e.target.value = '';
 };
 
@@ -1977,12 +1902,8 @@ $('restoreRemoved').onclick = ()=>{
     true,
     [
       {label:'↺ Återställ', primary:true, action:()=>{
-        removed.clear();
-        save();
-        renderManager();
-        rebuildAll();
-        hideOverlay();
-        showToast('Spellistor återställda');
+        removed.clear(); save(); renderManager(); rebuildAll();
+        hideOverlay(); showToast('Spellistor återställda');
       }},
       {label:'✖ Avbryt', action:()=>hideOverlay()}
     ]
@@ -1994,9 +1915,7 @@ els.addCustom.onclick = async ()=>{
   if(!url) return;
   const id = await addCustomPlaylist({
     name: 'Snabbval ' + new Date().toLocaleTimeString('sv-SE',{hour:'2-digit',minute:'2-digit'}),
-    url,
-    flag: '🔗',
-    country: 'Egen'
+    url, flag: '🔗', country: 'Egen'
   });
   if(id) els.customUrl.value = '';
 };
@@ -2007,13 +1926,10 @@ els.fileInput.onchange = async e=>{
     const chans = parseM3U(await file.text(), {id, country:'Fil', flag:'📁'});
     channelsByPlaylist[id]=chans; loaded.add(id); active.add(id);
     PLAYLISTS.push({id, name:file.name, country:'Fil', flag:'📁', url:'', custom:true});
-    savePlaylistMeta();
-    saveCustomPlaylists();
-    save(); renderManager(); rebuildAll();
+    savePlaylistMeta(); saveCustomPlaylists(); save();
+    renderManager(); rebuildAll();
     showToast(chans.length+' kanaler från fil');
-  }catch(err){
-    showToast('Kunde inte läsa filen');
-  }
+  }catch(err){ showToast('Kunde inte läsa filen'); }
   e.target.value = '';
 };
 els.autoLoadCheck.onchange = e=>localStorage.setItem(LS.autoload, e.target.checked?'1':'0');
@@ -2038,7 +1954,7 @@ setTimeout(()=>tvNav.refresh(), 200);
   try{
     await fetch('https://iptv-org.github.io/iptv/categories/movies.m3u', {method:'GET', cache:'no-store'});
   }catch(e){
-    document.getElementById('netWarning').style.display='block';
+    document.getElementById('netWarning').style.display = 'block';
   }
 })();
 </script>
