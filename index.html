@@ -717,8 +717,6 @@ function showToast(msg){
 
 /* ============================================================
    SPÄRRAD EXTERN-MINNE
-   Kanaler vars URL matchar något av dessa mönster hamnar ALDRIG
-   i extern-minnet. De försöker alltid spelas i spelaren.
    ============================================================ */
 const NEVER_EXTERNAL_PATTERNS = [
   'ncdn.telewebion.ir',
@@ -1190,7 +1188,6 @@ function playChannel(c){
   updateActiveChannelRow();
   renderFavPanel();
 
-  // ENDAST för icke-spärrade kanaler: om känd som extern-only, hoppa direkt
   if(isExternalOnly(c.url)){
     showExternalFallback(c, 'Känd för att kräva extern flik (CORS)', true);
     renderEPG(); renderGrid();
@@ -1204,9 +1201,7 @@ function playChannel(c){
 function tryNextCandidate(c, candidates, idx){
   if(idx >= candidates.length){
     const tried = playChannel._attempts.map(a=>a.id).join(' → ');
-    // Mahabad/Telewebion: markera inte som extern-only
     markExternalOnly(c.url);
-    // För spärrade kanaler: visa manuell fallback UTAN auto-öppning
     if(isNeverExternal(c.url)){
       showOverlay(
         '🚫 <b>Kanalen kunde inte spelas just nu.</b><br>'+
@@ -1375,12 +1370,86 @@ function openStreamExternal(channel, silent){
     );
   }
 }
+
+/* ============================================================
+   VLC – fungerar på Mac, Windows och Linux
+   ============================================================ */
+function downloadM3UAsFallback(c){
+  const m3u = '#EXTM3U\n#EXTINF:-1,' + (c.name||'Kanal') + '\n' + c.url + '\n';
+  const blob = new Blob([m3u], {type: 'audio/x-mpegurl'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = (c.name||'kanal').replace(/[^\w\-]+/g,'_') + '.m3u';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(a.href), 5000);
+  showToast('📁 .m3u nedladdad – öppna den i VLC');
+}
+
 function openInVlc(){
   const c = currentChannel;
   if(!c?.url){ showToast('Ingen kanal vald'); return; }
-  window.location.href = 'vlc://' + c.url;
-  showToast('Försöker öppna i VLC');
+
+  const ua = navigator.userAgent;
+  const isMac = /Macintosh|Mac OS X/i.test(ua);
+  const isWin = /Windows/i.test(ua);
+  const isLinux = /Linux/i.test(ua) && !/Android/i.test(ua);
+
+  const nativeUrl = 'vlc://' + c.url;
+
+  if(isMac){
+    showOverlay(
+      '🎬 <b>Öppna i VLC?</b><br><br>'+
+      '<span style="font-size:13px;color:#94a3b8">'+
+      'Om inget händer är <code>vlc://</code>-protokollet inte registrerat på din Mac.<br><br>'+
+      'Installera det en gång med Homebrew:<br>'+
+      '<code style="display:block;background:#0a0a12;padding:8px;border-radius:6px;margin-top:6px;font-size:11px;color:#c4b5fd;word-break:break-all">brew install --cask stefansundin/tap/vlc-protocol</code><br>'+
+      'Eller ladda ner .m3u-filen nedan och öppna i VLC.</span><br><br>'+
+      '<span style="font-size:11px;color:#4b5563;word-break:break-all">'+escapeHtml(c.url)+'</span>',
+      true,
+      [
+        {label:'▶️ Öppna i VLC', primary:true, action:()=>{ hideOverlay(); window.location.href = nativeUrl; }},
+        {label:'📁 Ladda ner .m3u', action:()=>{ hideOverlay(); downloadM3UAsFallback(c); }},
+        {label:'✖ Avbryt', action:()=>hideOverlay()}
+      ]
+    );
+    return;
+  }
+
+  if(isWin){
+    window.location.href = nativeUrl;
+    showToast('Försöker öppna i VLC...');
+    setTimeout(()=>{
+      if(!document.hidden){
+        showOverlay(
+          '🎬 <b>Öppnade VLC sig?</b><br><br>'+
+          '<span style="font-size:13px;color:#94a3b8">Om inte är protokollet inte registrerat i Windows.<br>'+
+          'Använd .m3u-filen nedan istället – den öppnar VLC automatiskt.</span>',
+          true,
+          [
+            {label:'🔄 Försök igen', primary:true, action:()=>{ hideOverlay(); window.location.href = nativeUrl; }},
+            {label:'📁 Ladda ner .m3u', action:()=>{ hideOverlay(); downloadM3UAsFallback(c); }},
+            {label:'✖ Stäng', action:()=>hideOverlay()}
+          ]
+        );
+      }
+    }, 1500);
+    return;
+  }
+
+  if(isLinux){
+    window.location.href = nativeUrl;
+    showToast('Försöker öppna i VLC...');
+    setTimeout(()=>{
+      if(!document.hidden) downloadM3UAsFallback(c);
+    }, 1500);
+    return;
+  }
+
+  downloadM3UAsFallback(c);
 }
+
 function openAllVisibleTabs(){
   const list = filtered.slice(0, 15);
   if(!list.length){ showToast('Inga kanaler synliga'); return; }
@@ -1632,9 +1701,23 @@ function toggleTvMode(){
   tvNav.refresh();
 }
 
+/* ============================================================
+   KEYDOWN – med fix för textinmatning i sökfält
+   ============================================================ */
 document.addEventListener('keydown', e=>{
   const key = e.key;
   const code = e.keyCode;
+  const tag = (e.target.tagName || '').toUpperCase();
+  const isTyping = tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || e.target.isContentEditable;
+
+  // När användaren skriver i ett fält – låt webbläsaren sköta allt
+  if(isTyping){
+    if(key === 'Escape'){
+      e.target.blur();
+      tvNav.refresh();
+    }
+    return;
+  }
 
   if(els.overlay.classList.contains('show')){
     const btns = [...els.overlay.querySelectorAll('.actBtn')];
