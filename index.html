@@ -289,85 +289,132 @@ select{background:var(--panel3);border:2px solid var(--line);border-radius:10px;
 .progCard .n{font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .gridChips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
 
+/* ============================================================
+   MOBIL-LAYOUT  (fix: knappar passar skärmen + sticky player)
+   ============================================================ */
 @media (max-width: 900px){
   body{overflow:auto}
-  header{height:auto;padding:10px 12px;flex-direction:column;gap:10px;position:sticky;top:0}
-  .brand{font-size:16px;width:100%}
+
+  /* HEADER – allt staplas vertikalt, inget hamnar utanför */
+  header{height:auto;padding:10px 12px;flex-direction:column;gap:10px;position:sticky;top:0;z-index:30}
+  .brand{font-size:16px;width:100%;flex-wrap:wrap}
   .brand .logoDot{width:34px;height:34px;font-size:18px}
   #stats{font-size:12px}
-  .hbtns{width:100%;justify-content:space-between}
-  .hbtn{flex:1;font-size:13px;padding:8px 6px;min-height:42px;min-width:0;white-space:nowrap;
-    overflow:hidden;text-overflow:ellipsis}
+  .hbtns{width:100%;display:grid;grid-template-columns:repeat(auto-fit,minmax(72px,1fr));gap:6px}
+  .hbtn{font-size:12px;padding:9px 4px;min-height:44px;min-width:0;display:flex;align-items:center;justify-content:center;gap:4px}
+  .hbtn .lbl{display:none}
+  .hbtn:active{background:#26264a}
 
-  #layout{display:flex;flex-direction:column;height:auto;min-height:0}
-  #rightPanel{order:1;width:100%;max-height:none;overflow:visible}
+  /* LAYOUT – video först, kanaler under */
+  #layout{display:flex;flex-direction:column;height:auto;min-height:0;padding:0}
+  #rightPanel{order:1;width:100%;max-height:none;overflow:visible;background:var(--bg)}
   #leftPanel{order:2;width:100%;border-right:none;border-top:1px solid var(--line);
-    height:auto;min-height:0}
+    height:auto;min-height:0;background:var(--panel)}
 
-  .rightInner{padding:10px;gap:10px}
-  .playerCard{padding:10px}
+  /* STICKY PLAYER – fastnar högst upp, följer med när man scrollar kanallistan */
+  .rightInner{padding:8px;gap:8px}
+  .playerCard{
+    position:sticky;
+    top:0;
+    z-index:50;
+    padding:8px;
+    border-radius:12px;
+    background:var(--panel);
+    box-shadow:0 6px 20px rgba(0,0,0,.6);
+    margin-bottom:8px;
+  }
   .playerWrap{border-radius:10px}
-  #nowName{font-size:18px}
-  #nowGroup{font-size:13px}
-  .nowHead{flex-direction:column;align-items:stretch}
-  .nowActions{justify-content:space-between;width:100%}
-  #favBtn,#openExternalBtn,#vlcBtn{flex:1;width:auto;height:50px;max-width:70px}
-  .pRow{gap:6px}
-  .miniBtn{flex:1;min-width:calc(50% - 3px)}
-  #epgUrl{flex:1 0 100%;min-width:0}
-  #proxySelect{flex:1 0 100%;min-width:0}
-  .tvHint{font-size:11px}
+  #nowName{font-size:16px;line-height:1.3}
+  #nowGroup{font-size:12px}
+  #nowUrl{font-size:10px}
+  .nowHead{flex-direction:column;align-items:stretch;margin-top:10px}
+  .nowActions{justify-content:space-between;width:100%;gap:6px}
+  #favBtn,#openExternalBtn,#vlcBtn{flex:1;width:auto;height:46px;max-width:none;font-size:18px}
 
-  .card{padding:12px}
-  .cardHead h2{font-size:17px}
+  /* KONTROLLPANELEN – stapla allt vertikalt, inget sticker ut */
+  .pRow{
+    flex-direction:column;
+    align-items:stretch;
+    gap:6px;
+    margin-top:8px;
+  }
+  .pRow > *{width:100%;min-width:0}
+  .miniBtn{width:100%;min-height:44px}
+  #proxyBaseUrl{width:100%!important;min-width:0!important;font-size:13px}
+  #epgUrl{width:100%;min-width:0}
+  #proxySelect{width:100%;min-width:0}
+  #proxyStatus{text-align:center;font-size:12px;padding:6px 10px}
+  #testProxyBtn{width:100%}
+  #toast{width:100%;text-align:center}
+  .tvHint{font-size:11px;line-height:1.6}
+
+  /* Programguide & grid under videon */
+  .card{padding:10px}
+  .cardHead h2{font-size:16px}
+  .cardHead{gap:8px}
   .program{grid-template-columns:1fr;gap:6px;padding:10px 12px}
   .ptime{font-size:12px}
   .ptitle{font-size:14px}
   .pdesc{font-size:12px}
 
-  #channelListWrap{height:auto;max-height:none}
-  #channelList{max-height:60vh;padding:6px;gap:5px}
-  .channelRow{padding:9px;min-height:64px;gap:8px}
+  /* KANALLISTAN under videon */
+  #channelListWrap{height:auto;max-height:none;min-height:0}
+  #channelList{max-height:none;padding:6px;gap:5px;overflow:visible}
+  .channelRow{padding:9px;min-height:64px;gap:8px;flex-wrap:wrap}
   .cLogo{width:44px;height:44px}
   .cName{font-size:14px}
-  .cSub{font-size:11px;gap:5px}
-  .favStar{font-size:20px;min-width:36px;min-height:36px;padding:5px}
-  .extIcon{font-size:15px;min-width:36px;min-height:36px;padding:5px}
-  .selCheck{width:32px;height:32px;min-width:32px;font-size:15px}
+  .cSub{font-size:11px;gap:5px;flex-wrap:wrap}
+  .cSub .badge{font-size:9px;padding:2px 6px}
+  .favStar{font-size:20px;min-width:38px;min-height:38px;padding:6px}
+  .extIcon{font-size:15px;min-width:38px;min-height:38px;padding:6px}
+  .selCheck{width:36px;height:36px;min-width:36px;font-size:16px}
 
-  .acc{margin:8px}
+  /* Accordion – kompakta */
+  .acc{margin:8px 8px 0}
   .accHead{padding:11px 12px}
   .accTitle{font-size:14px}
+  .accTitle .sub{font-size:11px}
   .accToggle{width:34px;height:34px;font-size:18px}
 
-  .grid{min-width:720px}
-  .gridHead,.gridRow{grid-template-columns:150px repeat(6,minmax(105px,1fr))}
-
-  .selectRow{flex-wrap:wrap}
-  select{flex:1 1 calc(50% - 4px);min-width:0}
-  #clearFilters{flex:1 1 100%}
-
-  .presetRow{flex-wrap:wrap}
-  .presetBtn{flex:1 1 calc(33% - 6px);min-width:0;font-size:12px;padding:10px 4px}
-
-  .favActions .miniBtn{flex:1 1 calc(50% - 3px);font-size:11px;padding:9px 6px}
+  /* Filter och favoriter */
+  .favActions .miniBtn{font-size:11px;padding:9px 6px}
   .favList{max-height:200px}
   .favItem{padding:7px;min-height:52px}
   .favItem img{width:34px;height:34px}
   .favItemName{font-size:12px}
 
+  .selectRow{flex-wrap:wrap}
+  select{flex:1 1 100%;min-width:0}
+  #clearFilters{flex:1 1 100%}
+
+  .presetRow{flex-wrap:wrap}
+  .presetBtn{flex:1 1 calc(33% - 6px);min-width:0;font-size:12px;padding:10px 4px}
+
   .addPlRow{flex-wrap:wrap}
   .addPlRow input{min-width:0;flex:1 1 calc(50% - 4px)}
   .addPlActions .miniBtn{flex:1 1 100%}
+
+  /* Grid */
+  .grid{min-width:720px}
+  .gridHead,.gridRow{grid-template-columns:150px repeat(6,minmax(105px,1fr))}
+
+  /* Modal-overlay (loadingOverlay) på mobil */
+  #loadingOverlay{padding:16px}
+  #loadingOverlay .actBtn{width:100%;min-width:0;padding:12px 14px;font-size:14px;min-height:48px}
 }
 
 @media (max-width: 480px){
-  .hbtns .hbtn{font-size:12px}
-  .hbtns .hbtn .lbl{display:none}
-  .hbtns .hbtn{min-width:44px;padding:8px}
-  .channelRow{flex-wrap:wrap}
+  .brand{font-size:15px}
+  #stats{font-size:11px;margin-left:2px}
+  .hbtns{grid-template-columns:repeat(auto-fit,minmax(60px,1fr))}
+  .hbtn{font-size:11px;min-height:42px;padding:8px 2px}
+
+  #nowName{font-size:15px}
+  #nowGroup{font-size:11px}
   .cSub .badge:last-child{display:none}
   .programs .program{padding:9px 10px}
+
+  .accTitle span{max-width:60vw;overflow:hidden;text-overflow:ellipsis}
 }
 
 .acc, .playerCard, .card{position:relative}
@@ -514,7 +561,7 @@ select{background:var(--panel3);border:2px solid var(--line);border-radius:10px;
           </div>
         </div>
         <div class="pRow">
-          <input id="proxyBaseUrl" type="url" placeholder="http://localhost:3000/proxy?url="
+          <input id="proxyBaseUrl" type="url" placeholder="http://localhost:8787/proxy?url="
             style="flex:1;min-width:200px;background:var(--panel3);border:2px solid var(--line);border-radius:10px;padding:11px 14px;color:var(--text);font-size:14px;outline:none;min-height:44px"/>
           <span id="proxyStatus" class="epgBadge" style="background:rgba(239,68,68,.15);color:#fca5a5">Proxy: ej testad</span>
           <button id="testProxyBtn" class="miniBtn">🔌 Testa</button>
@@ -604,7 +651,7 @@ let hls = null;
 let epg = {};
 let epgLoading = false;
 let proxyMode = localStorage.getItem(LS.proxyMode) || 'auto';
-let proxyBase = localStorage.getItem(LS.proxyBase) || 'http://localhost:3000/proxy?url=';
+let proxyBase = localStorage.getItem(LS.proxyBase) || 'http://localhost:8787/proxy?url=';
 let favTab = 'favs';
 
 let searchQ='', groupF='', showFavOnly=false;
@@ -619,7 +666,10 @@ channelsByPlaylist[BUILTIN_ID] = [
   {name:'France 24 English', group:'Nyheter', lang:'eng', country:'FR', plCountry:'Internationell', flag:'🌍', tvgId:'', logo:'', playlistId:'builtin', url:'https://static.france24.com/live/F24_EN_LO_HLS/live_web.m3u8'},
   {name:'TRT World', group:'Nyheter', lang:'eng', country:'TR', plCountry:'Turkiet', flag:'🇹🇷', tvgId:'', logo:'', playlistId:'builtin', url:'https://tv-trtworld.live.trt.com.tr/master.m3u8'},
   {name:'CGTN Documentary', group:'Dokumentär', lang:'eng', country:'CN', plCountry:'Internationell', flag:'🌍', tvgId:'', logo:'', playlistId:'builtin', url:'https://livedoc.cgtn.com/500d/prog_index.m3u8'},
-  {name:'Telewebion Hamoon', group:'Nyheter', lang:'fas', country:'IR', plCountry:'Iran', flag:'🇮🇷', tvgId:'', logo:'', playlistId:'builtin', url:'https://ncdn.telewebion.ir/hamoon/live/playlist.m3u8'},
+  {name:'Telewebion Hamoon', group:'Iran', lang:'fas', country:'IR', plCountry:'Iran', flag:'🇮🇷', tvgId:'', logo:'', playlistId:'builtin', url:'https://ncdn.telewebion.ir/hamoon/live/playlist.m3u8'},
+  {name:'Telewebion Aftab', group:'Iran', lang:'fas', country:'IR', plCountry:'Iran', flag:'🇮🇷', tvgId:'', logo:'', playlistId:'builtin', url:'https://ncdn.telewebion.ir/aftab/live/playlist.m3u8'},
+  {name:'Telewebion Mahabad', group:'Iran', lang:'fas', country:'IR', plCountry:'Iran', flag:'🇮🇷', tvgId:'', logo:'', playlistId:'builtin', url:'https://ncdn.telewebion.net/mahabad/live/playlist.m3u8'},
+  {name:'Telewebion Kordestan', group:'Iran', lang:'fas', country:'IR', plCountry:'Iran', flag:'🇮🇷', tvgId:'', logo:'', playlistId:'builtin', url:'https://ncdn.telewebion.net/kordestan/live/playlist.m3u8'},
 ];
 loaded.add(BUILTIN_ID);
 if(active.size===0){ active.add(BUILTIN_ID); }
@@ -729,11 +779,12 @@ function showToast(msg){
 }
 
 /* ============================================================
-   EGEN PROXY – för Telewebion, karwan.tv m.fl.
+   EGEN PROXY – Telewebion, Karwan, MMN m.fl.
+   Krävs för kanaler med certifikat- eller CORS-problem
    ============================================================ */
 function needsLocalProxy(url){
   if(!url) return false;
-  return /telewebion\.ir|karwan\.tv|mypsx\.net|persiana|iraninternational/i.test(url);
+  return /telewebion\.(ir|net)|ncdn\.|karwan\.tv|mypsx\.net|mmn\.|persiana|iraninternational/i.test(url);
 }
 function buildLocalProxyUrl(url){
   return proxyBase + encodeURIComponent(url);
@@ -749,7 +800,6 @@ const STREAM_PROXIES = [
 
 function buildStreamCandidates(url){
   const out = [];
-  // Lokal proxy för kanaler som kräver det
   if(needsLocalProxy(url)){
     out.push({id:'local-proxy', url: buildLocalProxyUrl(url)});
     return out;
@@ -766,14 +816,14 @@ function buildStreamCandidates(url){
 }
 
 async function testProxy(){
-  const base = els.proxyBaseUrl.value.trim() || 'http://localhost:3000/proxy?url=';
+  const base = els.proxyBaseUrl.value.trim() || 'http://localhost:8787/proxy?url=';
   proxyBase = base.endsWith('=') ? base : base + (base.includes('?')?'&':'?') + 'url=';
   els.proxyBaseUrl.value = proxyBase;
   localStorage.setItem(LS.proxyBase, proxyBase);
   els.proxyStatus.textContent = 'Testar...';
   els.proxyStatus.className = 'epgBadge';
   try{
-    const testUrl = 'https://ncdn.telewebion.ir/hamoon/live/playlist.m3u8';
+    const testUrl = 'https://ncdn.telewebion.ir/aftab/live/playlist.m3u8';
     const r = await fetch(proxyBase + encodeURIComponent(testUrl), {cache:'no-store'});
     if(r.ok){
       const txt = await r.text();
@@ -1203,6 +1253,12 @@ function playChannel(c){
   const candidates = buildStreamCandidates(c.url);
   playChannel._attempts = [];
   tryNextCandidate(c, candidates, 0);
+
+  // På mobil: scrolla upp till spelaren så den syns
+  if(window.innerWidth <= 900){
+    const pc = document.querySelector('.playerCard');
+    if(pc) pc.scrollIntoView({behavior:'smooth', block:'start'});
+  }
 }
 function tryNextCandidate(c, candidates, idx){
   if(idx >= candidates.length){
@@ -1284,7 +1340,7 @@ function showExternalFallback(c, reason){
     '🚫 <b>Kanalen kan inte spelas i sidan.</b><br>'+
     `<span style="color:#94a3b8;font-size:13px">${escapeHtml(reason||'CORS-skydd hos streamservern')}</span><br><br>`+
     (needsLocalProxy(c.url) ? 
-      '<span style="color:#fcd34d;font-size:13px">⚠️ Denna kanal kräver din lokala proxy.<br>Se till att <code>node server.js</code> körs och att proxy-URL:en är korrekt.</span><br><br>' 
+      '<span style="color:#fcd34d;font-size:13px">⚠️ Denna kanal kräver din lokala proxy.<br>Se till att <code>node server.js</code> körs på port 8787.</span><br><br>' 
       : '')+
     'Du kan öppna kanalen i en ny flik eller i VLC.',
     true,
