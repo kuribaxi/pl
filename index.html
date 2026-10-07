@@ -57,10 +57,9 @@ header{height:64px;flex-shrink:0;display:flex;align-items:center;justify-content
 
 #layout{display:flex;height:calc(100dvh - 64px);min-height:0}
 #leftPanel{width:460px;flex:0 0 auto;display:flex;flex-direction:column;background:var(--panel);
-  border-right:1px solid var(--line);min-height:0}
+  border-right:1px solid var(--line);min-height:0;overflow-y:auto}
 #rightPanel{flex:1 1 auto;overflow-y:auto;min-width:0;background:var(--bg)}
 
-/* TV-läge */
 body.tv-player-mode #rightPanel{width:100%}
 body.tv-player-mode .rightInner{max-width:none;padding:0}
 body.tv-player-mode .card{display:none}
@@ -174,6 +173,27 @@ body.tv-player-mode #video{
 .groupTab.active{background:var(--accent);color:#fff;border-color:var(--accent)}
 .groupTab .cnt{font-size:11px;opacity:.8;font-weight:600}
 
+/* Alltid synlig gruppsektion */
+#accGroups{background:linear-gradient(180deg,#1a1a2e,#151525);
+  border:2px solid var(--accent)}
+#accGroups .accBody { display:block !important; padding:12px !important; }
+#accGroups .accHead { background:linear-gradient(90deg, rgba(139,92,246,.2), transparent); }
+#createGroupBtn {
+  background:linear-gradient(90deg,#22c55e,#16a34a) !important;
+  font-size:15px;
+}
+#groupTabList:empty::after {
+  content:'Inga grupper än – tryck "➕ Skapa ny grupp"';
+  color:var(--muted); font-size:13px; padding:12px; display:block; text-align:center;
+}
+#groupPanel .gpHeader{
+  display:flex;justify-content:space-between;align-items:center;gap:8px;
+  margin-bottom:10px;flex-wrap:wrap;
+}
+#groupPanel .gpTitle{font-size:15px;font-weight:800;color:#c4b5fd}
+#groupPanel .gpActions{display:flex;gap:6px;flex-wrap:wrap}
+#groupPanel .gpActions .miniBtn{font-size:12px;padding:8px 10px;min-height:38px}
+
 .favActions{display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap}
 .favActions .miniBtn{flex:1;min-width:0;padding:9px 8px;font-size:12px;min-height:42px}
 .favActions .miniBtn.danger{color:#fca5a5;border-color:rgba(239,68,68,.4)}
@@ -277,12 +297,12 @@ select{background:var(--panel3);border:2px solid var(--line);border-radius:10px;
 .groupBadge{font-size:10px;padding:2px 7px;border-radius:6px;font-weight:700;
   background:rgba(139,92,246,.18);color:#c4b5fd}
 
-/* Kanal-listan: gruppväljare popup */
-.groupPickerBackdrop{position:fixed;inset:0;background:rgba(0,0,0,.75);
+/* Popup-modaler */
+.groupPickerBackdrop{position:fixed;inset:0;background:rgba(0,0,0,.78);
   z-index:80;display:flex;align-items:center;justify-content:center;padding:20px;
   backdrop-filter:blur(4px)}
 .groupPickerModal{background:var(--panel2);border:2px solid var(--accent);border-radius:16px;
-  padding:18px;max-width:480px;width:100%;max-height:80vh;overflow-y:auto;
+  padding:20px;max-width:480px;width:100%;max-height:80vh;overflow-y:auto;
   box-shadow:0 20px 60px rgba(0,0,0,.9)}
 .groupPickerModal h3{margin:0 0 12px 0;font-size:17px;font-weight:800;display:flex;align-items:center;gap:8px}
 .groupPickerModal .chanName{font-size:13px;color:var(--muted);margin-bottom:14px;
@@ -299,11 +319,10 @@ select{background:var(--panel3);border:2px solid var(--line);border-radius:10px;
 .groupPickerModal .row.on .chk{color:var(--accent2)}
 .groupPickerModal .newRow{display:flex;gap:8px;margin-bottom:14px}
 .groupPickerModal .newRow input{flex:1;background:var(--panel3);border:2px solid var(--line);
-  border-radius:10px;color:var(--text);padding:10px 12px;font-size:15px;outline:none;min-height:44px}
+  border-radius:10px;color:var(--text);padding:12px 14px;font-size:16px;outline:none;min-height:48px}
 .groupPickerModal .newRow input:focus{border-color:var(--accent)}
 .groupPickerModal .actions{display:flex;gap:8px;flex-wrap:wrap}
 
-/* Multi-select toolbar */
 #multiSelectBar{
   display:none;
   position:sticky;
@@ -612,9 +631,6 @@ body.multi-select-mode .channelRow{ cursor:pointer; }
 }
 .acc, .playerCard, .card{position:relative}
 
-/* ============================================================
-   TV-LÄGE: kanal-overlay + nav-bar
-   ============================================================ */
 #tvChannelOverlay{
   position:fixed;
   left:0; right:0; bottom:0;
@@ -890,13 +906,12 @@ body.tv-player-mode #tvChannelBadge{ display:block; }
 
     <div class="acc" id="accFavs">
       <div class="accHead" data-acc="favs">
-        <div class="accTitle">⭐ <span>Favoriter & grupper</span>
-          <span class="sub" id="favSummary">0 ⭐ · 0 grupper</span>
+        <div class="accTitle">⭐ <span>Favoriter</span>
+          <span class="sub" id="favSummary">0 ⭐</span>
         </div>
         <button class="accToggle" data-acc-toggle="favs" aria-label="Öppna/stäng">+</button>
       </div>
       <div class="accBody" id="accBodyFavs">
-        <div class="sideSecTitle">⭐ Favoriter</div>
         <div class="favActions">
           <button id="playAllFavs" class="miniBtn" title="Spela första">▶️ Spela</button>
           <button id="openAllFavs" class="miniBtn" title="Öppna externt">🔗 Öppna</button>
@@ -906,10 +921,6 @@ body.tv-player-mode #tvChannelBadge{ display:block; }
         <div id="favList" class="favList">
           <div class="note" style="padding:12px;text-align:center">Inga favoriter än</div>
         </div>
-
-        <div class="sideSecTitle" style="margin-top:16px">📁 Egna grupper</div>
-        <div id="groupTabList" class="groupTabs"></div>
-        <div id="groupPanel"></div>
       </div>
     </div>
 
@@ -935,6 +946,21 @@ body.tv-player-mode #tvChannelBadge{ display:block; }
           <button id="clearFilters" class="chip" style="flex:0 0 auto" title="Rensa filter">🧹 Rensa</button>
         </div>
         <div class="note" id="listCount" style="margin-top:8px">0 kanaler synliga</div>
+      </div>
+    </div>
+
+    <!-- ALLTID SYNLIG gruppsektion -->
+    <div class="acc" id="accGroups">
+      <div class="accHead" data-acc="groups">
+        <div class="accTitle">📁 <span>Mina grupper</span>
+          <span class="sub" id="groupsSummary">0 grupper</span>
+        </div>
+        <button class="accToggle" data-acc-toggle="groups" aria-label="Öppna/stäng">−</button>
+      </div>
+      <div class="accBody open" id="accBodyGroups">
+        <button id="createGroupBtn" class="primaryBtn" style="margin-bottom:10px">➕ Skapa ny grupp</button>
+        <div id="groupTabList" class="groupTabs" style="margin-bottom:0"></div>
+        <div id="groupPanel" style="margin-top:10px"></div>
       </div>
     </div>
 
@@ -1052,7 +1078,7 @@ let favs     = new Set(JSON.parse(localStorage.getItem(LS.favs)    ||'[]'));
 let groups   = JSON.parse(localStorage.getItem(LS.groups) || '[]');
 let groupMembers = JSON.parse(localStorage.getItem(LS.groupMembers) || '{}');
 let extOnly  = new Set(JSON.parse(localStorage.getItem(LS.extOnly) ||'[]'));
-let accOpen  = JSON.parse(localStorage.getItem(LS.accOpen) || '{"playlists":false,"filters":false,"favs":false}');
+let accOpen  = JSON.parse(localStorage.getItem(LS.accOpen) || '{"playlists":false,"filters":false,"favs":false,"groups":true}');
 let customPlaylists = JSON.parse(localStorage.getItem(LS.customPls) || '[]');
 let channelsByPlaylist = {};
 let loaded = new Set();
@@ -1129,6 +1155,7 @@ const els = {
   favList:$('favList'), playAllFavs:$('playAllFavs'), openAllFavs:$('openAllFavs'),
   exportFavsList:$('exportFavsList'), clearFavsList:$('clearFavsList'),
   groupTabList:$('groupTabList'), groupPanel:$('groupPanel'),
+  groupsSummary:$('groupsSummary'),
   tvOvTabs:$('tvOvTabs')
 };
 
@@ -1152,7 +1179,8 @@ function applyAccordion(){
     const body = acc.querySelector('.accBody');
     const toggle = acc.querySelector('.accToggle');
     if(!key || !head || !body || !toggle) return;
-    const isOpen = !!accOpen[key];
+    // Grupper-sektionen är alltid öppen
+    const isOpen = key === 'groups' ? true : !!accOpen[key];
     head.classList.toggle('open', isOpen);
     body.classList.toggle('open', isOpen);
     toggle.classList.toggle('open', isOpen);
@@ -1160,6 +1188,7 @@ function applyAccordion(){
   });
 }
 function toggleAccordion(key){
+  if(key === 'groups') return; // kan inte stängas
   accOpen[key] = !accOpen[key];
   save();
   applyAccordion();
@@ -1201,7 +1230,9 @@ function createGroup(name){
   groups.push(g);
   groupMembers[g.id] = [];
   save();
-  renderGroupTabs(); renderTvOvTabs();
+  renderGroupTabs(); renderGroupPanel(); renderTvOvTabs();
+  updateGroupsSummary();
+  updateSummary();
   return g;
 }
 function deleteGroup(id){
@@ -1210,6 +1241,7 @@ function deleteGroup(id){
   if(activeGroupId === id) activeGroupId = null;
   save();
   renderGroupTabs(); renderGroupPanel(); renderChannelList(); renderTvOvTabs();
+  updateGroupsSummary();
 }
 function renameGroup(id, newName){
   const g = groups.find(x=>x.id===id);
@@ -1239,6 +1271,93 @@ function getGroupChannels(groupId){
 function getGroupCount(groupId){
   return (groupMembers[groupId]||[]).length;
 }
+function updateGroupsSummary(){
+  const el = $('groupsSummary');
+  if(el){
+    const totalCh = Object.values(groupMembers).reduce((s,a)=>s+a.length,0);
+    el.textContent = `${groups.length} grupper · ${totalCh} kanaler`;
+  }
+}
+
+/* Skapa-grupp-modal (ersätter prompt) */
+function openCreateGroupModal(){
+  const backdrop = document.createElement('div');
+  backdrop.className = 'groupPickerBackdrop';
+  backdrop.onclick = e => { if(e.target === backdrop) close(); };
+  const modal = document.createElement('div');
+  modal.className = 'groupPickerModal';
+  modal.innerHTML = `
+    <h3>📁 Skapa ny grupp</h3>
+    <div class="newRow" style="margin-top:8px">
+      <input id="newGroupNameModal" placeholder="Gruppnamn (t.ex. Nyheter)" maxlength="40" autocomplete="off"/>
+    </div>
+    <div class="note" style="font-size:12px;margin-bottom:14px;color:#94a3b8;line-height:1.6">
+      💡 <b>Så fyller du gruppen:</b><br>
+      • Tryck <b>📁</b>-knappen på en kanal i listan<br>
+      • Eller använd <b>☑️ Multivälj-läget</b> för att lägga till flera samtidigt
+    </div>
+    <div class="actions">
+      <button class="miniBtn" id="cancelGroup" style="flex:1">✖ Avbryt</button>
+      <button class="miniBtn primary" id="saveGroup" style="flex:1;background:var(--accent);border-color:var(--accent);color:#fff;font-weight:700">✅ Skapa</button>
+    </div>
+  `;
+  backdrop.appendChild(modal);
+  document.body.appendChild(backdrop);
+  const close = ()=>{ document.body.removeChild(backdrop); };
+  const inp = modal.querySelector('#newGroupNameModal');
+  const doSave = ()=>{
+    const g = createGroup(inp.value);
+    if(g){
+      close();
+      showToast(`📁 "${g.name}" skapad!`);
+    }
+  };
+  modal.querySelector('#saveGroup').onclick = doSave;
+  modal.querySelector('#cancelGroup').onclick = close;
+  inp.addEventListener('keydown', e=>{
+    if(e.key === 'Enter'){ e.preventDefault(); doSave(); }
+    if(e.key === 'Escape'){ e.preventDefault(); close(); }
+  });
+  setTimeout(()=>inp.focus(), 80);
+}
+
+/* Byt namn-modal (ersätter prompt) */
+function openRenameGroupModal(group){
+  if(!group) return;
+  const backdrop = document.createElement('div');
+  backdrop.className = 'groupPickerBackdrop';
+  backdrop.onclick = e => { if(e.target === backdrop) close(); };
+  const modal = document.createElement('div');
+  modal.className = 'groupPickerModal';
+  modal.innerHTML = `
+    <h3>✏️ Byt namn på grupp</h3>
+    <div class="newRow" style="margin-top:8px">
+      <input id="renameGroupInput" placeholder="Nytt namn" maxlength="40" value="${escapeHtml(group.name)}" autocomplete="off"/>
+    </div>
+    <div class="actions">
+      <button class="miniBtn" id="cancelRename" style="flex:1">✖ Avbryt</button>
+      <button class="miniBtn primary" id="saveRename" style="flex:1;background:var(--accent);border-color:var(--accent);color:#fff;font-weight:700">✅ Spara</button>
+    </div>
+  `;
+  backdrop.appendChild(modal);
+  document.body.appendChild(backdrop);
+  const close = ()=>{ document.body.removeChild(backdrop); };
+  const inp = modal.querySelector('#renameGroupInput');
+  const doSave = ()=>{
+    const nn = inp.value.trim();
+    if(!nn){ showToast('Ange ett namn'); return; }
+    renameGroup(group.id, nn);
+    close();
+    showToast('Namn uppdaterat');
+  };
+  modal.querySelector('#saveRename').onclick = doSave;
+  modal.querySelector('#cancelRename').onclick = close;
+  inp.addEventListener('keydown', e=>{
+    if(e.key === 'Enter'){ e.preventDefault(); doSave(); }
+    if(e.key === 'Escape'){ e.preventDefault(); close(); }
+  });
+  setTimeout(()=>{ inp.focus(); inp.select(); }, 80);
+}
 
 function openGroupPicker(channel){
   if(!channel) return;
@@ -1251,13 +1370,13 @@ function openGroupPicker(channel){
     <h3>📁 Grupper för kanal</h3>
     <div class="chanName">${escapeHtml(channel.name)}</div>
     <div class="newRow">
-      <input id="newGroupName" placeholder="Ny grupp…" maxlength="40"/>
-      <button class="miniBtn primary" id="addGroupBtn">➕ Skapa</button>
+      <input id="newGroupName" placeholder="Ny grupp…" maxlength="40" autocomplete="off"/>
+      <button class="miniBtn primary" id="addGroupBtn" style="background:var(--accent);border-color:var(--accent);color:#fff;font-weight:700">➕ Skapa</button>
     </div>
     <div class="list" id="groupPickList">
       ${groups.length ? groups.map(g=>`
         <div class="row ${isChannelInGroup(channel.url, g.id)?'on':''}" data-gid="${g.id}">
-          <div class="nm">${escapeHtml(g.name)}</div>
+          <div class="nm">📁 ${escapeHtml(g.name)}</div>
           <div class="chk">${isChannelInGroup(channel.url, g.id)?'✓':'○'}</div>
         </div>`).join('') : '<div class="note" style="padding:8px;text-align:center">Inga grupper än – skapa en nedan</div>'}
     </div>
@@ -1267,16 +1386,16 @@ function openGroupPicker(channel){
   `;
   backdrop.appendChild(modal);
   document.body.appendChild(backdrop);
-  const close = ()=>{ document.body.removeChild(backdrop); renderChannelList(); renderGroupPanel(); renderGroupTabs(); };
+  const close = ()=>{ document.body.removeChild(backdrop); renderChannelList(); renderGroupPanel(); renderGroupTabs(); updateGroupsSummary(); };
   modal.querySelectorAll('.row').forEach(row=>{
     row.onclick = ()=>{
       toggleChannelInGroup(channel.url, row.dataset.gid);
       row.classList.toggle('on');
       row.querySelector('.chk').textContent = row.classList.contains('on') ? '✓' : '○';
-      renderGroupTabs(); renderGroupPanel();
+      renderGroupTabs(); renderGroupPanel(); updateGroupsSummary();
     };
   });
-  modal.querySelector('#addGroupBtn').onclick = ()=>{
+  const doAdd = ()=>{
     const inp = modal.querySelector('#newGroupName');
     const g = createGroup(inp.value);
     if(g){
@@ -1286,10 +1405,11 @@ function openGroupPicker(channel){
       openGroupPicker(channel);
     }
   };
+  modal.querySelector('#addGroupBtn').onclick = doAdd;
   modal.querySelector('#gpClose').onclick = close;
   const inp = modal.querySelector('#newGroupName');
   inp.addEventListener('keydown', e=>{
-    if(e.key === 'Enter'){ e.preventDefault(); modal.querySelector('#addGroupBtn').click(); }
+    if(e.key === 'Enter'){ e.preventDefault(); doAdd(); }
   });
   setTimeout(()=>inp.focus(), 80);
 }
@@ -1297,7 +1417,8 @@ function openGroupPicker(channel){
 function renderGroupTabs(){
   if(!els.groupTabList) return;
   if(!groups.length){
-    els.groupTabList.innerHTML = '<span class="note" style="padding:6px 4px">Inga grupper än – tryck 📁 på en kanal</span>';
+    els.groupTabList.innerHTML = '';
+    updateGroupsSummary();
     return;
   }
   els.groupTabList.innerHTML = groups.map(g=>{
@@ -1306,21 +1427,15 @@ function renderGroupTabs(){
     return `<button class="groupTab ${isActive?'active':''}" data-gid="${g.id}">
       📁 ${escapeHtml(g.name)} <span class="cnt">(${cnt})</span>
     </button>`;
-  }).join('') + `
-    <button class="groupTab" data-gid="__new" title="Skapa ny grupp">➕ Ny</button>
-  `;
+  }).join('');
   els.groupTabList.querySelectorAll('.groupTab').forEach(t=>{
     t.onclick = ()=>{
-      if(t.dataset.gid === '__new'){
-        const nm = prompt('Namn på ny grupp:');
-        if(nm) createGroup(nm);
-        return;
-      }
       activeGroupId = (activeGroupId === t.dataset.gid) ? null : t.dataset.gid;
       renderGroupTabs(); renderGroupPanel();
       if(showFavOnly === 'group') applyFilters();
     };
   });
+  updateGroupsSummary();
 }
 
 function renderGroupPanel(){
@@ -1332,14 +1447,16 @@ function renderGroupPanel(){
   const g = groups.find(x=>x.id===activeGroupId);
   const chans = getGroupChannels(g.id);
   els.groupPanel.innerHTML = `
-    <div style="display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap">
+    <div class="gpHeader">
+      <div class="gpTitle">📁 ${escapeHtml(g.name)} · ${chans.length} kan</div>
+    </div>
+    <div class="gpActions" style="margin-bottom:10px">
       <button class="miniBtn" id="gpPlayAll" style="flex:1">▶️ Spela första</button>
       <button class="miniBtn" id="gpExport" style="flex:1">💾 .m3u</button>
       <button class="miniBtn" id="gpRename" style="flex:1">✏️ Byt namn</button>
       <button class="miniBtn danger" id="gpDelete" style="flex:1">🗑️ Ta bort</button>
     </div>
-    <div class="note" style="margin-bottom:8px">${chans.length} kanaler i "${escapeHtml(g.name)}"</div>
-    <div class="favList" id="gpChanList">
+    <div class="favList" id="gpChanList" style="max-height:280px">
       ${chans.length ? chans.map(c=>`
         <div class="favItem ${currentChannel?.url===c.url?'active':''}" data-url="${escapeHtml(c.url)}">
           <img src="${escapeHtml(c.logo)}" loading="lazy" onerror="this.style.visibility='hidden'" alt=""/>
@@ -1348,7 +1465,7 @@ function renderGroupPanel(){
             <div class="favItemSub">${c.flag} ${escapeHtml(c.plCountry||c.country)} · ${escapeHtml(c.group||'Allmän')}</div>
           </div>
           <button class="favItemRemove" data-removeurl="${escapeHtml(c.url)}" title="Ta bort från grupp">✕</button>
-        </div>`).join('') : '<div class="note" style="padding:8px;text-align:center">Inga kanaler i gruppen</div>'}
+        </div>`).join('') : '<div class="note" style="padding:8px;text-align:center">Inga kanaler i gruppen än</div>'}
     </div>
   `;
   els.groupPanel.querySelectorAll('.favItem').forEach(el=>{
@@ -1362,7 +1479,7 @@ function renderGroupPanel(){
     b.onclick = e=>{
       e.stopPropagation();
       toggleChannelInGroup(b.dataset.removeurl, g.id);
-      renderGroupTabs(); renderGroupPanel(); renderChannelList();
+      renderGroupTabs(); renderGroupPanel(); renderChannelList(); updateGroupsSummary();
     };
   });
   els.groupPanel.querySelector('#gpPlayAll').onclick = ()=>{
@@ -1376,10 +1493,7 @@ function renderGroupPanel(){
     exportM3U(chans, g.name.replace(/[^\w\-]+/g,'_') + '.m3u');
     showToast(chans.length + ' kanaler exporterade');
   };
-  els.groupPanel.querySelector('#gpRename').onclick = ()=>{
-    const nn = prompt('Nytt namn:', g.name);
-    if(nn) renameGroup(g.id, nn);
-  };
+  els.groupPanel.querySelector('#gpRename').onclick = ()=> openRenameGroupModal(g);
   els.groupPanel.querySelector('#gpDelete').onclick = ()=>{
     showOverlay(
       `🗑️ <b>Ta bort gruppen "${escapeHtml(g.name)}"?</b><br><br>`+
@@ -1451,7 +1565,7 @@ function multiSelectAddToGroup(){
     <h3>📁 Lägg ${multiSelected.size} kanaler i grupp</h3>
     <div class="info">Markera en eller flera grupper – kanalerna läggs till i dem alla.</div>
     <div class="newRow">
-      <input id="bulkNewGroup" placeholder="Ny grupp…" maxlength="40"/>
+      <input id="bulkNewGroup" placeholder="Ny grupp…" maxlength="40" autocomplete="off"/>
       <button class="miniBtn primary" id="bulkCreateGroup" style="background:var(--accent);border-color:var(--accent);color:#fff;font-weight:700">➕ Skapa</button>
     </div>
     <div class="list" id="bulkGroupList">
@@ -1463,7 +1577,7 @@ function multiSelectAddToGroup(){
     </div>
     <div class="actions">
       <button class="miniBtn" id="bulkDone">Klar</button>
-      <button class="miniBtn" id="bulkApply" style="background:var(--accent);border-color:var(--accent);color:#fff;font-weight:700">✅ Lägg till i markerade</button>
+      <button class="miniBtn" id="bulkApply" style="background:var(--accent);border-color:var(--accent);color:#fff;font-weight:700">✅ Lägg till</button>
     </div>
   `;
   backdrop.appendChild(modal);
@@ -1491,7 +1605,7 @@ function multiSelectAddToGroup(){
       });
     });
     save();
-    renderGroupTabs(); renderGroupPanel(); renderChannelList(); renderTvOvTabs();
+    renderGroupTabs(); renderGroupPanel(); renderChannelList(); renderTvOvTabs(); updateGroupsSummary();
     showToast(`${multiSelected.size} kanaler → ${gids.length} grupp(er) · ${added} tillägg`);
     close();
     multiSelected.clear();
@@ -1768,7 +1882,8 @@ function updateSummary(){
   els.manageSummary.textContent = `${active.size}/${total} aktiva · proxy ${proxyLabel}`;
   els.loadBtn.textContent = `▶️ Ladda kanaler (${active.size} valda)`;
   els.stats.textContent = `${allChannels.length} kan • ${favs.size} ⭐ • ${groups.length} 📁`;
-  els.favSummary.textContent = `${favs.size} ⭐ · ${groups.length} grupper`;
+  els.favSummary.textContent = `${favs.size} ⭐`;
+  updateGroupsSummary();
 }
 function updateFilterSummary(){
   const parts = [];
@@ -1932,7 +2047,7 @@ function updateActiveChannelRow(){
 }
 
 function renderFavPanel(){
-  els.favSummary.textContent = `${favs.size} ⭐ · ${groups.length} grupper`;
+  els.favSummary.textContent = `${favs.size} ⭐`;
 
   const urls = [...favs];
   if(!urls.length){
@@ -1972,6 +2087,7 @@ function renderFavPanel(){
   }
   renderGroupTabs();
   renderGroupPanel();
+  updateGroupsSummary();
 }
 
 function stopPlayer(){
@@ -2383,9 +2499,6 @@ function renderGrid(){
   });
 }
 
-/* ============================================================
-   TV-NAVIGATION
-   ============================================================ */
 const tvNav = {
   zones: ['leftPanel','rightPanel'],
   currentZone: 0,
@@ -2635,6 +2748,7 @@ $('tvNextBtn').onclick = ()=> goToAdjacentChannel(1);
 $('tvReloadBtn').onclick = reloadCurrentChannel;
 $('tvListBtn').onclick = openTvOverlay;
 $('tvOvClose').onclick = closeTvOverlay;
+$('createGroupBtn').onclick = openCreateGroupModal;
 
 function toggleTvMode(){
   const on = document.body.classList.toggle('tv-player-mode');
@@ -2643,7 +2757,7 @@ function toggleTvMode(){
     closeTvChannelPanel();
     document.body.classList.remove('tv-overlay-open');
   }
-  showToast(on?'🖥️ TV-läge PÅ – OK=lista · ◀▶=kanal · R=reload':'🖥️ TV-läge AV');
+  showToast(on?'🖥️ TV-läge PÅ':'🖥️ TV-läge AV');
   if(on){
     tvNav.currentZone = 1;
     tvNav.focusIndex = 0;
@@ -2663,14 +2777,12 @@ function closeTvChannelPanel(){
 document.addEventListener('keydown', e=>{
   const key = e.key;
   const code = e.keyCode;
-
   const ae = document.activeElement;
   if(ae && (ae.tagName === 'INPUT' || ae.tagName === 'TEXTAREA' ||
      ae.tagName === 'SELECT' || ae.isContentEditable)){
     if(key === 'Escape'){ e.target.blur(); return; }
     return;
   }
-
   if(els.overlay.classList.contains('show')){
     const btns = [...els.overlay.querySelectorAll('.actBtn')];
     if(!btns.length) return;
@@ -2682,7 +2794,6 @@ document.addEventListener('keydown', e=>{
     if(key === 'Escape' || code === 8 || code === 461){ e.preventDefault(); hideOverlay(); return; }
     return;
   }
-
   if(document.body.classList.contains('tv-overlay-open')){
     if(key === 'ArrowRight'){ e.preventDefault(); cycleTvOvTab(1); return; }
     if(key === 'ArrowLeft'){ e.preventDefault(); cycleTvOvTab(-1); return; }
@@ -2700,7 +2811,6 @@ document.addEventListener('keydown', e=>{
     }
     return;
   }
-
   if(document.body.classList.contains('tv-player-mode')){
     if(key === 'ArrowRight'){ e.preventDefault(); goToAdjacentChannel(1); return; }
     if(key === 'ArrowLeft'){ e.preventDefault(); goToAdjacentChannel(-1); return; }
@@ -2724,12 +2834,10 @@ document.addEventListener('keydown', e=>{
       return;
     }
   }
-
   if(code === 403){ e.preventDefault(); tvNav.switchZone(0); showToast('🔴 Hem'); return; }
   if(code === 404){ e.preventDefault(); if(currentChannel) playChannel(currentChannel); showToast('🟢 Spela'); return; }
   if(code === 405){ e.preventDefault(); els.favBtn.click(); showToast('🟡 Favorit'); return; }
   if(code === 406){ e.preventDefault(); toggleTvMode(); return; }
-
   if(code >= 49 && code <= 57){
     e.preventDefault();
     const n = code - 49;
@@ -2738,7 +2846,6 @@ document.addEventListener('keydown', e=>{
     else showToast('Ingen favorit '+(n+1));
     return;
   }
-
   if(code === 8 || code === 461 || key === 'Escape'){
     e.preventDefault();
     if(document.body.classList.contains('tv-player-mode') &&
@@ -2749,12 +2856,10 @@ document.addEventListener('keydown', e=>{
     tvNav.back();
     return;
   }
-
   if(key === 'ArrowUp'){ e.preventDefault(); tvNav.move('up'); return; }
   if(key === 'ArrowDown'){ e.preventDefault(); tvNav.move('down'); return; }
   if(key === 'ArrowLeft'){ e.preventDefault(); tvNav.move('left'); return; }
   if(key === 'ArrowRight'){ e.preventDefault(); tvNav.move('right'); return; }
-
   if(code === 13 || key === 'Enter'){
     e.preventDefault();
     if(document.body.classList.contains('tv-player-mode') &&
@@ -2765,7 +2870,6 @@ document.addEventListener('keydown', e=>{
     tvNav.activate();
     return;
   }
-
   if((e.ctrlKey || e.metaKey) && key === 'Enter'){
     e.preventDefault();
     openStreamExternal();
@@ -2890,9 +2994,7 @@ els.exportGroupsBtn.onclick = ()=>{
       }).join('')+
     `</div>`,
     true,
-    [
-      {label:'✖ Stäng', action:()=>hideOverlay()}
-    ]
+    [{label:'✖ Stäng', action:()=>hideOverlay()}]
   );
   document.querySelectorAll('[data-export-gid]').forEach(b=>{
     b.onclick = ()=>{
@@ -3038,7 +3140,6 @@ function updateStickyPlayerLayout(){
   if(!header || !sticky) return;
   const hH = header.offsetHeight;
   root.style.setProperty('--headerH', hH + 'px');
-
   if(document.body.classList.contains('tv-player-mode')){
     root.style.setProperty('--playerH', '0px');
     return;
