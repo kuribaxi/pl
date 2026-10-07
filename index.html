@@ -7,10 +7,10 @@
 <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
 <style>
 :root{
-  --bg:#0a0a12; --panel:#0f0f1a; --panel2:#151525; --panel3:#1a1a2e;
-  --line:#22223a; --line2:#1a1a2e; --text:#e5e7eb; --muted:#94a3b8;
-  --accent:#8b5cf6; --accent2:#22c55e; --fav:#facc15; --focus:#7dd3fc;
-  --tv-focus:#facc15;
+  --bg:#0d1440; --panel:#131a4d; --panel2:#182059; --panel3:#1e2766;
+  --line:#2b3578; --line2:#252e6b; --text:#eef1fb; --muted:#9aa5d6;
+  --accent:#7c6cff; --accent2:#22c55e; --fav:#facc15; --focus:#7dd3fc;
+  --tv-focus:#ffd54a;
   --safe-b: env(safe-area-inset-bottom, 0px);
 }
 *{box-sizing:border-box}
@@ -21,10 +21,10 @@ html{
 body{
   min-height:100%;
   background:
-    radial-gradient(1200px 600px at 85% -10%, rgba(139,92,246,.14), transparent 60%),
-    radial-gradient(900px 500px at -10% 110%, rgba(34,211,238,.10), transparent 60%),
-    radial-gradient(700px 400px at 50% 120%, rgba(34,197,94,.06), transparent 60%),
-    var(--bg);
+    radial-gradient(1200px 600px at 85% -10%, rgba(124,108,255,.22), transparent 60%),
+    radial-gradient(900px 500px at -10% 110%, rgba(56,132,255,.18), transparent 60%),
+    radial-gradient(700px 400px at 50% 120%, rgba(49,27,146,.35), transparent 60%),
+    linear-gradient(180deg, #1a237e 0%, #0d1440 55%, #0a0f33 100%);
   background-attachment:fixed;
 }
 html,body{margin:0;color:var(--text);
@@ -76,20 +76,27 @@ header{height:64px;flex-shrink:0;display:flex;align-items:center;justify-content
   display:flex;flex-direction:column;align-items:center;justify-content:center;
   padding:4px 14px;margin-left:6px;margin-right:4px;
   border-radius:12px;
-  background:linear-gradient(180deg, rgba(139,92,246,.14), rgba(34,211,238,.08));
-  border:1px solid rgba(139,92,246,.35);
+  background:linear-gradient(180deg, rgba(124,108,255,.22), rgba(56,132,255,.12));
+  border:1px solid rgba(124,108,255,.45);
+  box-shadow:0 0 16px rgba(124,108,255,.35), inset 0 0 12px rgba(124,108,255,.12);
   min-width:86px;
   line-height:1.15;
   user-select:none;
 }
 #clockWidget .clockTime{
-  font-size:19px;font-weight:800;color:#e5e7eb;letter-spacing:1px;
+  font-size:19px;font-weight:800;letter-spacing:1px;
   font-variant-numeric:tabular-nums;
-  text-shadow:0 0 14px rgba(139,92,246,.55);
+  background:linear-gradient(90deg,#9f8cff, #6ec3ff);
+  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
+  filter:drop-shadow(0 0 8px rgba(110,140,255,.65));
 }
-#clockWidget .clockTime .sec{font-size:12px;color:#a5b4fc;font-weight:700}
+#clockWidget .clockTime .sec{
+  font-size:12px;font-weight:700;
+  background:none;-webkit-text-fill-color:#8fa3ff;
+  -webkit-text-fill-color:#8fa3ff;
+}
 #clockWidget .clockDate{
-  font-size:10.5px;font-weight:700;color:#94a3b8;text-transform:capitalize;
+  font-size:10.5px;font-weight:700;color:#b8c3ff;text-transform:capitalize;
   white-space:nowrap;
 }
 @media (max-width:900px){
@@ -163,7 +170,7 @@ body.tv-player-mode #video{
   width:100% !important;
   height:100% !important;
   object-fit:contain;
-  background:#000;
+  background:linear-gradient(180deg,#0a0f33,#0d1440);
 }
 
 .acc{background:rgba(21,21,37,.75);border:1px solid var(--line);border-radius:12px;
@@ -714,7 +721,7 @@ body.multi-mode .channelRow .listStar{ display:none; }
 
 .rightInner{padding:14px;display:grid;gap:14px;max-width:1400px}
 .playerCard{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:14px}
-.playerWrap{position:relative;aspect-ratio:16/9;background:#000;border-radius:12px;overflow:hidden}
+.playerWrap{position:relative;aspect-ratio:16/9;background:linear-gradient(180deg,#0a0f33,#0d1440);border-radius:12px;overflow:hidden}
 
 @media (min-width:901px){
   #stickyPlayerWrap{
@@ -748,7 +755,7 @@ body.multi-mode .channelRow .listStar{ display:none; }
     max-height:45vh;
     margin:0 auto;
   }
-  #video{object-fit:contain;background:#000}
+  #video{object-fit:contain;background:linear-gradient(180deg,#0a0f33,#0d1440)}
   #rightPanel{padding-top:var(--playerH,220px)}
   #netWarning{margin-top:0}
 }
@@ -1164,6 +1171,29 @@ body.tv-player-mode #tvChannelBadge{ display:block; }
   font-size:10px; color:#c4b5fd; font-weight:800;
   margin-top:3px; display:block;
 }
+
+/* ===== Dölj UI i TV-läge vid inaktivitet ===== */
+body.tv-player-mode.tv-idle #tvNavBar{
+  transform:translateX(-50%) translateY(140%);
+  opacity:0;
+  pointer-events:none;
+}
+body.tv-player-mode.tv-idle #tvChannelBadge{
+  opacity:0;
+  transition:opacity .4s;
+}
+body.tv-player-mode.tv-idle #stickyPlayerWrap video{
+  cursor:none;
+}
+#tvChannelBadge{transition:opacity .4s}
+#tvNavBar{transition:transform .28s ease, opacity .28s}
+
+/* ===== Riktig fullscreen för hela appen ===== */
+:fullscreen body, body:fullscreen{width:100%;height:100%}
+body.app-fullscreen #layout{height:calc(100dvh - var(--headerH, 64px))}
+#fullscreenBtn .lbl{display:none}
+#fullscreenBtn{font-size:17px}
+#tvNavBar .tvNavBtn.fs{padding:10px 14px}
 </style>
 </head>
 <body>
@@ -1179,6 +1209,7 @@ body.tv-player-mode #tvChannelBadge{ display:block; }
       <div class="clockDate" id="clockDate">--</div>
     </div>
     <button id="tvModeBtn" class="hbtn" title="TV-läge">🖥️ <span class="lbl">TV-läge</span></button>
+    <button id="fullscreenBtn" class="hbtn" title="Fullskärm (F)">⛶ <span class="lbl">Fullskärm</span></button>
     <button id="openAllBtn" class="hbtn" title="Öppna alla synliga">🔗 <span class="lbl">Öppna alla</span></button>
     <button id="clearExtOnlyBtn" class="hbtn" title="Rensa extern-minne">♻ <span class="lbl">Rensa EXT</span></button>
     <button id="exportFav" class="hbtn" title="Exportera favoriter">⭐ <span class="lbl">Favoriter</span></button>
@@ -3061,6 +3092,7 @@ function getTvList(){
   return [];
 }
 function openTvOverlay(){
+  document.body.classList.remove('tv-idle');
   document.body.classList.add('tv-overlay-open');
   renderTvOvTabs();
   renderTvOverlay();
@@ -3270,6 +3302,7 @@ document.addEventListener('keydown', e=>{
     if(key === 'ArrowRight'){ e.preventDefault(); btns[(idx+1)%btns.length].focus(); return; }
     if(key === 'ArrowLeft'){ e.preventDefault(); btns[(idx-1+btns.length)%btns.length].focus(); return; }
     if(key === 'Enter' || code === 13){ e.preventDefault(); btns[idx].click(); return; }
+    if(key === 'f' || key === 'F'){ e.preventDefault(); toggleFullscreen(); return; }
     if(key === 'Escape' || code === 8 || code === 461){ e.preventDefault(); hideOverlay(); return; }
     return;
   }
@@ -3291,6 +3324,7 @@ document.addEventListener('keydown', e=>{
     return;
   }
   if(document.body.classList.contains('tv-player-mode')){
+    if(key === 'f' || key === 'F'){ e.preventDefault(); toggleFullscreen(); return; }
     if(key === 'ArrowRight'){ e.preventDefault(); goToAdjacentChannel(1); return; }
     if(key === 'ArrowLeft'){ e.preventDefault(); goToAdjacentChannel(-1); return; }
     if(key === 'r' || key === 'R'){ e.preventDefault(); reloadCurrentChannel(); return; }
@@ -3339,6 +3373,7 @@ document.addEventListener('keydown', e=>{
   if(key === 'ArrowDown'){ e.preventDefault(); tvNav.move('down'); return; }
   if(key === 'ArrowLeft'){ e.preventDefault(); tvNav.move('left'); return; }
   if(key === 'ArrowRight'){ e.preventDefault(); tvNav.move('right'); return; }
+  if(key === 'f' || key === 'F'){ e.preventDefault(); toggleFullscreen(); return; }
   if(code === 13 || key === 'Enter'){
     e.preventDefault();
     if(document.body.classList.contains('tv-player-mode') &&
@@ -3659,6 +3694,68 @@ if(localStorage.getItem(LS.autoload)==='1' && active.size>0) els.loadBtn.click()
 if(localStorage.getItem(LS.tvMode)==='1') toggleTvMode();
 setTimeout(()=>tvNav.refresh(), 200);
 setTimeout(()=>updateTvChannelBadge(), 400);
+
+/* ===== Dölj UI i TV-läge efter inaktivitet ===== */
+const TV_IDLE_MS = 4000;
+let tvIdleTimer = null;
+function isTvIdleAllowed(){
+  /* Dölj bara när: TV-läge + en kanal spelar + ingen overlay/panel öppen */
+  if(!document.body.classList.contains('tv-player-mode')) return false;
+  if(document.body.classList.contains('tv-overlay-open')) return false;
+  if(document.body.classList.contains('tv-list-open')) return false;
+  if(els.overlay.classList.contains('show')) return false;
+  const v = els.video;
+  return !!(currentChannel && v && !v.paused && v.readyState >= 2);
+}
+function tvUiWake(){
+  document.body.classList.remove('tv-idle');
+  clearTimeout(tvIdleTimer);
+  tvIdleTimer = setTimeout(tvUiHide, TV_IDLE_MS);
+}
+function tvUiHide(){
+  if(!isTvIdleAllowed()){ tvUiWake(); return; }
+  document.body.classList.add('tv-idle');
+}
+['mousemove','mousedown','touchstart','keydown','wheel']
+  .forEach(ev=>document.addEventListener(ev, tvUiWake, {passive:true}));
+/* Spelarens egna händelser väcker också UI:t */
+els.video.addEventListener('play', tvUiWake);
+els.video.addEventListener('pause', ()=>{
+  document.body.classList.remove('tv-idle');
+  clearTimeout(tvIdleTimer);
+});
+els.video.addEventListener('waiting', ()=>document.body.classList.remove('tv-idle'));
+
+/* ===== Fullscreen-läge för hela appen ===== */
+function isAppFullscreen(){
+  return !!(document.fullscreenElement || document.webkitFullscreenElement);
+}
+async function toggleFullscreen(){
+  try{
+    if(!isAppFullscreen()){
+      const el = document.documentElement;
+      if(el.requestFullscreen) await el.requestFullscreen();
+      else if(el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+      showToast('⛶ Fullskärm PÅ');
+    } else {
+      if(document.exitFullscreen) await document.exitFullscreen();
+      else if(document.webkitExitFullscreen) document.webkitExitFullscreen();
+      showToast('⛶ Fullskärm AV');
+    }
+  }catch(e){
+    showToast('Fullskärm blockerad av webbläsaren');
+  }
+}
+$('fullscreenBtn').onclick = toggleFullscreen;
+['fullscreenchange','webkitfullscreenchange'].forEach(ev=>
+  document.addEventListener(ev, ()=>{
+    document.body.classList.toggle('app-fullscreen', isAppFullscreen());
+    const btn = $('fullscreenBtn');
+    if(btn) btn.textContent = isAppFullscreen() ? '🔙 ⛶' : '⛶';
+    updateStickyPlayerLayout();
+    setTimeout(updateStickyPlayerLayout, 120);
+  })
+);
 
 /* ============ Klocka & datum ============ */
 function updateClock(){
