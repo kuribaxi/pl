@@ -196,18 +196,30 @@ body.tv-player-mode #video{
 .favActions .miniBtn.danger:hover{background:rgba(239,68,68,.1)}
 
 .favList{display:grid;gap:5px;max-height:340px;overflow-y:auto;padding-right:2px}
-.favItem{display:flex;align-items:center;gap:8px;padding:8px;border-radius:10px;
-  background:var(--panel3);border:2px solid transparent;cursor:pointer;min-height:56px}
+.favItem{
+  display:flex;
+  flex-wrap:nowrap;
+  align-items:center;
+  gap:6px;
+  padding:8px;
+  border-radius:10px;
+  background:var(--panel3);
+  border:2px solid transparent;
+  cursor:pointer;
+  min-height:56px;
+  overflow:hidden;
+}
 .favItem:hover{background:#1e1e33}
 @media (hover:none){ .favItem:hover{background:var(--panel3)} }
 .favItem.active{border-color:rgba(139,92,246,.8);background:rgba(139,92,246,.15)}
 .favItem img{width:38px;height:38px;border-radius:9px;object-fit:contain;background:#000;
   flex:0 0 auto;padding:2px}
-.favItemMeta{flex:1;min-width:0}
+.favItemMeta{flex:1 1 0;min-width:0;overflow:hidden}
 .favItemName{font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .favItemSub{font-size:11px;color:var(--muted);margin-top:2px}
 .favItemRemove{background:none;border:2px solid transparent;color:var(--muted);
-  font-size:14px;cursor:pointer;padding:8px;border-radius:8px;min-width:40px;min-height:40px}
+  font-size:14px;cursor:pointer;padding:8px;border-radius:8px;min-width:38px;min-height:38px;
+  flex:0 0 auto}
 .favItemRemove:hover{color:#fca5a5}
 
 #playlistManager{display:grid;gap:6px;max-height:260px;overflow-y:auto;padding-right:2px}
@@ -265,13 +277,29 @@ select{background:var(--panel3);border:2px solid var(--line);border-radius:10px;
   -webkit-overflow-scrolling:touch}
 .placeholder{text-align:center;padding:50px 16px;color:var(--muted);font-size:14px;line-height:1.8}
 .placeholder .big{font-size:44px;margin-bottom:10px}
-.channelRow{display:flex;gap:8px;align-items:center;padding:10px;border-radius:12px;cursor:pointer;
-  background:var(--panel2);border:3px solid transparent;min-height:70px}
+
+/* ============================================================
+   KANALRAD: ⭐ + ✓ ALLTID SYNLIGA FÖRST
+   ============================================================ */
+.channelRow{
+  display:flex;
+  flex-wrap:nowrap;
+  gap:6px;
+  align-items:center;
+  padding:8px 10px;
+  border-radius:12px;
+  cursor:pointer;
+  background:var(--panel2);
+  border:3px solid transparent;
+  min-height:70px;
+  overflow:hidden;
+}
 .channelRow:hover{background:#1e1e33}
 @media (hover:none){ .channelRow:hover{background:var(--panel2)} }
 .channelRow.active{border-color:rgba(139,92,246,.8);background:rgba(139,92,246,.15)}
-.cLogo{width:50px;height:50px;border-radius:11px;object-fit:contain;background:#000;flex:0 0 auto;padding:3px}
-.cMeta{flex:1;min-width:0}
+
+.cLogo{width:46px;height:46px;border-radius:11px;object-fit:contain;background:#000;flex:0 0 auto;padding:3px}
+.cMeta{flex:1 1 0;min-width:0;overflow:hidden}
 .cName{font-size:15px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .cSub{font-size:12px;color:var(--muted);margin-top:3px;display:flex;gap:6px;flex-wrap:wrap;align-items:center}
 .badge{font-size:10px;padding:2px 8px;border-radius:999px;background:#1f1f30;font-weight:700}
@@ -281,49 +309,59 @@ select{background:var(--panel3);border:2px solid var(--line);border-radius:10px;
 .nowline b{color:#86efac;font-weight:700}
 
 /* ============================================================
-   TVÅ KNAPPAR FRAMFÖR VARJE KANAL:
-   ⭐ = gul favorit  |  ✓ = grön lista
+   ⭐ Gul favorit-stjärna – ALLTID synlig först
    ============================================================ */
 .favStar{
   background:none;
   border:2px solid transparent;
-  font-size:24px;
+  font-size:22px;
   cursor:pointer;
   color:var(--fav);
   padding:4px;
   flex:0 0 auto;
   border-radius:10px;
-  min-width:44px;
-  min-height:44px;
+  width:38px;
+  height:38px;
   line-height:1;
   text-align:center;
   transition:.15s;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  order:1;
 }
 .favStar:hover{ background:rgba(250,204,21,.15); }
 .favStar.notFav{ color:#3f3f55; }
 
+/* ============================================================
+   ✓ Grön lista-stjärna – ALLTID synlig bredvid gula
+   ============================================================ */
 .listStar{
   background:none;
   border:2px solid transparent;
-  font-size:24px;
+  font-size:22px;
   cursor:pointer;
   color:var(--accent2);
   padding:4px;
   flex:0 0 auto;
   border-radius:10px;
-  min-width:44px;
-  min-height:44px;
+  width:38px;
+  height:38px;
   line-height:1;
   text-align:center;
   position:relative;
   transition:.15s;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  order:2;
 }
 .listStar:hover{ background:rgba(34,197,94,.15); }
 .listStar.inList{ color:#22c55e; font-weight:900; }
 .listStar.notInList{ color:#3f3f55; }
 .listStar .cnt{
   position:absolute;
-  bottom:2px; right:2px;
+  bottom:0; right:0;
   font-size:9px;
   font-weight:900;
   background:var(--accent2);
@@ -336,10 +374,29 @@ select{background:var(--panel3);border:2px solid var(--line);border-radius:10px;
   height:14px;
 }
 
-/* Behåll gamla .extIcon för kompatibilitet */
-.extIcon{background:none;border:2px solid transparent;font-size:16px;cursor:pointer;color:var(--focus);
-  padding:6px;flex:0 0 auto;border-radius:10px;min-width:42px;min-height:42px}
-.extIcon:hover{color:#fff}
+/* Tvinga ordning i kanalraden */
+.channelRow > .favStar{ order:1; }
+.channelRow > .listStar{ order:2; }
+.channelRow > .cLogo{ order:3; }
+.channelRow > .cMeta{ order:4; }
+.channelRow > .extIcon{ order:5; }
+
+.extIcon{
+  background:none;
+  border:2px solid transparent;
+  font-size:16px;
+  cursor:pointer;
+  color:var(--focus);
+  padding:4px;
+  flex:0 0 auto;
+  border-radius:10px;
+  width:34px;
+  height:34px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+.extIcon:hover{color:#fff;background:rgba(125,211,252,.1)}
 .groupIcon{background:none;border:2px solid transparent;font-size:15px;cursor:pointer;
   color:#c4b5fd;padding:6px;flex:0 0 auto;border-radius:10px;min-width:42px;min-height:42px}
 .groupIcon:hover{color:#fff;background:rgba(139,92,246,.15)}
@@ -498,6 +555,9 @@ select{background:var(--panel3);border:2px solid var(--line);border-radius:10px;
 .progCard .n{font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .gridChips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
 
+/* ============================================================
+   MOBILFIX: gör stjärnorna lite mindre så de alltid syns
+   ============================================================ */
 @media (max-width:1024px) and (min-width:901px){
   #leftPanel{width:380px}
   .rightInner{max-width:none}
@@ -537,14 +597,30 @@ select{background:var(--panel3);border:2px solid var(--line);border-radius:10px;
   .pdesc{font-size:12px}
   #channelListWrap{height:auto;max-height:none;overflow:visible}
   #channelList{max-height:none;padding:6px;gap:5px;overflow:visible}
-  .channelRow{padding:9px;min-height:64px;gap:8px}
-  .cLogo{width:44px;height:44px}
-  .cName{font-size:14px}
-  .cSub{font-size:11px;gap:5px}
-  .favStar{font-size:22px;min-width:44px;min-height:44px;padding:4px}
-  .listStar{font-size:22px;min-width:44px;min-height:44px;padding:4px}
-  .extIcon{font-size:15px;min-width:42px;min-height:42px;padding:5px}
-  .groupIcon{font-size:15px;min-width:42px;min-height:42px;padding:5px}
+
+  /* Kanalrad på mobil */
+  .channelRow{
+    padding:8px;
+    gap:5px;
+  }
+  .favStar, .listStar{
+    width:36px;
+    height:36px;
+    font-size:20px;
+    padding:3px;
+  }
+  .cLogo{
+    width:40px;
+    height:40px;
+  }
+  .cName{ font-size:14px; }
+  .cSub{ font-size:11px; gap:4px; }
+  .extIcon{
+    width:32px;
+    height:32px;
+    font-size:14px;
+  }
+
   .acc{margin:8px}
   .accHead{padding:11px 12px}
   .accTitle{font-size:14px}
@@ -558,7 +634,7 @@ select{background:var(--panel3);border:2px solid var(--line);border-radius:10px;
   .presetBtn{flex:1 1 calc(33% - 6px);min-width:0;font-size:12px;padding:10px 4px}
   .favActions .miniBtn{flex:1 1 calc(50% - 3px);font-size:11px;padding:9px 6px}
   .favList{max-height:280px}
-  .favItem{padding:7px;min-height:52px}
+  .favItem{padding:7px;min-height:52px;gap:5px}
   .favItem img{width:34px;height:34px}
   .favItemName{font-size:12px}
   .addPlRow{flex-wrap:wrap}
@@ -571,8 +647,6 @@ select{background:var(--panel3);border:2px solid var(--line);border-radius:10px;
 @media (max-width:480px){
   .hbtns .hbtn .lbl{display:none}
   .hbtns .hbtn{min-width:46px;padding:10px 8px;font-size:14px}
-  .channelRow{flex-wrap:wrap}
-  .cSub .badge:last-child{display:none}
   .programs .program{padding:9px 10px}
   #nowUrl{-webkit-line-clamp:1}
   #favBtn,#openExternalBtn,#vlcBtn{max-width:none}
@@ -581,6 +655,18 @@ select{background:var(--panel3);border:2px solid var(--line);border-radius:10px;
   .playerWrap{aspect-ratio:16/9}
   .groupTabs{padding:4px;gap:4px}
   .groupTab{padding:7px 10px;font-size:12px;min-height:34px}
+  .cSub .badge:last-child{display:none}
+}
+@media (max-width:380px){
+  .favStar, .listStar{
+    width:34px;
+    height:34px;
+    font-size:18px;
+    padding:2px;
+  }
+  .cLogo{ width:36px; height:36px; }
+  .channelRow{ padding:6px; gap:4px; }
+  .extIcon{ width:30px; height:30px; font-size:12px; }
 }
 @media (max-height:480px) and (max-width:900px){
   .playerWrap{aspect-ratio:auto;height:38vh}
@@ -901,7 +987,7 @@ body.tv-player-mode #tvChannelBadge{ display:block; }
           <select id="favFilter">
             <option value="all">Alla kanaler</option>
             <option value="fav">⭐ Favoriter</option>
-            <option value="group">📁 Aktiv grupp</option>
+            <option value="group">✓ Aktiv lista</option>
           </select>
           <button id="clearFilters" class="chip" style="flex:0 0 auto" title="Rensa filter">🧹 Rensa</button>
         </div>
@@ -911,13 +997,13 @@ body.tv-player-mode #tvChannelBadge{ display:block; }
 
     <div class="acc" id="accGroups">
       <div class="accHead" data-acc="groups">
-        <div class="accTitle">📁 <span>Mina grupper</span>
-          <span class="sub" id="groupsSummary">0 grupper</span>
+        <div class="accTitle">✓ <span>Mina listor</span>
+          <span class="sub" id="groupsSummary">0 listor</span>
         </div>
         <button class="accToggle" data-acc-toggle="groups" aria-label="Öppna/stäng">+</button>
       </div>
       <div class="accBody" id="accBodyGroups">
-        <button id="createGroupBtn" class="primaryBtn" style="margin-bottom:10px">➕ Skapa ny grupp</button>
+        <button id="createGroupBtn" class="primaryBtn" style="margin-bottom:10px">➕ Skapa ny lista</button>
         <div id="groupTabList" class="groupTabs" style="margin-bottom:0"></div>
         <div id="groupPanel" style="margin-top:10px"></div>
       </div>
@@ -978,7 +1064,7 @@ body.tv-player-mode #tvChannelBadge{ display:block; }
           <b style="color:#facc15">🎮 TV:</b>
           <kbd>OK</kbd> kanallista <kbd>◀ ▶</kbd> förra/nästa kanal
           <kbd>▲ ▼</kbd> navigera <kbd>R</kbd> ladda om
-          <kbd>G</kbd> grupper <kbd>0-9</kbd> favorit <kbd>⌫</kbd> stäng/av
+          <kbd>G</kbd> listor <kbd>0-9</kbd> favorit <kbd>⌫</kbd> stäng/av
         </div>
       </div>
 
@@ -1168,7 +1254,7 @@ function showToast(msg){
 function makeGroupId(){ return 'g_' + Date.now() + '_' + Math.random().toString(36).slice(2,6); }
 function createGroup(name){
   name = (name||'').trim();
-  if(!name){ showToast('Ange ett gruppnamn'); return null; }
+  if(!name){ showToast('Ange ett listnamn'); return null; }
   if(groups.find(g=>g.name.toLowerCase()===name.toLowerCase())){ showToast('Listan finns redan'); return null; }
   const g = { id: makeGroupId(), name };
   groups.push(g);
@@ -1223,7 +1309,7 @@ function updateGroupsSummary(){
   }
 }
 
-/* =============== GRUPPVÄLJARE – öppnas från grön stjärna =============== */
+/* =============== GRUPPVÄLJARE =============== */
 function openGroupPicker(channel){
   if(!channel){ showToast('Ingen kanal vald'); return; }
   const backdrop = document.createElement('div');
@@ -1298,7 +1384,7 @@ function openCreateGroupModal(){
   const modal = document.createElement('div');
   modal.className = 'groupPickerModal';
   modal.innerHTML = `
-    <h3>📁 Skapa ny lista</h3>
+    <h3>✓ Skapa ny lista</h3>
     <div class="newRow" style="margin-top:8px">
       <input id="newGroupNameModal" placeholder="Listnamn (t.ex. Nyheter)" maxlength="40" autocomplete="off"/>
     </div>
@@ -1320,7 +1406,7 @@ function openCreateGroupModal(){
     const g = createGroup(inp.value);
     if(g){
       close();
-      showToast(`📁 "${g.name}" skapad!`);
+      showToast(`✓ "${g.name}" skapad!`);
     }
   };
   modal.querySelector('#saveGroup').onclick = doSave;
@@ -1756,7 +1842,7 @@ function renderListCount(){
 }
 
 /* ============================================================
-   KANALLISTA – med ⭐ (gul) och ✓ (grön) framför varje kanal
+   KANALLISTA – ⭐ och ✓ ALLTID synliga först i varje rad
    ============================================================ */
 function renderChannelList(){
   const prevScrollTop = els.channelList.scrollTop;
@@ -1811,7 +1897,6 @@ function renderChannelList(){
       const ch = findChannelByKey(b.dataset.favkey); if(!ch) return;
       if(favs.has(ch.url)) favs.delete(ch.url); else favs.add(ch.url);
       save(); updateSummary(); updateFavBtn(); renderFavPanel();
-      /* Uppdatera bara denna rad */
       b.textContent = favs.has(ch.url)?'⭐':'☆';
       b.classList.toggle('notFav', !favs.has(ch.url));
       b.title = favs.has(ch.url)?'Ta bort från favoriter':'Lägg till i favoriter';
@@ -1858,7 +1943,7 @@ function renderFavPanel(){
         const chGroups = getChannelGroups(c.url);
         const inAnyList = chGroups.length > 0;
         return `<div class="favItem ${isActive?'active':''}" data-url="${escapeHtml(c.url)}" tabindex="0">
-          <button class="listStar ${inAnyList?'inList':'notInList'}" data-listurl="${escapeHtml(c.url)}" title="${inAnyList?'I '+chGroups.length+' lista(or)':'Lägg i lista'}" style="font-size:20px;min-width:36px;min-height:36px">${inAnyList?'✓':'○'}</button>
+          <button class="listStar ${inAnyList?'inList':'notInList'}" data-listurl="${escapeHtml(c.url)}" title="${inAnyList?'I '+chGroups.length+' lista(or)':'Lägg i lista'}">${inAnyList?'✓':'○'}</button>
           <img src="${escapeHtml(c.logo)}" loading="lazy" onerror="this.style.visibility='hidden'" alt=""/>
           <div class="favItemMeta">
             <div class="favItemName">${escapeHtml(c.name)}</div>
