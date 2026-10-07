@@ -173,11 +173,8 @@ body.tv-player-mode #video{
 .groupTab.active{background:var(--accent);color:#fff;border-color:var(--accent)}
 .groupTab .cnt{font-size:11px;opacity:.8;font-weight:600}
 
-/* Alltid synlig gruppsektion */
-#accGroups{background:linear-gradient(180deg,#1a1a2e,#151525);
-  border:2px solid var(--accent)}
-#accGroups .accBody { display:block !important; padding:12px !important; }
-#accGroups .accHead { background:linear-gradient(90deg, rgba(139,92,246,.2), transparent); }
+#accGroups{border:2px solid var(--accent)}
+#accGroups .accHead{background:linear-gradient(90deg, rgba(139,92,246,.2), transparent);}
 #createGroupBtn {
   background:linear-gradient(90deg,#22c55e,#16a34a) !important;
   font-size:15px;
@@ -322,97 +319,6 @@ select{background:var(--panel3);border:2px solid var(--line);border-radius:10px;
   border-radius:10px;color:var(--text);padding:12px 14px;font-size:16px;outline:none;min-height:48px}
 .groupPickerModal .newRow input:focus{border-color:var(--accent)}
 .groupPickerModal .actions{display:flex;gap:8px;flex-wrap:wrap}
-
-#multiSelectBar{
-  display:none;
-  position:sticky;
-  top:0;
-  z-index:10;
-  background:linear-gradient(180deg, #1e1e33, #16162a);
-  border-bottom:2px solid var(--accent);
-  padding:10px 12px;
-  gap:8px;
-  flex-wrap:wrap;
-  align-items:center;
-  box-shadow:0 6px 20px rgba(0,0,0,.6);
-}
-#multiSelectBar.show{ display:flex; }
-#multiSelectBar .cnt{
-  font-size:13px; font-weight:800; color:var(--accent);
-  background:rgba(139,92,246,.15);
-  padding:6px 12px; border-radius:8px;
-  margin-right:auto;
-}
-#multiSelectBar .miniBtn{ font-size:12px; padding:8px 12px; min-height:38px; }
-
-.channelRow .multiChk{
-  width:30px; height:30px; min-width:30px;
-  border-radius:8px;
-  border:2px solid var(--line);
-  background:var(--panel3);
-  cursor:pointer;
-  display:none;
-  align-items:center;
-  justify-content:center;
-  font-size:16px; font-weight:800;
-  color:var(--muted);
-  flex:0 0 auto;
-  transition:.15s;
-}
-.channelRow .multiChk:hover{ border-color:var(--accent); color:var(--text); }
-.channelRow .multiChk.on{ background:var(--accent2); border-color:var(--accent2); color:#fff; }
-body.multi-select-mode .channelRow .multiChk{ display:flex; }
-body.multi-select-mode .channelRow .favStar,
-body.multi-select-mode .channelRow .extIcon,
-body.multi-select-mode .channelRow .groupIcon{ display:none; }
-body.multi-select-mode .channelRow.selected{
-  border-color:var(--accent2);
-  background:rgba(34,197,94,.12);
-}
-body.multi-select-mode .channelRow{ cursor:pointer; }
-
-#multiSelectToggle{
-  width:calc(100% - 16px);
-  margin:8px;
-  font-size:13px;
-  background:#1e1e33;
-  border:2px solid var(--line);
-  color:var(--text);
-  padding:10px;
-  border-radius:10px;
-  cursor:pointer;
-  min-height:44px;
-  font-weight:700;
-}
-#multiSelectToggle:hover{ background:#26264a; border-color:var(--accent); }
-#multiSelectToggle.on{
-  background:linear-gradient(90deg,#7c3aed,#4f46e5);
-  color:#fff; border-color:transparent;
-}
-
-.bulkGroupBackdrop{position:fixed;inset:0;background:rgba(0,0,0,.75);
-  z-index:85;display:flex;align-items:center;justify-content:center;padding:20px;
-  backdrop-filter:blur(4px)}
-.bulkGroupModal{background:var(--panel2);border:2px solid var(--accent);border-radius:16px;
-  padding:18px;max-width:480px;width:100%;max-height:80vh;overflow-y:auto;
-  box-shadow:0 20px 60px rgba(0,0,0,.9)}
-.bulkGroupModal h3{margin:0 0 12px 0;font-size:17px;font-weight:800}
-.bulkGroupModal .info{font-size:13px;color:var(--muted);margin-bottom:14px}
-.bulkGroupModal .list{display:grid;gap:6px;margin-bottom:14px}
-.bulkGroupModal .row{display:flex;align-items:center;justify-content:space-between;gap:8px;
-  padding:10px 12px;background:var(--panel3);border-radius:10px;min-height:48px;cursor:pointer;
-  border:2px solid transparent}
-.bulkGroupModal .row:hover{background:#1e1e33}
-.bulkGroupModal .row.on{border-color:var(--accent2);background:rgba(34,197,94,.12)}
-.bulkGroupModal .row .nm{font-size:14px;font-weight:700;flex:1}
-.bulkGroupModal .row .chk{font-size:18px;color:var(--muted)}
-.bulkGroupModal .row.on .chk{color:var(--accent2)}
-.bulkGroupModal .newRow{display:flex;gap:8px;margin-bottom:14px}
-.bulkGroupModal .newRow input{flex:1;background:var(--panel3);border:2px solid var(--line);
-  border-radius:10px;color:var(--text);padding:10px 12px;font-size:15px;outline:none;min-height:44px}
-.bulkGroupModal .newRow input:focus{border-color:var(--accent)}
-.bulkGroupModal .actions{display:flex;gap:8px;flex-wrap:wrap}
-.bulkGroupModal .actions .miniBtn{flex:1}
 
 .rightInner{padding:14px;display:grid;gap:14px;max-width:1400px}
 .playerCard{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:14px}
@@ -627,7 +533,7 @@ body.multi-select-mode .channelRow{ cursor:pointer; }
 }
 @media (hover:none) and (pointer:coarse){
   .channelRow,.favItem,.progCard,.gridCell.left{touch-action:manipulation}
-  .plRemove,.favItemRemove,.extIcon,.favStar,.groupIcon,.multiChk{touch-action:manipulation}
+  .plRemove,.favItemRemove,.extIcon,.favStar,.groupIcon{touch-action:manipulation}
 }
 .acc, .playerCard, .card{position:relative}
 
@@ -949,15 +855,14 @@ body.tv-player-mode #tvChannelBadge{ display:block; }
       </div>
     </div>
 
-    <!-- ALLTID SYNLIG gruppsektion -->
     <div class="acc" id="accGroups">
       <div class="accHead" data-acc="groups">
         <div class="accTitle">📁 <span>Mina grupper</span>
           <span class="sub" id="groupsSummary">0 grupper</span>
         </div>
-        <button class="accToggle" data-acc-toggle="groups" aria-label="Öppna/stäng">−</button>
+        <button class="accToggle" data-acc-toggle="groups" aria-label="Öppna/stäng">+</button>
       </div>
-      <div class="accBody open" id="accBodyGroups">
+      <div class="accBody" id="accBodyGroups">
         <button id="createGroupBtn" class="primaryBtn" style="margin-bottom:10px">➕ Skapa ny grupp</button>
         <div id="groupTabList" class="groupTabs" style="margin-bottom:0"></div>
         <div id="groupPanel" style="margin-top:10px"></div>
@@ -965,16 +870,6 @@ body.tv-player-mode #tvChannelBadge{ display:block; }
     </div>
 
     <div id="channelListWrap">
-      <div id="multiSelectBar">
-        <span class="cnt" id="msCount">0 valda</span>
-        <button class="miniBtn" id="msSelectAll">✅ Markera alla synliga</button>
-        <button class="miniBtn" id="msClear">✖ Rensa</button>
-        <button class="miniBtn" id="msAddToGroup" style="background:var(--accent);border-color:var(--accent);color:#fff;font-weight:700">📁 Lägg i grupp</button>
-        <button class="miniBtn" id="msFav">⭐ Favorit</button>
-        <button class="miniBtn" id="msExport">💾 Exportera</button>
-        <button class="miniBtn danger" id="msExit">🚪 Avsluta</button>
-      </div>
-      <button id="multiSelectToggle">☑️ Multivälj-läge</button>
       <div id="channelList"></div>
     </div>
   </aside>
@@ -1097,9 +992,6 @@ const LIST_LIMIT = IS_MOBILE ? 250 : 600;
 let searchQ='', groupF='', showFavOnly=false;
 let countryFilter='Alla', langFilter='Alla', gridFilter='Alla';
 
-let multiSelectMode = false;
-let multiSelected = new Set();
-
 const BUILTIN_ID = 'builtin';
 channelsByPlaylist[BUILTIN_ID] = [
   {name:'Red Bull TV', group:'Sport', lang:'eng', country:'AT', plCountry:'Internationell', flag:'🌍', tvgId:'', logo:'', playlistId:'builtin', url:'https://rbmn-live.akamaized.net/hls/live/590964/BoRB-AT/master.m3u8'},
@@ -1179,8 +1071,7 @@ function applyAccordion(){
     const body = acc.querySelector('.accBody');
     const toggle = acc.querySelector('.accToggle');
     if(!key || !head || !body || !toggle) return;
-    // Grupper-sektionen är alltid öppen
-    const isOpen = key === 'groups' ? true : !!accOpen[key];
+    const isOpen = !!accOpen[key];
     head.classList.toggle('open', isOpen);
     body.classList.toggle('open', isOpen);
     toggle.classList.toggle('open', isOpen);
@@ -1188,7 +1079,6 @@ function applyAccordion(){
   });
 }
 function toggleAccordion(key){
-  if(key === 'groups') return; // kan inte stängas
   accOpen[key] = !accOpen[key];
   save();
   applyAccordion();
@@ -1279,7 +1169,7 @@ function updateGroupsSummary(){
   }
 }
 
-/* Skapa-grupp-modal (ersätter prompt) */
+/* Skapa-grupp-modal */
 function openCreateGroupModal(){
   const backdrop = document.createElement('div');
   backdrop.className = 'groupPickerBackdrop';
@@ -1293,8 +1183,7 @@ function openCreateGroupModal(){
     </div>
     <div class="note" style="font-size:12px;margin-bottom:14px;color:#94a3b8;line-height:1.6">
       💡 <b>Så fyller du gruppen:</b><br>
-      • Tryck <b>📁</b>-knappen på en kanal i listan<br>
-      • Eller använd <b>☑️ Multivälj-läget</b> för att lägga till flera samtidigt
+      • Tryck <b>📁</b>-knappen på en kanal i listan
     </div>
     <div class="actions">
       <button class="miniBtn" id="cancelGroup" style="flex:1">✖ Avbryt</button>
@@ -1321,7 +1210,7 @@ function openCreateGroupModal(){
   setTimeout(()=>inp.focus(), 80);
 }
 
-/* Byt namn-modal (ersätter prompt) */
+/* Byt namn-modal */
 function openRenameGroupModal(group){
   if(!group) return;
   const backdrop = document.createElement('div');
@@ -1359,6 +1248,7 @@ function openRenameGroupModal(group){
   setTimeout(()=>{ inp.focus(); inp.select(); }, 80);
 }
 
+/* Gruppväljare för kanal */
 function openGroupPicker(channel){
   if(!channel) return;
   const backdrop = document.createElement('div');
@@ -1508,159 +1398,6 @@ function renderGroupPanel(){
     );
   };
 }
-
-/* ================= Multi-select ================= */
-function toggleMultiSelect(force){
-  multiSelectMode = (typeof force === 'boolean') ? force : !multiSelectMode;
-  document.body.classList.toggle('multi-select-mode', multiSelectMode);
-  $('multiSelectBar').classList.toggle('show', multiSelectMode);
-  $('multiSelectToggle').classList.toggle('on', multiSelectMode);
-  $('multiSelectToggle').textContent = multiSelectMode
-    ? '✖ Stäng multivälj'
-    : '☑️ Multivälj-läge';
-  if(!multiSelectMode) multiSelected.clear();
-  updateMultiBar();
-  renderChannelList();
-}
-function updateMultiBar(){
-  const el = $('msCount');
-  if(el) el.textContent = multiSelected.size + ' valda';
-}
-function toggleChannelMulti(url){
-  if(multiSelected.has(url)) multiSelected.delete(url);
-  else multiSelected.add(url);
-  updateMultiBar();
-  document.querySelectorAll('.channelRow').forEach(r=>{
-    const ch = findChannelByKey(r.dataset.key);
-    if(!ch || ch.url !== url) return;
-    r.classList.toggle('selected', multiSelected.has(url));
-    const chk = r.querySelector('.multiChk');
-    if(chk){
-      chk.classList.toggle('on', multiSelected.has(url));
-      chk.textContent = multiSelected.has(url) ? '✓' : '';
-    }
-  });
-}
-function multiSelectAllVisible(){
-  filtered.slice(0, LIST_LIMIT).forEach(c => multiSelected.add(c.url));
-  updateMultiBar();
-  renderChannelList();
-}
-function multiSelectClear(){
-  multiSelected.clear();
-  updateMultiBar();
-  renderChannelList();
-}
-function multiSelectExit(){
-  toggleMultiSelect(false);
-}
-function multiSelectAddToGroup(){
-  if(!multiSelected.size){ showToast('Markera minst en kanal'); return; }
-  const backdrop = document.createElement('div');
-  backdrop.className = 'bulkGroupBackdrop';
-  backdrop.onclick = e => { if(e.target === backdrop) close(); };
-  const modal = document.createElement('div');
-  modal.className = 'bulkGroupModal';
-  modal.innerHTML = `
-    <h3>📁 Lägg ${multiSelected.size} kanaler i grupp</h3>
-    <div class="info">Markera en eller flera grupper – kanalerna läggs till i dem alla.</div>
-    <div class="newRow">
-      <input id="bulkNewGroup" placeholder="Ny grupp…" maxlength="40" autocomplete="off"/>
-      <button class="miniBtn primary" id="bulkCreateGroup" style="background:var(--accent);border-color:var(--accent);color:#fff;font-weight:700">➕ Skapa</button>
-    </div>
-    <div class="list" id="bulkGroupList">
-      ${groups.length ? groups.map(g=>`
-        <div class="row" data-gid="${g.id}">
-          <div class="nm">📁 ${escapeHtml(g.name)} <span style="color:#94a3b8;font-weight:500">(${getGroupCount(g.id)})</span></div>
-          <div class="chk">○</div>
-        </div>`).join('') : '<div class="note" style="padding:8px;text-align:center">Inga grupper än – skapa en ovan</div>'}
-    </div>
-    <div class="actions">
-      <button class="miniBtn" id="bulkDone">Klar</button>
-      <button class="miniBtn" id="bulkApply" style="background:var(--accent);border-color:var(--accent);color:#fff;font-weight:700">✅ Lägg till</button>
-    </div>
-  `;
-  backdrop.appendChild(modal);
-  document.body.appendChild(backdrop);
-  const close = ()=> document.body.removeChild(backdrop);
-
-  modal.querySelectorAll('.row').forEach(row=>{
-    row.onclick = ()=>{
-      row.classList.toggle('on');
-      row.querySelector('.chk').textContent = row.classList.contains('on') ? '✓' : '○';
-    };
-  });
-
-  const applyBulkGroups = (explicitGids)=>{
-    const gids = explicitGids || [...modal.querySelectorAll('.row.on')].map(r=>r.dataset.gid);
-    if(!gids.length){ showToast('Välj minst en grupp'); return; }
-    let added = 0;
-    gids.forEach(gid=>{
-      if(!groupMembers[gid]) groupMembers[gid] = [];
-      multiSelected.forEach(url=>{
-        if(!groupMembers[gid].includes(url)){
-          groupMembers[gid].push(url);
-          added++;
-        }
-      });
-    });
-    save();
-    renderGroupTabs(); renderGroupPanel(); renderChannelList(); renderTvOvTabs(); updateGroupsSummary();
-    showToast(`${multiSelected.size} kanaler → ${gids.length} grupp(er) · ${added} tillägg`);
-    close();
-    multiSelected.clear();
-    updateMultiBar();
-    toggleMultiSelect(false);
-  };
-
-  modal.querySelector('#bulkCreateGroup').onclick = ()=>{
-    const inp = modal.querySelector('#bulkNewGroup');
-    const g = createGroup(inp.value);
-    if(g){
-      inp.value = '';
-      const list = modal.querySelector('#bulkGroupList');
-      const row = document.createElement('div');
-      row.className = 'row on';
-      row.dataset.gid = g.id;
-      row.innerHTML = `<div class="nm">📁 ${escapeHtml(g.name)} <span style="color:#94a3b8;font-weight:500">(0)</span></div><div class="chk">✓</div>`;
-      row.onclick = ()=>{
-        row.classList.toggle('on');
-        row.querySelector('.chk').textContent = row.classList.contains('on') ? '✓' : '○';
-      };
-      list.appendChild(row);
-      applyBulkGroups([g.id]);
-    }
-  };
-  modal.querySelector('#bulkNewGroup').addEventListener('keydown', e=>{
-    if(e.key === 'Enter'){ e.preventDefault(); modal.querySelector('#bulkCreateGroup').click(); }
-  });
-  modal.querySelector('#bulkApply').onclick = ()=> applyBulkGroups();
-  modal.querySelector('#bulkDone').onclick = close;
-  setTimeout(()=>modal.querySelector('#bulkNewGroup').focus(), 80);
-}
-function multiSelectFavourite(){
-  if(!multiSelected.size){ showToast('Markera minst en kanal'); return; }
-  let added = 0;
-  multiSelected.forEach(url=>{
-    if(!favs.has(url)){ favs.add(url); added++; }
-  });
-  save(); updateSummary(); renderFavPanel(); renderChannelList(); renderTvOvTabs();
-  showToast(`${added} nya favoriter (av ${multiSelected.size})`);
-}
-function multiSelectExport(){
-  if(!multiSelected.size){ showToast('Markera minst en kanal'); return; }
-  const chans = [...multiSelected].map(u=>findChannelByUrl(u)).filter(Boolean);
-  if(!chans.length){ showToast('Inga kanaler'); return; }
-  exportM3U(chans, 'urval_' + chans.length + '_kanaler.m3u');
-  showToast(chans.length + ' kanaler exporterade');
-}
-$('multiSelectToggle').onclick = ()=> toggleMultiSelect();
-$('msSelectAll').onclick = multiSelectAllVisible;
-$('msClear').onclick = multiSelectClear;
-$('msAddToGroup').onclick = multiSelectAddToGroup;
-$('msFav').onclick = multiSelectFavourite;
-$('msExport').onclick = multiSelectExport;
-$('msExit').onclick = multiSelectExit;
 
 /* ================= Playlist manager ================= */
 async function loadPlaylist(id){
@@ -1968,9 +1705,7 @@ function renderChannelList(){
     const progs = epg[c.tvgId]?.programs;
     const nowP  = progs?.find(p=>p.start<=now && p.stop>now);
     const nextP = progs?.find(p=>p.start>now);
-    const isMulti = multiSelected.has(c.url);
-    return `<div class="channelRow ${currentChannel?.url===c.url?'active':''} ${isMulti?'selected':''}" data-key="${escapeHtml(channelKey(c))}" tabindex="0">
-      <div class="multiChk ${isMulti?'on':''}" data-multikey="${escapeHtml(channelKey(c))}" title="Markera">${isMulti?'✓':''}</div>
+    return `<div class="channelRow ${currentChannel?.url===c.url?'active':''}" data-key="${escapeHtml(channelKey(c))}" tabindex="0">
       <img class="cLogo" src="${escapeHtml(c.logo)}" loading="lazy" onerror="this.style.visibility='hidden'" alt=""/>
       <div class="cMeta">
         <div class="cName">${escapeHtml(c.name)}${isExt?'<span class="extOnlyTag">EXT</span>':''}</div>
@@ -1991,24 +1726,10 @@ function renderChannelList(){
 
   els.channelList.querySelectorAll('.channelRow').forEach(row=>{
     row.onclick = e=>{
-      if(multiSelectMode){
-        e.preventDefault(); e.stopPropagation();
-        const ch = findChannelByKey(row.dataset.key);
-        if(ch) toggleChannelMulti(ch.url);
-        return;
-      }
       if(e.target.classList.contains('favStar') ||
          e.target.classList.contains('extIcon') ||
-         e.target.classList.contains('groupIcon') ||
-         e.target.classList.contains('multiChk')) return;
+         e.target.classList.contains('groupIcon')) return;
       const ch = findChannelByKey(row.dataset.key); if(ch) playChannel(ch);
-    };
-  });
-  els.channelList.querySelectorAll('.multiChk').forEach(chk=>{
-    chk.onclick = e=>{
-      e.stopPropagation();
-      const ch = findChannelByKey(chk.dataset.multikey);
-      if(ch) toggleChannelMulti(ch.url);
     };
   });
   els.channelList.querySelectorAll('.favStar').forEach(b=>{
