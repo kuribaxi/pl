@@ -62,13 +62,30 @@ header{height:64px;flex-shrink:0;display:flex;align-items:center;justify-content
   border-right:1px solid var(--line);min-height:0}
 #rightPanel{flex:1 1 auto;overflow-y:auto;min-width:0;background:var(--bg)}
 
-body.tv-player-mode #leftPanel{display:none}
+/* TV-läge: helskärmspelare + kanalpanel som glider in från vänster */
 body.tv-player-mode #rightPanel{width:100%}
 body.tv-player-mode .rightInner{max-width:none;padding:0}
 body.tv-player-mode .card{display:none}
 body.tv-player-mode .playerCard{border-radius:0;border:none;padding:0;height:calc(100dvh - 64px)}
-body.tv-player-mode #stickyPlayerWrap{position:static;box-shadow:none}
+body.tv-player-mode #stickyPlayerWrap{position:static;box-shadow:none;border:none;border-radius:0;padding:0}
 body.tv-player-mode .playerWrap{height:calc(100dvh - 220px);aspect-ratio:auto;border-radius:0}
+/* Vensterpanelen blir en glidande kanalmeny i TV-läget */
+body.tv-player-mode #leftPanel{
+  display:flex !important;
+  position:fixed;
+  left:0; top:64px; bottom:0;
+  width:430px; max-width:92vw;
+  z-index:25;
+  background:var(--panel);
+  border-right:2px solid var(--accent);
+  box-shadow:12px 0 40px rgba(0,0,0,.7);
+  transform:translateX(-102%);
+  transition:transform .25s ease;
+}
+body.tv-player-mode.tv-list-open #leftPanel{transform:none}
+/* Dölj in-line i kanallistan ser bättre ut i TV-läget */
+body.tv-player-mode #channelList .channelRow{border-width:3px}
+body.tv-player-mode #channelList .channelRow.tv-focus{background:rgba(139,92,246,.25)}
 
 .acc{background:var(--panel2);border:1px solid var(--line);border-radius:14px;
   margin:10px;overflow:hidden;flex-shrink:0}
@@ -1806,10 +1823,27 @@ const tvNav = {
 function toggleTvMode(){
   const on = document.body.classList.toggle('tv-player-mode');
   localStorage.setItem(LS.tvMode, on?'1':'0');
+  if(!on) closeTvChannelPanel();
   showToast(on?'🖥️ TV-läge PÅ':'🖥️ TV-läge AV');
-  if(on) els.video.focus();
+  if(on){
+    els.video.focus();
+    showToast('OK = kanallista');
+  }
   tvNav.refresh();
   if(typeof updateStickyPlayerLayout === 'function') setTimeout(updateStickyPlayerLayout, 50);
+}
+
+/* TV-läge: kanalpanel som glider in över videon */
+function openTvChannelPanel(){
+  document.body.classList.add('tv-list-open');
+  tvNav.currentZone = 0;
+  tvNav.focusIndex = 0;
+  setTimeout(()=>tvNav.refresh(), 260);
+  showToast('◀▶ zon · ▲▼ kanal · OK spela · ⌫ stäng');
+}
+function closeTvChannelPanel(){
+  document.body.classList.remove('tv-list-open');
+  if(tvNav.currentZone === 0) tvNav.switchZone(1);
 }
 
 document.addEventListener('keydown', e=>{
@@ -1854,6 +1888,12 @@ document.addEventListener('keydown', e=>{
 
   if(code === 8 || code === 461 || key === 'Escape'){
     e.preventDefault();
+    // I TV-läge med kanalpanelen öppen: stäng panelen först
+    if(document.body.classList.contains('tv-player-mode') &&
+       document.body.classList.contains('tv-list-open')){
+      closeTvChannelPanel();
+      return;
+    }
     tvNav.back();
     return;
   }
@@ -1865,6 +1905,12 @@ document.addEventListener('keydown', e=>{
 
   if(code === 13 || key === 'Enter'){
     e.preventDefault();
+    // I TV-läge utan öppen panel: OK öppnar kanalpanelen
+    if(document.body.classList.contains('tv-player-mode') &&
+       !document.body.classList.contains('tv-list-open')){
+      openTvChannelPanel();
+      return;
+    }
     tvNav.activate();
     return;
   }
