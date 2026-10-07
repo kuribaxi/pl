@@ -1093,26 +1093,38 @@ body.tv-player-mode.tv-overlay-open #tvChannelOverlay{
   text-align:center; padding:40px 16px;
   color:var(--muted); font-size:14px;
 }
+
+/* ============================================================
+   ===== TV-TOOLBAR (Heval-stil, anpassad till IPTV-färger) =====
+   ============================================================ */
 #tvNavBar{
   position:fixed;
   left:50%; bottom:18px;
-  transform:translateX(-50%) translateY(140%);
-  display:flex; gap:10px;
+  transform:translateX(-50%);
+  display:none;                 /* dold utanför TV-läge */
+  gap:10px;
   padding:10px 14px;
-  background:rgba(15,15,26,.94);
+  background:rgba(10,15,51,.92);
   border:3px solid var(--tv-focus);
   border-radius:999px;
-  box-shadow:0 10px 40px rgba(0,0,0,.8);
+  box-shadow:0 10px 40px rgba(0,0,0,.8), 0 0 20px rgba(250,204,21,.25);
   z-index:75;
   transition:transform .28s ease, opacity .28s;
-  opacity:0;
-  pointer-events:none;
-  backdrop-filter:blur(10px);
-  flex-wrap:wrap;
+  flex-wrap:nowrap;             /* alltid en rad */
   justify-content:center;
   max-width:96vw;
+  overflow-x:auto;
+  overflow-y:hidden;
+  -webkit-overflow-scrolling:touch;
+  scrollbar-width:none;
+  backdrop-filter:blur(10px);
+  opacity:0;
+  pointer-events:none;
 }
+#tvNavBar::-webkit-scrollbar{ display:none; }
+
 body.tv-player-mode #tvNavBar{
+  display:flex;
   transform:translateX(-50%) translateY(0);
   opacity:1;
   pointer-events:auto;
@@ -1131,6 +1143,8 @@ body.tv-player-mode.tv-overlay-open #tvNavBar{
   font-size:14px; font-weight:800;
   cursor:pointer; min-height:48px; min-width:48px;
   transition:background .15s, border-color .15s;
+  flex-shrink:0;
+  white-space:nowrap;
 }
 .tvNavBtn:hover{ background:#26264a; border-color:var(--accent); }
 .tvNavBtn.primary{
@@ -1143,6 +1157,7 @@ body.tv-player-mode.tv-overlay-open #tvNavBar{
   border-radius:6px; padding:2px 6px;
 }
 .tvNavBtn.primary .kbd{ background:rgba(255,255,255,.15); color:#fff; }
+
 #tvChannelBadge{
   position:fixed;
   top:calc(var(--headerH,64px) + 14px);
@@ -1172,7 +1187,50 @@ body.tv-player-mode #tvChannelBadge{ display:block; }
   margin-top:3px; display:block;
 }
 
-/* ===== Dölj UI i TV-läge vid inaktivitet ===== */
+/* ============================================================
+   ===== TV-KLOCKA (visas ALLTID i TV-läge, göms bara manuellt) =====
+   ============================================================ */
+#tvClock{
+  position:fixed;
+  top:calc(var(--headerH,64px) + 14px);
+  left:18px;
+  z-index:14;
+  background:rgba(15,15,26,.9);
+  backdrop-filter:blur(10px);
+  border:2px solid var(--line);
+  border-radius:14px;
+  padding:9px 14px;
+  display:none;
+  align-items:center;
+  gap:10px;
+  box-shadow:0 8px 28px rgba(0,0,0,0.6);
+  pointer-events:auto;
+  transition:opacity .4s;
+}
+body.tv-player-mode #tvClock{ display:flex; }
+#tvClock .tvClockTime{
+  font-family:'Courier New',monospace; font-weight:800; font-size:1.15rem;
+  letter-spacing:2px; color:var(--tv-focus);
+  text-shadow:0 0 14px rgba(250,204,21,.55);
+  white-space:nowrap; line-height:1.1;
+}
+#tvClock .tvClockDate{
+  font-size:0.78rem; opacity:0.9; color:#e0e7ff; white-space:nowrap;
+}
+#tvClockHide{
+  background:rgba(0,0,0,0.6); border:1px solid var(--line);
+  color:var(--tv-focus);
+  border-radius:50%; width:26px; height:26px; font-size:0.8rem; cursor:pointer;
+  display:flex; align-items:center; justify-content:center; transition:all 0.2s;
+}
+#tvClockHide:hover{ background:var(--tv-focus); color:#000; }
+
+/* Gömd av användaren – enda sättet klockan försvinner */
+body.tv-player-mode.tv-clock-off #tvClock{ display:none !important; }
+
+/* OBS: Klockan döljs ALDRIG automatiskt vid tv-idle. */
+
+/* ===== Dölj UI i TV-läge vid inaktivitet (END. toolbar + badge) ===== */
 body.tv-player-mode.tv-idle #tvNavBar{
   transform:translateX(-50%) translateY(140%);
   opacity:0;
@@ -1185,6 +1243,7 @@ body.tv-player-mode.tv-idle #tvChannelBadge{
 body.tv-player-mode.tv-idle #stickyPlayerWrap video{
   cursor:none;
 }
+body.tv-player-mode.tv-idle #tvClockBtn{ opacity:.55; }
 #tvChannelBadge{transition:opacity .4s}
 #tvNavBar{transition:transform .28s ease, opacity .28s}
 
@@ -1226,19 +1285,22 @@ body.app-fullscreen #layout{height:calc(100dvh - var(--headerH, 64px))}
   <div class="tvOvGrid" id="tvOvGrid"></div>
 </div>
 
+<!-- ===== TV-KLOCKA (Heval-liknande) ===== -->
+<div id="tvClock" title="Klicka ✕ för att gömma">
+  <div class="tvClockTime" id="tvClockDisplay">--:--:--</div>
+  <div class="tvClockDate" id="tvClockDate">Laddar...</div>
+  <button id="tvClockHide" title="Göm klockan">✕</button>
+</div>
+
+<!-- ===== TV-TOOLBAR (Heval-liknande) ===== -->
 <div id="tvNavBar" role="toolbar" aria-label="TV navigering">
-  <button class="tvNavBtn" id="tvPrevBtn" title="Föregående kanal">
-    ⏮ <span class="kbd">◀</span>
-  </button>
-  <button class="tvNavBtn primary" id="tvListBtn" title="Öppna kanallista">
-    📺 <span>Kanaler</span> <span class="kbd">OK</span>
-  </button>
-  <button class="tvNavBtn" id="tvNextBtn" title="Nästa kanal">
-    ⏭ <span class="kbd">▶</span>
-  </button>
-  <button class="tvNavBtn" id="tvReloadBtn" title="Ladda om kanal">
-    🔄 <span class="kbd">R</span>
-  </button>
+  <button class="tvNavBtn" id="tvPrevBtn" title="Föregående kanal">⏮ <span class="kbd">◀</span></button>
+  <button class="tvNavBtn primary" id="tvListBtn" title="Öppna kanallista">📺 <span>Kanaler</span> <span class="kbd">OK</span></button>
+  <button class="tvNavBtn" id="tvNextBtn" title="Nästa kanal">⏭ <span class="kbd">▶</span></button>
+  <button class="tvNavBtn" id="tvReloadBtn" title="Ladda om kanal">🔄 <span class="kbd">R</span></button>
+  <button class="tvNavBtn" id="tvClockBtn" title="Visa/göm klockan">🕐 <span class="kbd">K</span></button>
+  <button class="tvNavBtn" id="tvFsBtn" title="Fullskärm av/på">⛶ <span class="kbd">F</span></button>
+  <button class="tvNavBtn" id="tvExitBtn" title="Avsluta TV-läge">✖ <span class="kbd">Esc</span></button>
 </div>
 
 <div id="tvChannelBadge">
@@ -1422,7 +1484,7 @@ body.app-fullscreen #layout{height:calc(100dvh - var(--headerH, 64px))}
           <b style="color:#facc15">🎮 TV:</b>
           <kbd>OK</kbd> kanallista <kbd>◀ ▶</kbd> förra/nästa kanal
           <kbd>▲ ▼</kbd> navigera <kbd>R</kbd> ladda om
-          <kbd>G</kbd> listor <kbd>0-9</kbd> favorit <kbd>⌫</kbd> stäng/av
+          <kbd>G</kbd> listor <kbd>K</kbd> klocka <kbd>0-9</kbd> favorit <kbd>⌫</kbd> stäng/av
         </div>
       </div>
 
@@ -1464,7 +1526,7 @@ const LS = {
   epg:'iptv_epg_url', extOnly:'iptv_external_only', proxyMode:'iptv_proxy_mode',
   tvMode:'iptv_tv_mode', accOpen:'iptv_acc_open',
   customPls:'iptv_custom_playlists', plMeta:'iptv_playlist_meta',
-  activeGroup:'iptv_active_group'
+  activeGroup:'iptv_active_group', tvClockOff:'iptv_tv_clock_off'
 };
 let active   = new Set(JSON.parse(localStorage.getItem(LS.active)  ||'[]'));
 let removed  = new Set(JSON.parse(localStorage.getItem(LS.removed) ||'[]'));
@@ -1658,7 +1720,6 @@ function toggleMultiSelect(url){
   if(multiSelected.has(url)) multiSelected.delete(url);
   else multiSelected.add(url);
   updateMultiToolbar();
-  /* Uppdatera bara den aktuella raden */
   document.querySelectorAll('.channelRow').forEach(r=>{
     const ch = findChannelByKey(r.dataset.key);
     if(!ch || ch.url !== url) return;
@@ -2438,7 +2499,6 @@ function renderChannelList(){
 
   els.channelList.querySelectorAll('.channelRow').forEach(row=>{
     row.onclick = e=>{
-      /* Multi-läge: klick på rad = markera/avmarkera */
       if(multiMode){
         e.preventDefault(); e.stopPropagation();
         const ch = findChannelByKey(row.dataset.key);
@@ -3168,7 +3228,6 @@ function tvOvActivate(){
 }
 function switchTvOvTab(tab){
   tvOvTab = tab;
-  /* FIX: väljer du en lista-flik → den blir aktiv lista (fram/bak följer bara den) */
   if(tab.startsWith('group:')){
     const gid = tab.slice(6);
     if(groups.find(g=>g.id===gid)){
@@ -3177,7 +3236,6 @@ function switchTvOvTab(tab){
       renderGroupTabs(); renderGroupPanel();
     }
   } else if(activeGroupId){
-    /* Favoriter/Alla → avaktivera lista så favoriter används igen */
     activeGroupId = null;
     localStorage.removeItem(LS.activeGroup);
     renderGroupTabs(); renderGroupPanel();
@@ -3196,7 +3254,6 @@ function cycleTvOvTab(delta){
   switchTvOvTab(tabs[i]);
 }
 
-/* Fram/bak: vald lista har högsta prioritet */
 function getChannelSequence(){
   if(activeGroupId && groupMembers[activeGroupId]?.length){
     return getGroupChannels(activeGroupId);
@@ -3261,6 +3318,49 @@ $('tvListBtn').onclick = openTvOverlay;
 $('tvOvClose').onclick = closeTvOverlay;
 $('createGroupBtn').onclick = openCreateGroupModal;
 
+/* ===== TV-klocka: uppdatering + göm/visa ===== */
+function updateTvClockDisplay(){
+  const timeEl = $('tvClockDisplay');
+  const dateEl = $('tvClockDate');
+  if(!timeEl || !dateEl) return;
+  const now = new Date();
+  const hh = String(now.getHours()).padStart(2,'0');
+  const mm = String(now.getMinutes()).padStart(2,'0');
+  const ss = String(now.getSeconds()).padStart(2,'0');
+  timeEl.textContent = `${hh}:${mm}:${ss}`;
+  const daysShort = ['Sön','Mån','Tis','Ons','Tor','Fre','Lör'];
+  const monthsShort = ['jan','feb','mar','apr','maj','jun','jul','aug','sep','okt','nov','dec'];
+  dateEl.textContent = `${daysShort[now.getDay()]} ${now.getDate()} ${monthsShort[now.getMonth()]} ${now.getFullYear()}`;
+}
+updateTvClockDisplay();
+setInterval(updateTvClockDisplay, 1000);
+
+function setTvClockOff(off){
+  document.body.classList.toggle('tv-clock-off', off);
+  try{ localStorage.setItem(LS.tvClockOff, off ? '1' : '0'); }catch(e){}
+  const btn = $('tvClockBtn');
+  if(btn){
+    btn.textContent = off ? '🔕' : '🕐';
+    btn.title = off ? 'Visa klockan' : 'Göm klockan';
+    btn.style.background = off ? '#3a1f24' : '';
+    btn.style.borderColor = off ? '#a05560' : '';
+  }
+}
+function toggleTvClock(){
+  setTvClockOff(!document.body.classList.contains('tv-clock-off'));
+}
+if(localStorage.getItem(LS.tvClockOff) === '1'){
+  document.body.classList.add('tv-clock-off');
+}
+$('tvClockBtn').onclick = toggleTvClock;
+$('tvClockHide').onclick = (e)=>{ e.stopPropagation(); toggleTvClock(); };
+
+/* ===== Fullskärm (hela appen) i TV-läge ===== */
+$('tvFsBtn').onclick = toggleFullscreen;
+
+/* ===== Avsluta TV-läge ===== */
+$('tvExitBtn').onclick = ()=> toggleTvMode();
+
 function toggleTvMode(){
   const on = document.body.classList.toggle('tv-player-mode');
   localStorage.setItem(LS.tvMode, on?'1':'0');
@@ -3276,6 +3376,15 @@ function toggleTvMode(){
   }
   updateStickyPlayerLayout();
   setTimeout(updateStickyPlayerLayout, 100);
+  /* Synka klock-knappen när vi växlar läge */
+  const off = document.body.classList.contains('tv-clock-off');
+  const btn = $('tvClockBtn');
+  if(btn){
+    btn.textContent = off ? '🔕' : '🕐';
+    btn.title = off ? 'Visa klockan' : 'Göm klockan';
+    btn.style.background = off ? '#3a1f24' : '';
+    btn.style.borderColor = off ? '#a05560' : '';
+  }
 }
 
 function openTvChannelPanel(){ openTvOverlay(); }
@@ -3328,6 +3437,7 @@ document.addEventListener('keydown', e=>{
     if(key === 'ArrowRight'){ e.preventDefault(); goToAdjacentChannel(1); return; }
     if(key === 'ArrowLeft'){ e.preventDefault(); goToAdjacentChannel(-1); return; }
     if(key === 'r' || key === 'R'){ e.preventDefault(); reloadCurrentChannel(); return; }
+    if(key === 'k' || key === 'K'){ e.preventDefault(); toggleTvClock(); return; }
     if(key === 'g' || key === 'G'){
       e.preventDefault();
       if(currentChannel) openGroupPicker(currentChannel);
@@ -3699,7 +3809,6 @@ setTimeout(()=>updateTvChannelBadge(), 400);
 const TV_IDLE_MS = 4000;
 let tvIdleTimer = null;
 function isTvIdleAllowed(){
-  /* Dölj bara när: TV-läge + en kanal spelar + ingen overlay/panel öppen */
   if(!document.body.classList.contains('tv-player-mode')) return false;
   if(document.body.classList.contains('tv-overlay-open')) return false;
   if(document.body.classList.contains('tv-list-open')) return false;
@@ -3718,7 +3827,6 @@ function tvUiHide(){
 }
 ['mousemove','mousedown','touchstart','keydown','wheel']
   .forEach(ev=>document.addEventListener(ev, tvUiWake, {passive:true}));
-/* Spelarens egna händelser väcker också UI:t */
 els.video.addEventListener('play', tvUiWake);
 els.video.addEventListener('pause', ()=>{
   document.body.classList.remove('tv-idle');
@@ -3757,7 +3865,7 @@ $('fullscreenBtn').onclick = toggleFullscreen;
   })
 );
 
-/* ============ Klocka & datum ============ */
+/* ============ Klocka & datum (header) ============ */
 function updateClock(){
   const tEl = $('clockTime');
   const dEl = $('clockDate');
