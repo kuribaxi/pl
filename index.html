@@ -1816,6 +1816,16 @@ document.addEventListener('keydown', e=>{
   const key = e.key;
   const code = e.keyCode;
 
+  // SKYDDA TEXTFÄLT: när användaren skriver i ett fält ska TV-navigation,
+  // backsteg och piltangenter INTE fångas – annars kan man inte redigera text.
+  const ae = document.activeElement;
+  if(ae && (ae.tagName === 'INPUT' || ae.tagName === 'TEXTAREA' ||
+     ae.tagName === 'SELECT' || ae.isContentEditable)){
+    // Endast Escape får lämna fältet
+    if(key === 'Escape'){ e.target.blur(); return; }
+    return; // låt webbläsaren sköta tangenterna normalt
+  }
+
   if(els.overlay.classList.contains('show')){
     const btns = [...els.overlay.querySelectorAll('.actBtn')];
     if(!btns.length) return;
