@@ -111,6 +111,11 @@ header{height:64px;flex-shrink:0;display:flex;align-items:center;justify-content
 .hbtn:hover{background:#26264a}
 @media (hover:none){ .hbtn:hover{background:#1e1e33} }
 
+/* ===== Dölj headern helt i TV-läge ===== */
+body.tv-player-mode header{
+  display:none !important;
+}
+
 #layout{display:flex;height:calc(100dvh - 64px);min-height:0}
 #leftPanel{width:460px;flex:0 0 auto;display:flex;flex-direction:column;background:var(--panel);
   border-right:1px solid var(--line);min-height:0;overflow-y:auto}
@@ -119,13 +124,13 @@ header{height:64px;flex-shrink:0;display:flex;align-items:center;justify-content
 body.tv-player-mode #rightPanel{width:100%}
 body.tv-player-mode .rightInner{max-width:none;padding:0}
 body.tv-player-mode .card{display:none}
-body.tv-player-mode .playerCard{border-radius:0;border:none;padding:0;height:calc(100dvh - 64px)}
+body.tv-player-mode .playerCard{border-radius:0;border:none;padding:0;height:100dvh}
 body.tv-player-mode #leftPanel{
   display:flex !important;
   position:fixed;
   left:0;
-  top:var(--headerH, 64px);
-  height:calc(100dvh - var(--headerH, 64px));
+  top:0;
+  height:100dvh;
   bottom:auto;
   width:430px;
   max-width:92vw;
@@ -146,10 +151,10 @@ body.tv-player-mode *:focus{outline:4px solid var(--tv-focus) !important;outline
 
 body.tv-player-mode #stickyPlayerWrap{
   position:fixed !important;
-  top:var(--headerH, 64px) !important;
+  top:0 !important;
   left:0 !important;
   width:100vw !important;
-  height:calc(100dvh - var(--headerH, 64px)) !important;
+  height:100dvh !important;
   padding:0 !important;
   margin:0 !important;
   border-radius:0 !important;
@@ -1101,7 +1106,7 @@ body.tv-player-mode.tv-overlay-open #tvChannelOverlay{
   position:fixed;
   left:50%; bottom:18px;
   transform:translateX(-50%);
-  display:none;                 /* dold utanför TV-läge */
+  display:none;
   gap:10px;
   padding:10px 14px;
   background:rgba(10,15,51,.92);
@@ -1110,7 +1115,7 @@ body.tv-player-mode.tv-overlay-open #tvChannelOverlay{
   box-shadow:0 10px 40px rgba(0,0,0,.8), 0 0 20px rgba(250,204,21,.25);
   z-index:75;
   transition:transform .28s ease, opacity .28s;
-  flex-wrap:nowrap;             /* alltid en rad */
+  flex-wrap:nowrap;
   justify-content:center;
   max-width:96vw;
   overflow-x:auto;
@@ -1160,7 +1165,7 @@ body.tv-player-mode.tv-overlay-open #tvNavBar{
 
 #tvChannelBadge{
   position:fixed;
-  top:calc(var(--headerH,64px) + 14px);
+  top:14px;
   right:18px;
   background:rgba(15,15,26,.9);
   border:2px solid var(--line);
@@ -1192,7 +1197,7 @@ body.tv-player-mode #tvChannelBadge{ display:block; }
    ============================================================ */
 #tvClock{
   position:fixed;
-  top:calc(var(--headerH,64px) + 14px);
+  top:14px;
   left:18px;
   z-index:14;
   background:rgba(15,15,26,.9);
@@ -1228,8 +1233,6 @@ body.tv-player-mode #tvClock{ display:flex; }
 /* Gömd av användaren – enda sättet klockan försvinner */
 body.tv-player-mode.tv-clock-off #tvClock{ display:none !important; }
 
-/* OBS: Klockan döljs ALDRIG automatiskt vid tv-idle. */
-
 /* ===== Dölj UI i TV-läge vid inaktivitet (END. toolbar + badge) ===== */
 body.tv-player-mode.tv-idle #tvNavBar{
   transform:translateX(-50%) translateY(140%);
@@ -1249,7 +1252,7 @@ body.tv-player-mode.tv-idle #tvClockBtn{ opacity:.55; }
 
 /* ===== Riktig fullscreen för hela appen ===== */
 :fullscreen body, body:fullscreen{width:100%;height:100%}
-body.app-fullscreen #layout{height:calc(100dvh - var(--headerH, 64px))}
+body.app-fullscreen #layout{height:100dvh}
 #fullscreenBtn .lbl{display:none}
 #fullscreenBtn{font-size:17px}
 #tvNavBar .tvNavBtn.fs{padding:10px 14px}
@@ -3376,7 +3379,6 @@ function toggleTvMode(){
   }
   updateStickyPlayerLayout();
   setTimeout(updateStickyPlayerLayout, 100);
-  /* Synka klock-knappen när vi växlar läge */
   const off = document.body.classList.contains('tv-clock-off');
   const btn = $('tvClockBtn');
   if(btn){
@@ -3763,9 +3765,10 @@ function updateStickyPlayerLayout(){
   const sticky = document.getElementById('stickyPlayerWrap');
   const root = document.documentElement;
   if(!header || !sticky) return;
-  const hH = header.offsetHeight;
+  const inTvMode = document.body.classList.contains('tv-player-mode');
+  const hH = inTvMode ? 0 : header.offsetHeight;
   root.style.setProperty('--headerH', hH + 'px');
-  if(document.body.classList.contains('tv-player-mode')){
+  if(inTvMode){
     root.style.setProperty('--playerH', '0px');
     return;
   }
