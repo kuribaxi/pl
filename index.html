@@ -11,16 +11,25 @@
   --line:#22223a; --line2:#1a1a2e; --text:#e5e7eb; --muted:#94a3b8;
   --accent:#8b5cf6; --accent2:#22c55e; --fav:#facc15; --focus:#7dd3fc;
   --tv-focus:#facc15;
+  --safe-b: env(safe-area-inset-bottom, 0px);
 }
 *{box-sizing:border-box}
 html,body{height:100%;margin:0;background:var(--bg);color:var(--text);
   font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
   font-size:16px;-webkit-user-select:none;user-select:none;
-  -webkit-tap-highlight-color:transparent}
-body{overflow:hidden}
-@media (max-width:1024px){ body{overflow:auto} }
+  -webkit-tap-highlight-color:transparent;
+  -webkit-text-size-adjust:100%}
+body{overflow:hidden;height:100dvh}
+@media (max-width:1024px){ body{overflow:auto;height:auto;min-height:100dvh} }
 ::-webkit-scrollbar{width:10px;height:10px}
 ::-webkit-scrollbar-thumb{background:#2a2a40;border-radius:5px}
+/* Tillåt normal textredigering i fält (user-select:none ärvs annars och gör
+   markering/backsteg svårt på mobil) */
+input,textarea,select,#search{
+  -webkit-user-select:text !important;
+  user-select:text !important;
+  -webkit-touch-callout:default;
+}
 button{font-family:inherit;font-size:16px;touch-action:manipulation}
 button:focus-visible,input:focus-visible,select:focus-visible,.toggle:focus-visible{
   outline:none;box-shadow:0 0 0 4px rgba(250,204,21,.75)}
@@ -44,10 +53,11 @@ header{height:64px;flex-shrink:0;display:flex;align-items:center;justify-content
 #stats{font-size:13px;color:var(--muted);font-weight:500;margin-left:6px}
 .hbtns{display:flex;gap:8px;flex-wrap:wrap}
 .hbtn{font-size:14px;background:#1e1e33;color:var(--text);border:2px solid var(--line);
-  padding:9px 14px;border-radius:11px;cursor:pointer;min-height:44px}
+  padding:9px 14px;border-radius:11px;cursor:pointer;min-height:44px;min-width:44px}
 .hbtn:hover{background:#26264a}
+@media (hover:none){ .hbtn:hover{background:#1e1e33} }
 
-#layout{display:flex;height:calc(100vh - 64px);min-height:0}
+#layout{display:flex;height:calc(100dvh - 64px);min-height:0}
 #leftPanel{width:460px;flex:0 0 auto;display:flex;flex-direction:column;background:var(--panel);
   border-right:1px solid var(--line);min-height:0}
 #rightPanel{flex:1 1 auto;overflow-y:auto;min-width:0;background:var(--bg)}
@@ -56,8 +66,9 @@ body.tv-player-mode #leftPanel{display:none}
 body.tv-player-mode #rightPanel{width:100%}
 body.tv-player-mode .rightInner{max-width:none;padding:0}
 body.tv-player-mode .card{display:none}
-body.tv-player-mode .playerCard{border-radius:0;border:none;padding:0;height:calc(100vh - 64px)}
-body.tv-player-mode .playerWrap{height:calc(100vh - 220px);aspect-ratio:auto;border-radius:0}
+body.tv-player-mode .playerCard{border-radius:0;border:none;padding:0;height:calc(100dvh - 64px)}
+body.tv-player-mode #stickyPlayerWrap{position:static;box-shadow:none}
+body.tv-player-mode .playerWrap{height:calc(100dvh - 220px);aspect-ratio:auto;border-radius:0}
 
 .acc{background:var(--panel2);border:1px solid var(--line);border-radius:14px;
   margin:10px;overflow:hidden;flex-shrink:0}
@@ -65,6 +76,7 @@ body.tv-player-mode .playerWrap{height:calc(100vh - 220px);aspect-ratio:auto;bor
   padding:12px 14px;cursor:pointer;background:#16162a;user-select:none;
   border-bottom:1px solid transparent;transition:background .15s}
 .accHead:hover{background:#1c1c30}
+@media (hover:none){ .accHead:hover{background:#16162a} }
 .accHead.open{border-bottom-color:var(--line)}
 .accTitle{display:flex;align-items:center;gap:10px;font-weight:700;font-size:15px;min-width:0;flex:1}
 .accTitle .sub{font-size:12px;color:var(--muted);font-weight:500;margin-left:6px;
@@ -81,6 +93,7 @@ body.tv-player-mode .playerWrap{height:calc(100vh - 220px);aspect-ratio:auto;bor
 .addPlHead{display:flex;align-items:center;justify-content:space-between;gap:10px;
   font-size:13px;font-weight:700;color:var(--muted);cursor:pointer;min-height:40px}
 .addPlHead:hover{color:var(--text)}
+@media (hover:none){ .addPlHead:hover{color:var(--muted)} }
 .accToggle.small{width:32px;height:32px;font-size:16px}
 .addPlBody{display:none;padding-top:10px}
 .addPlBody.open{display:block}
@@ -89,7 +102,7 @@ body.tv-player-mode .playerWrap{height:calc(100vh - 220px);aspect-ratio:auto;bor
 .addPlBox input[type="text"],
 .addPlBox input[type="url"],
 .addPlBox input:not([type]){width:100%;background:var(--panel3);border:2px solid var(--line);
-  border-radius:10px;color:var(--text);padding:11px 12px;font-size:14px;
+  border-radius:10px;color:var(--text);padding:11px 12px;font-size:16px;
   outline:none;min-height:44px;margin-bottom:8px}
 .addPlBox input:focus{border-color:var(--accent)}
 .addPlActions{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px}
@@ -97,7 +110,7 @@ body.tv-player-mode .playerWrap{height:calc(100vh - 220px);aspect-ratio:auto;bor
 .addPlActions .miniBtn.primary{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:700}
 .addPlActions .miniBtn.primary:hover{filter:brightness(1.1)}
 .linkBtn{background:none;border:none;color:var(--focus);cursor:pointer;font-size:11px;
-  text-decoration:underline;padding:4px;margin-left:6px}
+  text-decoration:underline;padding:8px;margin-left:6px}
 .linkBtn:hover{color:#fff}
 .customBadge{font-size:9px;padding:2px 6px;border-radius:6px;background:rgba(139,92,246,.2);
   color:#c4b5fd;font-weight:700;margin-left:6px}
@@ -108,6 +121,7 @@ body.tv-player-mode .playerWrap{height:calc(100vh - 220px);aspect-ratio:auto;bor
   padding:9px 10px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:700;
   min-height:42px;transition:.15s}
 .favTab:hover{background:#1a1a2e;color:var(--text)}
+@media (hover:none){ .favTab:hover{background:transparent} }
 .favTab.active{background:var(--panel3);color:var(--text);border-color:var(--accent)}
 .favActions{display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap}
 .favActions .miniBtn{flex:1;min-width:0;padding:9px 8px;font-size:12px;min-height:42px}
@@ -118,6 +132,7 @@ body.tv-player-mode .playerWrap{height:calc(100vh - 220px);aspect-ratio:auto;bor
 .favItem{display:flex;align-items:center;gap:8px;padding:8px;border-radius:10px;
   background:var(--panel3);border:2px solid transparent;cursor:pointer;min-height:56px}
 .favItem:hover{background:#1e1e33}
+@media (hover:none){ .favItem:hover{background:var(--panel3)} }
 .favItem.active{border-color:rgba(139,92,246,.8);background:rgba(139,92,246,.15)}
 .favItem img{width:38px;height:38px;border-radius:9px;object-fit:contain;background:#000;
   flex:0 0 auto;padding:2px}
@@ -126,11 +141,11 @@ body.tv-player-mode .playerWrap{height:calc(100vh - 220px);aspect-ratio:auto;bor
   text-overflow:ellipsis}
 .favItemSub{font-size:11px;color:var(--muted);margin-top:2px}
 .favItemRemove{background:none;border:2px solid transparent;color:var(--muted);
-  font-size:14px;cursor:pointer;padding:6px;border-radius:8px;min-width:34px;min-height:34px}
+  font-size:14px;cursor:pointer;padding:8px;border-radius:8px;min-width:40px;min-height:40px}
 .favItemRemove:hover{color:#fca5a5}
 
 .selCheck{background:var(--panel3);border:2px solid var(--line);border-radius:8px;
-  width:34px;height:34px;min-width:34px;cursor:pointer;color:var(--muted);
+  width:38px;height:38px;min-width:38px;cursor:pointer;color:var(--muted);
   font-size:16px;font-weight:700;display:flex;align-items:center;justify-content:center;
   flex:0 0 auto;padding:0;transition:.15s}
 .selCheck:hover{border-color:var(--accent);color:var(--text)}
@@ -151,7 +166,7 @@ body.tv-player-mode .playerWrap{height:calc(100vh - 220px);aspect-ratio:auto;bor
 @keyframes pulse{50%{opacity:.5}}
 .plActions{display:flex;align-items:center;gap:8px}
 .plRemove{background:none;border:2px solid transparent;color:var(--muted);font-size:15px;
-  cursor:pointer;padding:6px;border-radius:8px;min-width:34px;min-height:34px}
+  cursor:pointer;padding:6px;border-radius:8px;min-width:38px;min-height:38px}
 .plRemove:hover{color:#fca5a5}
 .toggle{width:50px;height:28px;background:#2a2a40;border-radius:999px;position:relative;
   cursor:pointer;transition:.2s;flex:0 0 auto;border:2px solid transparent}
@@ -166,8 +181,10 @@ body.tv-player-mode .playerWrap{height:calc(100vh - 220px);aspect-ratio:auto;bor
 .presetBtn{flex:1;font-size:13px;background:#1e1e33;color:var(--text);border:2px solid var(--line);
   padding:10px 6px;border-radius:10px;cursor:pointer;min-height:46px}
 .presetBtn:hover{background:#26264a}
+@media (hover:none){ .presetBtn:hover{background:#1e1e33} }
 .autoLabel{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);
   margin-top:6px;cursor:pointer;min-height:44px}
+.autoLabel input{width:20px;height:20px;accent-color:var(--accent)}
 
 #search{width:100%;background:var(--panel3);border:2px solid var(--line);border-radius:12px;
   padding:12px 14px;color:var(--text);font-size:16px;outline:none;min-height:48px}
@@ -176,20 +193,23 @@ body.tv-player-mode .playerWrap{height:calc(100vh - 220px);aspect-ratio:auto;bor
 .chip{font-size:13px;background:#1e1e33;color:var(--text);border:2px solid var(--line);
   padding:8px 14px;border-radius:999px;cursor:pointer;white-space:nowrap;min-height:40px}
 .chip:hover{background:#26264a}
+@media (hover:none){ .chip:hover{background:#1e1e33} }
 .chip.active{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:700}
 .selectRow{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
 select{background:var(--panel3);border:2px solid var(--line);border-radius:10px;color:var(--text);
-  padding:10px 8px;font-size:14px;flex:1;min-width:130px;min-height:44px}
+  padding:10px 8px;font-size:16px;flex:1;min-width:130px;min-height:44px}
 .sideSecTitle{font-size:11px;color:var(--muted);font-weight:700;margin-top:12px;
   text-transform:uppercase;letter-spacing:.6px}
 
 #channelListWrap{flex:1 1 auto;min-height:200px;overflow:hidden;display:flex;flex-direction:column}
-#channelList{flex:1;overflow-y:auto;padding:8px;display:grid;gap:6px;align-content:start}
+#channelList{flex:1;overflow-y:auto;padding:8px;display:grid;gap:6px;align-content:start;
+  -webkit-overflow-scrolling:touch}
 .placeholder{text-align:center;padding:50px 16px;color:var(--muted);font-size:14px;line-height:1.8}
 .placeholder .big{font-size:44px;margin-bottom:10px}
 .channelRow{display:flex;gap:8px;align-items:center;padding:10px;border-radius:12px;cursor:pointer;
   background:var(--panel2);border:3px solid transparent;min-height:70px}
 .channelRow:hover{background:#1e1e33}
+@media (hover:none){ .channelRow:hover{background:var(--panel2)} }
 .channelRow.active{border-color:rgba(139,92,246,.8);background:rgba(139,92,246,.15)}
 .cLogo{width:50px;height:50px;border-radius:11px;object-fit:contain;background:#000;flex:0 0 auto;padding:3px}
 .cMeta{flex:1;min-width:0}
@@ -201,15 +221,62 @@ select{background:var(--panel3);border:2px solid var(--line);border-radius:10px;
 .nowline{font-size:12px;color:#cbd5e1;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .nowline b{color:#86efac;font-weight:700}
 .favStar{background:none;border:2px solid transparent;font-size:22px;cursor:pointer;color:var(--fav);
-  padding:6px;flex:0 0 auto;border-radius:10px;min-width:38px;min-height:38px}
+  padding:6px;flex:0 0 auto;border-radius:10px;min-width:42px;min-height:42px}
 .favStar.notFav{color:#3f3f55}
 .extIcon{background:none;border:2px solid transparent;font-size:16px;cursor:pointer;color:var(--focus);
-  padding:6px;flex:0 0 auto;border-radius:10px;min-width:38px;min-height:38px}
+  padding:6px;flex:0 0 auto;border-radius:10px;min-width:42px;min-height:42px}
 .extIcon:hover{color:#fff}
 
 .rightInner{padding:14px;display:grid;gap:14px;max-width:1400px}
 .playerCard{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:14px}
 .playerWrap{position:relative;aspect-ratio:16/9;background:#000;border-radius:12px;overflow:hidden}
+
+/* ============================================================
+   FAST SPELARE – alltid synlig vid skroll (mobil + desktop)
+   ============================================================ */
+/* Desktop (>900px): fast i viewporten, placerad över höger panels område.
+   JS mäter vänsterkant/bredd (vänsterpanel kan vara 460px eller dold). */
+@media (min-width:901px){
+  #stickyPlayerWrap{
+    position:fixed;
+    top:var(--headerH,64px);
+    left:var(--plLeft,460px);
+    width:var(--plW,600px);
+    z-index:15;
+    margin:0;
+    padding:12px 12px 0 12px;
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:16px 16px 0 0;
+    box-shadow:0 8px 20px rgba(0,0,0,.5);
+  }
+  #stickyPlayerWrap .playerWrap{border-radius:10px}
+  .rightInner{padding-top:calc(var(--playerH,220px) - 12px)}
+}
+/* Mobil (≤900px): fast i viewporten under rubrikraden */
+@media (max-width:900px){
+  #stickyPlayerWrap{
+    position:fixed;
+    top:var(--headerH,64px);
+    left:0;right:0;
+    z-index:15;
+    background:#000;
+    box-shadow:0 6px 18px rgba(0,0,0,.55);
+  }
+  #stickyPlayerWrap .playerWrap{
+    aspect-ratio:16/9;
+    border-radius:0;
+    max-height:45vh;      /* inte för högt i landskap */
+    margin:0 auto;
+  }
+  #video{object-fit:contain;background:#000}
+  #rightPanel{padding-top:var(--playerH,220px)}
+  #netWarning{margin-top:0}
+}
+@media (max-width:900px) and (orientation:landscape) and (max-height:500px){
+  #stickyPlayerWrap{top:0;z-index:30}
+  #rightPanel{padding-top:calc(var(--playerH,220px) + 8px)}
+}
 #video{width:100%;height:100%}
 #loadingOverlay{position:absolute;inset:0;display:none;align-items:center;justify-content:center;
   background:rgba(0,0,0,.82);font-size:15px;color:#cbd5e1;text-align:center;padding:24px;
@@ -228,7 +295,8 @@ select{background:var(--panel3);border:2px solid var(--line);border-radius:10px;
 .nowHead{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-top:14px;flex-wrap:wrap}
 #nowName{font-size:22px;font-weight:800}
 #nowGroup{font-size:14px;color:var(--muted);margin-top:4px}
-#nowUrl{font-size:11px;color:#4b5563;word-break:break-all;margin-top:4px}
+#nowUrl{font-size:11px;color:#4b5563;word-break:break-all;margin-top:4px;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .epgBadge{font-size:13px;font-weight:800;padding:8px 14px;border-radius:999px;
   background:rgba(245,158,11,.15);color:#fcd34d}
 .epgBadge.ok{background:rgba(34,197,94,.18);color:#86efac}
@@ -239,13 +307,15 @@ select{background:var(--panel3);border:2px solid var(--line);border-radius:10px;
 #openExternalBtn{color:var(--focus);font-size:22px}
 #vlcBtn{color:#f97316;font-size:14px;font-weight:800}
 #favBtn:hover,#openExternalBtn:hover,#vlcBtn:hover{background:#26264a;border-color:var(--accent)}
+@media (hover:none){ #favBtn:hover,#openExternalBtn:hover,#vlcBtn:hover{background:var(--panel3)} }
 #openExternalBtn:disabled,#vlcBtn:disabled{opacity:.35;cursor:not-allowed}
 .pRow{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;align-items:center}
 .miniBtn{font-size:14px;background:#1e1e33;color:var(--text);border:2px solid var(--line);
   padding:10px 16px;border-radius:10px;cursor:pointer;min-height:44px}
 .miniBtn:hover{background:#26264a}
+@media (hover:none){ .miniBtn:hover{background:#1e1e33} }
 #epgUrl{flex:1;min-width:180px;background:var(--panel3);border:2px solid var(--line);border-radius:10px;
-  padding:11px 14px;color:var(--text);font-size:14px;outline:none;min-height:44px}
+  padding:11px 14px;color:var(--text);font-size:16px;outline:none;min-height:44px}
 #toast{font-size:14px;background:var(--accent);color:#fff;border-radius:10px;padding:9px 14px;
   opacity:0;transition:.3s;pointer-events:none;font-weight:700}
 #toast.show{opacity:1}
@@ -282,39 +352,52 @@ select{background:var(--panel3);border:2px solid var(--line);border-radius:10px;
 .progCard{height:100%;border-radius:10px;background:rgba(139,92,246,.10);border:2px solid rgba(139,92,246,.28);
   padding:7px 9px;overflow:hidden;cursor:pointer;position:relative;min-height:50px}
 .progCard:hover{background:rgba(139,92,246,.2)}
+@media (hover:none){ .progCard:hover{background:rgba(139,92,246,.10)} }
 .progCard.now{background:rgba(34,197,94,.13);border-color:rgba(34,197,94,.4)}
 .progCard .t{font-size:11px;color:#cbd5e1;font-weight:700;margin-bottom:3px}
 .progCard .n{font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .gridChips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
 
-@media (max-width: 900px){
+/* ============================================================
+   MOBILANPASSNING – surfplatta
+   ============================================================ */
+@media (max-width:1024px) and (min-width:901px){
+  #leftPanel{width:380px}
+  .rightInner{max-width:none}
+}
+
+/* ============================================================
+   MOBILANPASSNING – mobil
+   ============================================================ */
+@media (max-width:900px){
   body{overflow:auto}
-  header{height:auto;padding:10px 12px;flex-direction:column;gap:10px;position:sticky;top:0}
-  .brand{font-size:16px;width:100%}
+  header{height:auto;padding:10px 12px;flex-direction:column;gap:10px;position:sticky;top:0;
+    padding-top:max(10px, env(safe-area-inset-top))}
+  .brand{font-size:16px;width:100%;justify-content:space-between}
   .brand .logoDot{width:34px;height:34px;font-size:18px}
   #stats{font-size:12px}
-  .hbtns{width:100%;justify-content:space-between}
-  .hbtn{flex:1;font-size:13px;padding:8px 6px;min-height:42px;min-width:0;white-space:nowrap;
+  .hbtns{width:100%;justify-content:space-between;gap:6px}
+  .hbtn{flex:1;font-size:13px;padding:10px 6px;min-height:46px;min-width:0;white-space:nowrap;
     overflow:hidden;text-overflow:ellipsis}
 
   #layout{display:flex;flex-direction:column;height:auto;min-height:0}
   #rightPanel{order:1;width:100%;max-height:none;overflow:visible}
   #leftPanel{order:2;width:100%;border-right:none;border-top:1px solid var(--line);
-    height:auto;min-height:0}
+    height:auto;min-height:0;overflow:visible}
 
   .rightInner{padding:10px;gap:10px}
   .playerCard{padding:10px}
-  .playerWrap{border-radius:10px}
+  .playerCard .playerWrap{border-radius:10px}
   #nowName{font-size:18px}
   #nowGroup{font-size:13px}
   .nowHead{flex-direction:column;align-items:stretch}
   .nowActions{justify-content:space-between;width:100%}
-  #favBtn,#openExternalBtn,#vlcBtn{flex:1;width:auto;height:50px;max-width:70px}
+  #favBtn,#openExternalBtn,#vlcBtn{flex:1;width:auto;height:52px;max-width:33%}
   .pRow{gap:6px}
   .miniBtn{flex:1;min-width:calc(50% - 3px)}
   #epgUrl{flex:1 0 100%;min-width:0}
   #proxySelect{flex:1 0 100%;min-width:0}
-  .tvHint{font-size:11px}
+  .tvHint{display:none}
 
   .card{padding:12px}
   .cardHead h2{font-size:17px}
@@ -323,15 +406,15 @@ select{background:var(--panel3);border:2px solid var(--line);border-radius:10px;
   .ptitle{font-size:14px}
   .pdesc{font-size:12px}
 
-  #channelListWrap{height:auto;max-height:none}
-  #channelList{max-height:60vh;padding:6px;gap:5px}
+  #channelListWrap{height:auto;max-height:none;overflow:visible}
+  #channelList{max-height:none;padding:6px;gap:5px;overflow:visible}
   .channelRow{padding:9px;min-height:64px;gap:8px}
   .cLogo{width:44px;height:44px}
   .cName{font-size:14px}
   .cSub{font-size:11px;gap:5px}
-  .favStar{font-size:20px;min-width:36px;min-height:36px;padding:5px}
-  .extIcon{font-size:15px;min-width:36px;min-height:36px;padding:5px}
-  .selCheck{width:32px;height:32px;min-width:32px;font-size:15px}
+  .favStar{font-size:20px;min-width:42px;min-height:42px;padding:5px}
+  .extIcon{font-size:15px;min-width:42px;min-height:42px;padding:5px}
+  .selCheck{width:36px;height:36px;min-width:36px;font-size:15px}
 
   .acc{margin:8px}
   .accHead{padding:11px 12px}
@@ -355,17 +438,43 @@ select{background:var(--panel3);border:2px solid var(--line);border-radius:10px;
   .favItemName{font-size:12px}
 
   .addPlRow{flex-wrap:wrap}
-  .addPlRow input{min-width:0;flex:1 1 calc(50% - 4px)}
+  .addPlRow input{min-width:0;flex:1 1 calc(50% - 4px);font-size:16px}
   .addPlActions .miniBtn{flex:1 1 100%}
+
+  #playlistManager{max-height:220px}
+  #netWarning{margin:0 10px}
+
+  /* Landningszon: hela sidan scrollar, kanallistan växer fritt */
+  #channelListWrap{flex:none}
 }
 
-@media (max-width: 480px){
-  .hbtns .hbtn{font-size:12px}
+/* ============================================================
+   MOBILANPASSNING – liten mobil (<480px)
+   ============================================================ */
+@media (max-width:480px){
   .hbtns .hbtn .lbl{display:none}
-  .hbtns .hbtn{min-width:44px;padding:8px}
+  .hbtns .hbtn{min-width:46px;padding:10px 8px;font-size:14px}
   .channelRow{flex-wrap:wrap}
   .cSub .badge:last-child{display:none}
   .programs .program{padding:9px 10px}
+  #nowUrl{-webkit-line-clamp:1}
+  #favBtn,#openExternalBtn,#vlcBtn{max-width:none}
+  .favTabs{gap:4px;padding:3px}
+  .favTab{padding:9px 6px;font-size:12px}
+  #loadingOverlay{padding:16px;font-size:14px}
+  #loadingOverlay .actBtn{min-width:120px;padding:13px 14px}
+  .playerWrap{aspect-ratio:16/9}
+}
+
+/* Ligger-läge / små höjder: mindre spelare */
+@media (max-height:480px) and (max-width:900px){
+  .playerWrap{aspect-ratio:auto;height:38vh}
+}
+
+/* Större pek-ytor: iOS-hantering */
+@media (hover:none) and (pointer:coarse){
+  .channelRow,.favItem,.progCard,.gridCell.left{touch-action:manipulation}
+  .plRemove,.favItemRemove,.extIcon,.favStar,.selCheck{touch-action:manipulation}
 }
 
 .acc, .playerCard, .card{position:relative}
@@ -471,7 +580,7 @@ select{background:var(--panel3);border:2px solid var(--line);border-radius:10px;
         <button class="accToggle" data-acc-toggle="filters" aria-label="Öppna/stäng">+</button>
       </div>
       <div class="accBody" id="accBodyFilters">
-        <input id="search" placeholder="🔍 Sök kanal, grupp, språk, land..."/>
+        <input id="search" placeholder="🔍 Sök kanal, grupp, språk, land..." type="search"/>
         <div id="countryChips" class="chips"></div>
         <div class="sideSecTitle">Språk</div>
         <div id="langChips" class="chips"></div>
@@ -494,10 +603,12 @@ select{background:var(--panel3);border:2px solid var(--line);border-radius:10px;
     <div class="rightInner">
 
       <div class="playerCard">
-        <div class="playerWrap">
-          <video id="video" controls autoplay playsinline></video>
-          <div id="proxyBadge"></div>
-          <div id="loadingOverlay"></div>
+        <div id="stickyPlayerWrap">
+          <div class="playerWrap">
+            <video id="video" controls autoplay playsinline></video>
+            <div id="proxyBadge"></div>
+            <div id="loadingOverlay"></div>
+          </div>
         </div>
         <div class="nowHead">
           <div style="min-width:0;flex:1">
@@ -525,9 +636,9 @@ select{background:var(--panel3);border:2px solid var(--line);border-radius:10px;
         </div>
         <div class="pRow">
           <details style="font-size:13px;flex:1 0 100%">
-            <summary style="cursor:pointer;color:var(--muted);min-height:40px;display:flex;align-items:center">➕ Lägg till egen M3U-länk / fil</summary>
+            <summary style="cursor:pointer;color:var(--muted);min-height:44px;display:flex;align-items:center">➕ Lägg till egen M3U-länk / fil</summary>
             <div class="pRow" style="margin-top:8px">
-              <input id="customUrl" placeholder="https://..." style="background:var(--panel3);border:2px solid var(--line);border-radius:10px;padding:11px 12px;color:var(--text);font-size:14px;flex:1;min-width:140px;outline:none;min-height:44px"/>
+              <input id="customUrl" placeholder="https://..." type="url" style="background:var(--panel3);border:2px solid var(--line);border-radius:10px;padding:11px 12px;color:var(--text);font-size:16px;flex:1;min-width:140px;outline:none;min-height:44px"/>
               <button id="addCustom" class="miniBtn">Lägg till</button>
               <label class="miniBtn" style="display:inline-flex;align-items:center;cursor:pointer">📁 Fil<input id="fileInput" type="file" accept=".m3u,.m3u8" hidden/></label>
             </div>
@@ -596,6 +707,10 @@ let epg = {};
 let epgLoading = false;
 let proxyMode = localStorage.getItem(LS.proxyMode) || 'auto';
 let favTab = 'favs';
+
+/* Mobil: färre rader i DOM för snabbare scroll på telefoner */
+const IS_MOBILE = window.matchMedia('(max-width:900px)').matches;
+const LIST_LIMIT = IS_MOBILE ? 250 : 600;
 
 let searchQ='', groupF='', showFavOnly=false;
 let countryFilter='Alla', langFilter='Alla', gridFilter='Alla';
@@ -724,7 +839,14 @@ const NEVER_EXTERNAL_PATTERNS = [
   'ncdn.telewebion.ir',
   'ncdn.telewebion.net',
   'telewebion.ir',
-  'telewebion.net'
+  'telewebion.net',
+  'karwan.tv',
+  'karwantv',
+  'karwan',
+  'kurdmax',
+  'netonalive',
+  'mypsx.net',
+  'mypsx'
 ];
 function isNeverExternal(url){
   if(!url) return false;
@@ -1029,7 +1151,8 @@ function applyFilters(){
 }
 function renderListCount(){
   const el = $('listCount');
-  if(el) el.textContent = filtered.length + ' av ' + allChannels.length + ' kanaler synliga';
+  if(el) el.textContent = filtered.length + ' av ' + allChannels.length + ' kanaler synliga' +
+    (filtered.length > LIST_LIMIT ? ' · visar första ' + LIST_LIMIT : '');
 }
 
 function renderChannelList(){
@@ -1040,7 +1163,7 @@ function renderChannelList(){
     return;
   }
   const now = new Date();
-  els.channelList.innerHTML = filtered.slice(0,600).map(c=>{
+  els.channelList.innerHTML = filtered.slice(0,LIST_LIMIT).map(c=>{
     const isFav = favs.has(c.url);
     const isSel = selected.has(c.url);
     const isExt = isExternalOnly(c.url);
@@ -1048,7 +1171,7 @@ function renderChannelList(){
     const nowP  = progs?.find(p=>p.start<=now && p.stop>now);
     const nextP = progs?.find(p=>p.start>now);
     return `<div class="channelRow ${currentChannel?.url===c.url?'active':''}" data-key="${escapeHtml(channelKey(c))}" tabindex="0">
-      <img class="cLogo" src="${escapeHtml(c.logo)}" onerror="this.style.visibility='hidden'" alt=""/>
+      <img class="cLogo" src="${escapeHtml(c.logo)}" loading="lazy" onerror="this.style.visibility='hidden'" alt=""/>
       <div class="cMeta">
         <div class="cName">${escapeHtml(c.name)}${isExt?'<span class="extOnlyTag">EXT</span>':''}</div>
         <div class="cSub">
@@ -1136,7 +1259,7 @@ function renderFavPanel(){
   els.favList.innerHTML = chans.map(c=>{
     const isActive = currentChannel?.url === c.url;
     return `<div class="favItem ${isActive?'active':''}" data-url="${escapeHtml(c.url)}" tabindex="0">
-      <img src="${escapeHtml(c.logo)}" onerror="this.style.visibility='hidden'" alt=""/>
+      <img src="${escapeHtml(c.logo)}" loading="lazy" onerror="this.style.visibility='hidden'" alt=""/>
       <div class="favItemMeta">
         <div class="favItemName">${escapeHtml(c.name)}</div>
         <div class="favItemSub">${c.flag} ${escapeHtml(c.plCountry||c.country)} · ${escapeHtml(c.group||'Allmän')}</div>
@@ -1190,6 +1313,7 @@ function playChannel(c){
   updateActiveChannelRow();
   renderFavPanel();
 
+  // Spelaren är fast på mobil – ingen scroll behövs vid kanalbyte
   // ENDAST för icke-spärrade kanaler: om känd som extern-only, hoppa direkt
   if(isExternalOnly(c.url)){
     showExternalFallback(c, 'Känd för att kräva extern flik (CORS)', true);
@@ -1344,6 +1468,13 @@ function openStreamExternal(channel, silent){
   const c = channel || currentChannel;
   if(!c || !c.url){ if(!silent) showToast('Ingen kanal vald'); return; }
   if(!/^https?:\/\//i.test(c.url)){ if(!silent) showToast('Ogiltig URL'); return; }
+  // Spärrade domäner (karwan.tv, mypsx.net m.fl.) öppnas ALDRIG externt –
+  // de ska spelas i spelaren
+  if(isNeverExternal(c.url)){
+    if(!silent) showToast('Denna kanal spelas bara i spelaren');
+    if(c !== currentChannel) playChannel(c);
+    return;
+  }
   if(openStreamExternal._last === c.url && !silent){ showToast('Redan öppnad'); return; }
   openStreamExternal._last = c.url;
 
@@ -1375,10 +1506,58 @@ function openStreamExternal(channel, silent){
     );
   }
 }
+function isMacOS(){
+  return /Mac/i.test(navigator.platform || '') ||
+    (/Macintosh/i.test(navigator.userAgent) && !/iPhone|iPad/i.test(navigator.userAgent));
+}
 function openInVlc(){
   const c = currentChannel;
   if(!c?.url){ showToast('Ingen kanal vald'); return; }
-  window.location.href = 'vlc://' + c.url;
+  const vlcUrl = 'vlc://' + c.url;
+
+  if(isMacOS()){
+    // macOS registrerar inte alltid vlc://-protokollet automatiskt.
+    // Försök öppna, och visa tydlig fallback med instruktioner om det misslyckas.
+    let opened = false;
+    const fallback = ()=>{
+      if(opened) return;
+      showOverlay(
+        '🎬 <b>VLC öppnades inte automatiskt</b><br><br>'+
+        '<span style="font-size:13px;color:#94a3b8;line-height:1.7;display:block;text-align:left">'+
+        'På Mac måste VLC-installationen tillåta länkar en gång:<br><br>'+
+        '1. Öppna VLC manuellt<br>'+
+        '2. Menyn <b>VLC → Inställningar…</b> (⌘,)<br>'+
+        '3. Fliken <b>Interface</b> → <b>General</b><br>'+
+        '4. Markera <b>"Tillåt länkar från webbläsare"</b> (vlc://-protokoll)<br><br>'+
+        'Eller kopiera URL:en och använd <b>Media → Öppna nätverksplats…</b> (⌘N) i VLC'+
+        '</span><br><br>'+
+        '<span style="font-size:11px;color:#4b5563;word-break:break-all">'+escapeHtml(c.url)+'</span>',
+        true,
+        [
+          {label:'🔄 Försök igen', primary:true, action:()=>openInVlc()},
+          {label:'📋 Kopiera URL', action:()=>{ navigator.clipboard.writeText(c.url); showToast('URL kopierad – klistra in i VLC (⌘N)'); }},
+          {label:'✖ Stäng', action:()=>hideOverlay()}
+        ]
+      );
+    };
+    // Sikta på en "tvärtom" navigation; om VLC tar över ser vi inga fler ticks
+    try{ window.location.href = vlcUrl; }catch(e){ fallback(); return; }
+    let ticks = 0;
+    openInVlc._poll = setInterval(()=>{
+      ticks++;
+      // Om sidan fortfarande körs efter ~2,5 s tog inte VLC emot protokollet
+      if(ticks > 5){ clearInterval(openInVlc._poll); fallback(); }
+    }, 500);
+    // "pagehide"/"blur" körs om VLC-appen tar fokus
+    const onHide = ()=>{ opened = true; clearInterval(openInVlc._poll); window.removeEventListener('pagehide', onHide); window.removeEventListener('blur', onHide); };
+    window.addEventListener('pagehide', onHide);
+    window.addEventListener('blur', onHide);
+    showToast('Försöker öppna VLC…');
+    return;
+  }
+
+  // Windows/Linux: vlc:// fungerar direkt om VLC är installerat
+  window.location.href = vlcUrl;
   showToast('Försöker öppna i VLC');
 }
 function openAllVisibleTabs(){
@@ -1630,6 +1809,7 @@ function toggleTvMode(){
   showToast(on?'🖥️ TV-läge PÅ':'🖥️ TV-läge AV');
   if(on) els.video.focus();
   tvNav.refresh();
+  if(typeof updateStickyPlayerLayout === 'function') setTimeout(updateStickyPlayerLayout, 50);
 }
 
 document.addEventListener('keydown', e=>{
@@ -1686,7 +1866,18 @@ document.addEventListener('keydown', e=>{
   }
 });
 
-els.search.oninput = e=>{ searchQ=e.target.value; applyFilters(); };
+/* Sök: debounced så tangentbordet inte hackar på mobil + behåll fokus */
+let _searchT = null;
+els.search.addEventListener('input', e=>{
+  searchQ = e.target.value;
+  clearTimeout(_searchT);
+  _searchT = setTimeout(applyFilters, IS_MOBILE ? 250 : 0);
+});
+/* iOS/Android: hoppa inte ur fältet när listan ritas om */
+els.search.addEventListener('focus', ()=>{ searchQ = els.search.value; });
+document.addEventListener('focusout', e=>{
+  if(e.target === els.search) clearTimeout(_searchT);
+});
 els.groupSelect.onchange = e=>{ groupF=e.target.value; applyFilters(); };
 els.favFilter.onchange = e=>{ showFavOnly = e.target.value === 'fav' ? 'fav' : e.target.value === 'sel' ? 'sel' : false; applyFilters(); };
 els.favBtn.onclick = ()=>{
@@ -1919,6 +2110,42 @@ $('clearFilters').onclick = ()=>{
 };
 
 /* ================= Init ================= */
+/* Fast mobilspelare: håll topp-offset och utrymme under spelaren synkat */
+function updateStickyPlayerLayout(){
+  const isMobile = window.matchMedia('(max-width:900px)').matches;
+  const header = document.querySelector('header');
+  const sticky = document.getElementById('stickyPlayerWrap');
+  const root = document.documentElement;
+  if(!header || !sticky) return;
+  const hH = header.offsetHeight;
+  root.style.setProperty('--headerH', hH + 'px');
+  if(document.body.classList.contains('tv-player-mode')){
+    root.style.setProperty('--playerH', '0px');
+    return;
+  }
+  if(isMobile){
+    const pH = sticky.offsetHeight;
+    root.style.setProperty('--playerH', (pH + hH) + 'px');
+  } else {
+    // Desktop: mät höger panels område (vänsterpanel 460px eller dold)
+    const right = document.getElementById('rightPanel');
+    if(right){
+      const r = right.getBoundingClientRect();
+      root.style.setProperty('--plLeft', r.left + 'px');
+      root.style.setProperty('--plW', Math.min(r.width - 28, 1400) + 'px');
+    }
+    const pH = sticky.offsetHeight;
+    root.style.setProperty('--playerH', (pH + hH + 14) + 'px');
+  }
+}
+window.addEventListener('resize', ()=>{ clearTimeout(updateStickyPlayerLayout._t); updateStickyPlayerLayout._t = setTimeout(updateStickyPlayerLayout, 150); });
+window.addEventListener('orientationchange', ()=>setTimeout(updateStickyPlayerLayout, 250));
+window.addEventListener('load', updateStickyPlayerLayout);
+const stickyPlayerMQ = window.matchMedia('(max-width:900px)');
+if(stickyPlayerMQ.addEventListener){ stickyPlayerMQ.addEventListener('change', updateStickyPlayerLayout); }
+setTimeout(updateStickyPlayerLayout, 100);
+setTimeout(updateStickyPlayerLayout, 600);
+
 renderManager(); rebuildAll(); setEPGStatus('EPG ej laddad','warn');
 applyAccordion();
 renderFavPanel();
