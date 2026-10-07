@@ -441,9 +441,6 @@ select{background:var(--panel3);border:2px solid var(--line);border-radius:10px;
 .groupBadge{font-size:9px;padding:2px 6px;border-radius:5px;font-weight:700;
   background:rgba(139,92,246,.18);color:#c4b5fd}
 
-/* ============================================================
-   MODAL – LISTOR SOM SMÅ IKON-KORT I RUTNÄT
-   ============================================================ */
 .groupPickerBackdrop{position:fixed;inset:0;background:rgba(0,0,0,.78);
   z-index:80;display:flex;align-items:center;justify-content:center;padding:20px;
   backdrop-filter:blur(4px)}
@@ -454,7 +451,6 @@ select{background:var(--panel3);border:2px solid var(--line);border-radius:10px;
 .groupPickerModal .chanName{font-size:13px;color:var(--muted);margin-bottom:14px;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
-/* Listor som små ikon-kort i rutnät */
 .groupPickerModal .list{
   display:grid;
   grid-template-columns:repeat(auto-fill, minmax(110px, 1fr));
@@ -488,8 +484,6 @@ select{background:var(--panel3);border:2px solid var(--line);border-radius:10px;
   background:linear-gradient(180deg, rgba(34,197,94,.18), rgba(34,197,94,.06));
   box-shadow:0 0 0 2px rgba(34,197,94,.25);
 }
-
-/* Ikon för varje lista */
 .groupPickerModal .row .ico{
   width:42px; height:42px;
   border-radius:11px;
@@ -503,16 +497,12 @@ select{background:var(--panel3);border:2px solid var(--line);border-radius:10px;
 .groupPickerModal .row.on .ico{
   background:linear-gradient(135deg,#22c55e,#16a34a);
 }
-
-/* Namn */
 .groupPickerModal .row .nm{
   font-size:12px; font-weight:700; min-width:0;
   white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
   max-width:100%;
   color:var(--text);
 }
-
-/* Antal-badge */
 .groupPickerModal .row .cnt{
   font-size:10px; font-weight:900;
   background:rgba(255,255,255,.1);
@@ -525,8 +515,6 @@ select{background:var(--panel3);border:2px solid var(--line);border-radius:10px;
   background:rgba(34,197,94,.3);
   color:#86efac;
 }
-
-/* Checkmark uppe till höger */
 .groupPickerModal .row .chk{
   position:absolute;
   top:6px; right:6px;
@@ -547,7 +535,6 @@ select{background:var(--panel3);border:2px solid var(--line);border-radius:10px;
   border-color:var(--accent2);
   color:#fff;
 }
-
 .groupPickerModal .newRow{display:flex;gap:8px;margin-bottom:14px}
 .groupPickerModal .newRow input{flex:1;background:var(--panel3);border:2px solid var(--line);
   border-radius:10px;color:var(--text);padding:12px 14px;font-size:16px;outline:none;min-height:48px}
@@ -1017,6 +1004,10 @@ body.tv-player-mode #tvChannelBadge{ display:block; }
   font-size:11px; color:var(--muted); font-weight:600;
   margin-top:3px; display:block;
 }
+#tvChannelBadge .scope{
+  font-size:10px; color:#c4b5fd; font-weight:800;
+  margin-top:3px; display:block;
+}
 </style>
 </head>
 <body>
@@ -1062,6 +1053,7 @@ body.tv-player-mode #tvChannelBadge{ display:block; }
 <div id="tvChannelBadge">
   <span class="nm" id="tvBadgeName">Ingen kanal</span>
   <span class="idx" id="tvBadgeIdx"></span>
+  <span class="scope" id="tvBadgeScope"></span>
 </div>
 
 <div id="layout">
@@ -1271,7 +1263,8 @@ const LS = {
   autoload:'iptv_autoload',
   epg:'iptv_epg_url', extOnly:'iptv_external_only', proxyMode:'iptv_proxy_mode',
   tvMode:'iptv_tv_mode', accOpen:'iptv_acc_open',
-  customPls:'iptv_custom_playlists', plMeta:'iptv_playlist_meta'
+  customPls:'iptv_custom_playlists', plMeta:'iptv_playlist_meta',
+  activeGroup:'iptv_active_group'
 };
 let active   = new Set(JSON.parse(localStorage.getItem(LS.active)  ||'[]'));
 let removed  = new Set(JSON.parse(localStorage.getItem(LS.removed) ||'[]'));
@@ -1290,7 +1283,7 @@ let hls = null;
 let epg = {};
 let epgLoading = false;
 let proxyMode = localStorage.getItem(LS.proxyMode) || 'auto';
-let activeGroupId = null;
+let activeGroupId = localStorage.getItem(LS.activeGroup) || null;
 
 const IS_MOBILE = window.matchMedia('(max-width:900px)').matches;
 const LIST_LIMIT = IS_MOBILE ? 250 : 600;
@@ -1366,6 +1359,8 @@ function save(){
   localStorage.setItem(LS.extOnly, JSON.stringify([...extOnly]));
   localStorage.setItem(LS.proxyMode, proxyMode);
   localStorage.setItem(LS.accOpen, JSON.stringify(accOpen));
+  if(activeGroupId) localStorage.setItem(LS.activeGroup, activeGroupId);
+  else localStorage.removeItem(LS.activeGroup);
   savePlaylistMeta();
   saveCustomPlaylists();
 }
@@ -1455,7 +1450,7 @@ function createGroup(name){
 function deleteGroup(id){
   groups = groups.filter(g=>g.id!==id);
   delete groupMembers[id];
-  if(activeGroupId === id) activeGroupId = null;
+  if(activeGroupId === id){ activeGroupId = null; localStorage.removeItem(LS.activeGroup); }
   save();
   renderGroupTabs(); renderGroupPanel(); renderChannelList(); renderTvOvTabs();
   updateGroupsSummary();
@@ -1667,8 +1662,16 @@ function renderGroupTabs(){
   els.groupTabList.querySelectorAll('.groupTab').forEach(t=>{
     t.onclick = ()=>{
       activeGroupId = (activeGroupId === t.dataset.gid) ? null : t.dataset.gid;
-      renderGroupTabs(); renderGroupPanel();
+      if(activeGroupId) localStorage.setItem(LS.activeGroup, activeGroupId);
+      else localStorage.removeItem(LS.activeGroup);
+      renderGroupTabs(); renderGroupPanel(); updateTvChannelBadge();
       if(showFavOnly === 'group') applyFilters();
+      if(activeGroupId){
+        const g = groups.find(x=>x.id===activeGroupId);
+        showToast(`✓ Fram/bak använder nu "${g.name}"`);
+      } else {
+        showToast('Fram/bak använder favoriter/alla');
+      }
     };
   });
   updateGroupsSummary();
@@ -2804,22 +2807,42 @@ function cycleTvOvTab(delta){
   switchTvOvTab(tabs[i]);
 }
 
+/* ============================================================
+   VIKTIGT: Fram/bak ordning
+   Om en egen lista är vald → ENDAST den listan används
+   Annars: favoriter → filtrerade → alla
+   ============================================================ */
 function getChannelSequence(){
-  if(favs.size) return allChannels.filter(c => favs.has(c.url));
+  /* Om en egen lista är vald → använd BARA den */
   if(activeGroupId && groupMembers[activeGroupId]?.length){
     return getGroupChannels(activeGroupId);
   }
+  /* Annars: favoriter om de finns */
+  if(favs.size) return allChannels.filter(c => favs.has(c.url));
+  /* Annars: filtrerade */
   if(filtered.length) return filtered.slice(0, LIST_LIMIT);
+  /* Fallback: alla */
   return allChannels.slice(0, LIST_LIMIT);
 }
 function goToAdjacentChannel(delta){
   const seq = getChannelSequence();
-  if(!seq.length){ showToast('Inga kanaler i listan'); return; }
+  if(!seq.length){
+    if(activeGroupId){
+      const g = groups.find(x=>x.id===activeGroupId);
+      showToast(`Listan "${g?.name||''}" är tom`);
+    } else {
+      showToast('Inga kanaler i listan');
+    }
+    return;
+  }
   let idx = seq.findIndex(c => currentChannel && c.url === currentChannel.url);
   if(idx < 0) idx = 0;
   else idx = (idx + delta + seq.length) % seq.length;
   playChannel(seq[idx]);
-  showToast(`${delta>0?'⏭ Nästa':'⏮ Föregående'}: ${seq[idx].name}`);
+  const scope = activeGroupId
+    ? `📁 ${groups.find(g=>g.id===activeGroupId)?.name||''}`
+    : (favs.size ? '⭐ Favoriter' : 'Kanaler');
+  showToast(`${delta>0?'⏭ Nästa':'⏮ Föregående'} (${scope}): ${seq[idx].name}`);
 }
 function reloadCurrentChannel(){
   if(!currentChannel){ showToast('Ingen kanal vald'); return; }
@@ -2829,14 +2852,25 @@ function reloadCurrentChannel(){
 function updateTvChannelBadge(){
   const nameEl = $('tvBadgeName');
   const idxEl = $('tvBadgeIdx');
+  const scopeEl = $('tvBadgeScope');
   if(!nameEl || !idxEl) return;
-  if(!currentChannel){ nameEl.textContent = 'Ingen kanal'; idxEl.textContent = ''; return; }
+  if(!currentChannel){ nameEl.textContent = 'Ingen kanal'; idxEl.textContent = ''; if(scopeEl) scopeEl.textContent = ''; return; }
   const seq = getChannelSequence();
   const idx = seq.findIndex(c => c.url === currentChannel.url);
   nameEl.textContent = currentChannel.name;
   idxEl.textContent = idx >= 0
     ? `Kanal ${idx+1} av ${seq.length}`
     : 'Kanal ej i aktuell lista';
+  if(scopeEl){
+    if(activeGroupId){
+      const g = groups.find(x=>x.id===activeGroupId);
+      scopeEl.textContent = `📁 Fram/bak: ${g?.name||''}`;
+    } else if(favs.size){
+      scopeEl.textContent = '⭐ Fram/bak: Favoriter';
+    } else {
+      scopeEl.textContent = '';
+    }
+  }
 }
 
 $('tvPrevBtn').onclick = ()=> goToAdjacentChannel(-1);
@@ -3223,7 +3257,8 @@ $('clearFilters').onclick = ()=>{
   countryFilter='Alla'; langFilter='Alla'; gridFilter='Alla';
   els.search.value=''; els.groupSelect.value=''; els.favFilter.value='all';
   activeGroupId = null;
-  renderGroupTabs(); renderGroupPanel();
+  localStorage.removeItem(LS.activeGroup);
+  renderGroupTabs(); renderGroupPanel(); updateTvChannelBadge();
   showToast('Filter rensade');
   applyFilters();
 };
