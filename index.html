@@ -14,7 +14,20 @@
   --safe-b: env(safe-area-inset-bottom, 0px);
 }
 *{box-sizing:border-box}
-html,body{height:100%;margin:0;background:var(--bg);color:var(--text);
+html{
+  height:100%;
+  background:var(--bg);
+}
+body{
+  min-height:100%;
+  background:
+    radial-gradient(1200px 600px at 85% -10%, rgba(139,92,246,.14), transparent 60%),
+    radial-gradient(900px 500px at -10% 110%, rgba(34,211,238,.10), transparent 60%),
+    radial-gradient(700px 400px at 50% 120%, rgba(34,197,94,.06), transparent 60%),
+    var(--bg);
+  background-attachment:fixed;
+}
+html,body{margin:0;color:var(--text);
   font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
   font-size:16px;-webkit-user-select:none;user-select:none;
   -webkit-tap-highlight-color:transparent;
@@ -43,12 +56,48 @@ button:focus-visible,input:focus-visible,select:focus-visible,.toggle:focus-visi
 .tv-zone-active{border-color:var(--tv-focus) !important}
 
 header{height:64px;flex-shrink:0;display:flex;align-items:center;justify-content:space-between;
-  padding:0 16px;background:#11111c;border-bottom:1px solid var(--line);
+  padding:0 16px;
+  background:rgba(17,17,28,.78);
+  border-bottom:1px solid var(--line);
+  backdrop-filter:blur(14px);
+  -webkit-backdrop-filter:blur(14px);
   position:sticky;top:0;z-index:20}
-.brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:18px}
+.brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:18px;
+  background:linear-gradient(90deg,#c4b5fd,#7dd3fc);
+  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
 .brand .logoDot{width:38px;height:38px;border-radius:11px;display:flex;align-items:center;justify-content:center;
-  background:linear-gradient(135deg,#8b5cf6,#22d3ee);font-size:20px}
-#stats{font-size:13px;color:var(--muted);font-weight:500;margin-left:6px}
+  background:linear-gradient(135deg,#8b5cf6,#22d3ee);
+  box-shadow:0 0 18px rgba(139,92,246,.55), 0 4px 12px rgba(0,0,0,.5);
+  font-size:20px}
+#stats{font-size:13px;color:var(--muted);font-weight:500;margin-left:6px;
+  -webkit-text-fill-color:var(--muted);background:none}
+/* ===== Klocka & datum ===== */
+#clockWidget{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:4px 14px;margin-left:6px;margin-right:4px;
+  border-radius:12px;
+  background:linear-gradient(180deg, rgba(139,92,246,.14), rgba(34,211,238,.08));
+  border:1px solid rgba(139,92,246,.35);
+  min-width:86px;
+  line-height:1.15;
+  user-select:none;
+}
+#clockWidget .clockTime{
+  font-size:19px;font-weight:800;color:#e5e7eb;letter-spacing:1px;
+  font-variant-numeric:tabular-nums;
+  text-shadow:0 0 14px rgba(139,92,246,.55);
+}
+#clockWidget .clockTime .sec{font-size:12px;color:#a5b4fc;font-weight:700}
+#clockWidget .clockDate{
+  font-size:10.5px;font-weight:700;color:#94a3b8;text-transform:capitalize;
+  white-space:nowrap;
+}
+@media (max-width:900px){
+  #clockWidget{padding:3px 10px;min-width:74px}
+  #clockWidget .clockTime{font-size:15px}
+  #clockWidget .clockDate{font-size:9.5px}
+}
+@media (max-width:380px){ #clockWidget{display:none} }
 .hbtns{display:flex;gap:8px;flex-wrap:wrap}
 .hbtn{font-size:14px;background:#1e1e33;color:var(--text);border:2px solid var(--line);
   padding:9px 14px;border-radius:11px;cursor:pointer;min-height:44px;min-width:44px}
@@ -117,8 +166,9 @@ body.tv-player-mode #video{
   background:#000;
 }
 
-.acc{background:var(--panel2);border:1px solid var(--line);border-radius:10px;
-  margin:4px 8px;overflow:hidden;flex-shrink:0}
+.acc{background:rgba(21,21,37,.75);border:1px solid var(--line);border-radius:12px;
+  margin:4px 8px;overflow:hidden;flex-shrink:0;
+  backdrop-filter:blur(6px)}
 .accHead{display:flex;align-items:center;justify-content:space-between;gap:8px;
   padding:6px 10px;cursor:pointer;background:#16162a;user-select:none;
   border-bottom:1px solid transparent;transition:background .15s}
@@ -435,16 +485,19 @@ body.multi-mode .channelRow .listStar{ display:none; }
   padding:8px 10px;
   border-radius:12px;
   cursor:pointer;
-  background:var(--panel2);
+  background:rgba(21,21,37,.85);
   border:3px solid transparent;
   min-height:64px;
   overflow:hidden;
+  transition:background .15s, border-color .15s, transform .12s, box-shadow .15s;
 }
-.channelRow:hover{background:#1e1e33}
-@media (hover:none){ .channelRow:hover{background:var(--panel2)} }
-.channelRow.active{border-color:rgba(139,92,246,.8);background:rgba(139,92,246,.15)}
-
-.cLogo{width:42px;height:42px;border-radius:10px;object-fit:contain;background:#000;flex:0 0 auto;padding:3px}
+.channelRow:hover{background:#1c1c35;transform:translateY(-1px);
+  box-shadow:0 6px 18px rgba(0,0,0,.45)}
+@media (hover:none){ .channelRow:hover{background:rgba(21,21,37,.85);transform:none;box-shadow:none} }
+.channelRow.active{border-color:rgba(139,92,246,.85);background:rgba(139,92,246,.15);
+  box-shadow:0 0 0 3px rgba(139,92,246,.18), 0 6px 20px rgba(139,92,246,.25)}
+.cLogo{width:42px;height:42px;border-radius:10px;object-fit:contain;background:#000;flex:0 0 auto;padding:3px;
+  border:1px solid rgba(255,255,255,.06);background:radial-gradient(circle at 30% 25%, #1e1e30, #05050a)}
 .cMeta{flex:1 1 0;min-width:0;overflow:hidden}
 .cName{font-size:14px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .cSub{font-size:11px;color:var(--muted);margin-top:2px;display:flex;gap:5px;flex-wrap:wrap;align-items:center}
@@ -751,7 +804,9 @@ body.multi-mode .channelRow .listStar{ display:none; }
 .tvHint kbd{background:#1e1e33;border:1px solid var(--line);border-radius:6px;padding:2px 7px;
   font-family:monospace;font-size:11px;color:#e5e7eb}
 
-.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:14px}
+.card{background:rgba(15,15,26,.8);border:1px solid var(--line);border-radius:16px;padding:14px;
+  backdrop-filter:blur(6px);
+  box-shadow:0 10px 30px rgba(0,0,0,.35)}
 .cardHead{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:12px}
 .cardHead h2{margin:0;font-size:19px;font-weight:800}
 .note{font-size:13px;color:var(--muted)}
@@ -1118,7 +1173,11 @@ body.tv-player-mode #tvChannelBadge{ display:block; }
     <span>IPTV Grid TV</span>
     <span id="stats">0 kanaler</span>
   </div>
-  <div class="hbtns">
+  <div class="hbtns" style="align-items:center">
+    <div id="clockWidget" title="Aktuell tid och datum">
+      <div class="clockTime" id="clockTime">--:--<span class="sec">--</span></div>
+      <div class="clockDate" id="clockDate">--</div>
+    </div>
     <button id="tvModeBtn" class="hbtn" title="TV-läge">🖥️ <span class="lbl">TV-läge</span></button>
     <button id="openAllBtn" class="hbtn" title="Öppna alla synliga">🔗 <span class="lbl">Öppna alla</span></button>
     <button id="clearExtOnlyBtn" class="hbtn" title="Rensa extern-minne">♻ <span class="lbl">Rensa EXT</span></button>
@@ -2059,7 +2118,8 @@ function showProxyBadge(text){
   els.proxyBadge.style.display = 'block';
 }
 function hideProxyBadge(){
-  if(els.proxyBadge) els.proxyBadge.style.display = 'none';
+  if(!els.proxyBadge) return;
+  els.proxyBadge.style.display = 'none';
 }
 
 const proxies = [
@@ -3076,6 +3136,21 @@ function tvOvActivate(){
 }
 function switchTvOvTab(tab){
   tvOvTab = tab;
+  /* FIX: väljer du en lista-flik → den blir aktiv lista (fram/bak följer bara den) */
+  if(tab.startsWith('group:')){
+    const gid = tab.slice(6);
+    if(groups.find(g=>g.id===gid)){
+      activeGroupId = gid;
+      localStorage.setItem(LS.activeGroup, activeGroupId);
+      renderGroupTabs(); renderGroupPanel();
+    }
+  } else if(activeGroupId){
+    /* Favoriter/Alla → avaktivera lista så favoriter används igen */
+    activeGroupId = null;
+    localStorage.removeItem(LS.activeGroup);
+    renderGroupTabs(); renderGroupPanel();
+  }
+  updateTvChannelBadge();
   renderTvOvTabs();
   tvOvFocus = 0;
   renderTvOverlay();
@@ -3584,6 +3659,22 @@ if(localStorage.getItem(LS.autoload)==='1' && active.size>0) els.loadBtn.click()
 if(localStorage.getItem(LS.tvMode)==='1') toggleTvMode();
 setTimeout(()=>tvNav.refresh(), 200);
 setTimeout(()=>updateTvChannelBadge(), 400);
+
+/* ============ Klocka & datum ============ */
+function updateClock(){
+  const tEl = $('clockTime');
+  const dEl = $('clockDate');
+  if(!tEl || !dEl) return;
+  const now = new Date();
+  const hh = String(now.getHours()).padStart(2,'0');
+  const mm = String(now.getMinutes()).padStart(2,'0');
+  const ss = String(now.getSeconds()).padStart(2,'0');
+  tEl.innerHTML = `${hh}:${mm}<span class="sec">:${ss}</span>`;
+  dEl.textContent = new Intl.DateTimeFormat('sv-SE',
+    {weekday:'long', day:'numeric', month:'long', year:'numeric'}).format(now);
+}
+updateClock();
+setInterval(updateClock, 1000);
 
 (async ()=>{
   try{
