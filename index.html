@@ -117,9 +117,6 @@ body.tv-player-mode #video{
   background:#000;
 }
 
-/* ============================================================
-   ACCORDION – gjord MINDRE och mer diskret
-   ============================================================ */
 .acc{background:var(--panel2);border:1px solid var(--line);border-radius:10px;
   margin:4px 8px;overflow:hidden;flex-shrink:0}
 .accHead{display:flex;align-items:center;justify-content:space-between;gap:8px;
@@ -131,7 +128,6 @@ body.tv-player-mode #video{
 .accTitle{display:flex;align-items:center;gap:8px;font-weight:700;font-size:13px;min-width:0;flex:1}
 .accTitle .sub{font-size:11px;color:var(--muted);font-weight:500;margin-left:4px;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-/* Liten diskret +/- knapp */
 .accToggle{width:26px;height:26px;border-radius:7px;background:transparent;
   border:1.5px solid var(--line);
   display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;
@@ -142,17 +138,11 @@ body.tv-player-mode #video{
 .accBody{display:none;padding:10px}
 .accBody.open{display:block}
 
-/* ============================================================
-   MINA LISTOR – accenterad, öppnas alltid i +/-
-   ============================================================ */
 #accGroups{border:2px solid var(--accent);
   background:linear-gradient(180deg, rgba(139,92,246,.08), transparent)}
 #accGroups .accHead{background:linear-gradient(90deg, rgba(139,92,246,.22), transparent);}
 #accGroups .accTitle{font-size:14px}
 
-/* ============================================================
-   MINA LISTOR – flikar med ikon/färg/badge
-   ============================================================ */
 .groupTabs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;background:#0f0f1a;
   border-radius:10px;padding:6px;min-height:44px;align-items:center}
 .groupTab{
@@ -160,12 +150,12 @@ body.tv-player-mode #video{
   background:#1e1e33;
   border:2px solid var(--line);
   color:var(--text);
-  padding:8px 12px;
+  padding:6px 10px;
   border-radius:10px;
   cursor:pointer;
   font-size:12px;
   font-weight:700;
-  min-height:42px;
+  min-height:40px;
   transition:.15s;
   white-space:nowrap;
   display:inline-flex;
@@ -182,10 +172,10 @@ body.tv-player-mode #video{
   box-shadow:0 0 0 2px rgba(139,92,246,.4);
 }
 .groupTab .ico{
-  width:26px;height:26px;border-radius:8px;
+  width:24px;height:24px;border-radius:7px;
   background:linear-gradient(135deg,#8b5cf6,#22d3ee);
   display:flex;align-items:center;justify-content:center;
-  font-size:14px;flex:0 0 auto;
+  font-size:13px;flex:0 0 auto;
   color:#fff;
   font-weight:900;
 }
@@ -451,30 +441,135 @@ select{background:var(--panel3);border:2px solid var(--line);border-radius:10px;
 .groupBadge{font-size:9px;padding:2px 6px;border-radius:5px;font-weight:700;
   background:rgba(139,92,246,.18);color:#c4b5fd}
 
+/* ============================================================
+   MODAL – LISTOR SOM SMÅ IKON-KORT I RUTNÄT
+   ============================================================ */
 .groupPickerBackdrop{position:fixed;inset:0;background:rgba(0,0,0,.78);
   z-index:80;display:flex;align-items:center;justify-content:center;padding:20px;
   backdrop-filter:blur(4px)}
 .groupPickerModal{background:var(--panel2);border:2px solid var(--accent2);border-radius:16px;
-  padding:20px;max-width:480px;width:100%;max-height:80vh;overflow-y:auto;
+  padding:20px;max-width:560px;width:100%;max-height:80vh;overflow-y:auto;
   box-shadow:0 20px 60px rgba(0,0,0,.9)}
 .groupPickerModal h3{margin:0 0 12px 0;font-size:17px;font-weight:800;display:flex;align-items:center;gap:8px;color:#86efac}
 .groupPickerModal .chanName{font-size:13px;color:var(--muted);margin-bottom:14px;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.groupPickerModal .list{display:grid;gap:6px;margin-bottom:14px}
-.groupPickerModal .row{display:flex;align-items:center;justify-content:space-between;gap:8px;
-  padding:12px 14px;background:var(--panel3);border-radius:10px;min-height:54px;cursor:pointer;
-  border:2px solid transparent;transition:.15s}
-.groupPickerModal .row:hover{background:#1e1e33}
-.groupPickerModal .row.on{border-color:var(--accent2);background:rgba(34,197,94,.12)}
-.groupPickerModal .row .nm{font-size:15px;font-weight:700;flex:1;min-width:0;
-  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.groupPickerModal .row .chk{font-size:22px;color:var(--muted);flex:0 0 auto;font-weight:900}
-.groupPickerModal .row.on .chk{color:var(--accent2)}
+
+/* Listor som små ikon-kort i rutnät */
+.groupPickerModal .list{
+  display:grid;
+  grid-template-columns:repeat(auto-fill, minmax(110px, 1fr));
+  gap:8px;
+  margin-bottom:14px;
+}
+.groupPickerModal .row{
+  position:relative;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:6px;
+  padding:12px 8px 10px;
+  background:var(--panel3);
+  border-radius:12px;
+  min-height:96px;
+  cursor:pointer;
+  border:2px solid transparent;
+  transition:.15s;
+  text-align:center;
+  overflow:hidden;
+}
+.groupPickerModal .row:hover{
+  background:#1e1e33;
+  border-color:var(--line);
+  transform:translateY(-1px);
+}
+.groupPickerModal .row.on{
+  border-color:var(--accent2);
+  background:linear-gradient(180deg, rgba(34,197,94,.18), rgba(34,197,94,.06));
+  box-shadow:0 0 0 2px rgba(34,197,94,.25);
+}
+
+/* Ikon för varje lista */
+.groupPickerModal .row .ico{
+  width:42px; height:42px;
+  border-radius:11px;
+  background:linear-gradient(135deg,#8b5cf6,#22d3ee);
+  display:flex; align-items:center; justify-content:center;
+  font-size:20px; font-weight:900;
+  color:#fff;
+  flex:0 0 auto;
+  box-shadow:0 2px 8px rgba(0,0,0,.4);
+}
+.groupPickerModal .row.on .ico{
+  background:linear-gradient(135deg,#22c55e,#16a34a);
+}
+
+/* Namn */
+.groupPickerModal .row .nm{
+  font-size:12px; font-weight:700; min-width:0;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  max-width:100%;
+  color:var(--text);
+}
+
+/* Antal-badge */
+.groupPickerModal .row .cnt{
+  font-size:10px; font-weight:900;
+  background:rgba(255,255,255,.1);
+  color:var(--muted);
+  border-radius:999px;
+  padding:1px 7px;
+  min-width:20px;
+}
+.groupPickerModal .row.on .cnt{
+  background:rgba(34,197,94,.3);
+  color:#86efac;
+}
+
+/* Checkmark uppe till höger */
+.groupPickerModal .row .chk{
+  position:absolute;
+  top:6px; right:6px;
+  width:20px; height:20px;
+  border-radius:50%;
+  background:#0f0f1a;
+  border:2px solid var(--line);
+  color:transparent;
+  font-size:12px;
+  font-weight:900;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  transition:.15s;
+}
+.groupPickerModal .row.on .chk{
+  background:var(--accent2);
+  border-color:var(--accent2);
+  color:#fff;
+}
+
 .groupPickerModal .newRow{display:flex;gap:8px;margin-bottom:14px}
 .groupPickerModal .newRow input{flex:1;background:var(--panel3);border:2px solid var(--line);
   border-radius:10px;color:var(--text);padding:12px 14px;font-size:16px;outline:none;min-height:48px}
 .groupPickerModal .newRow input:focus{border-color:var(--accent2)}
 .groupPickerModal .actions{display:flex;gap:8px;flex-wrap:wrap}
+
+@media (max-width:480px){
+  .groupPickerModal .list{
+    grid-template-columns:repeat(auto-fill, minmax(95px, 1fr));
+    gap:6px;
+  }
+  .groupPickerModal .row{
+    min-height:86px;
+    padding:10px 6px 8px;
+  }
+  .groupPickerModal .row .ico{
+    width:36px; height:36px;
+    font-size:18px;
+    border-radius:9px;
+  }
+  .groupPickerModal .row .nm{ font-size:11px; }
+}
 
 .rightInner{padding:14px;display:grid;gap:14px;max-width:1400px}
 .playerCard{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:14px}
@@ -647,22 +742,15 @@ select{background:var(--panel3);border:2px solid var(--line);border-radius:10px;
     font-size:18px;
     padding:2px;
   }
-  .cLogo{
-    width:38px;
-    height:38px;
-  }
+  .cLogo{ width:38px; height:38px; }
   .cName{ font-size:13px; }
   .cSub{ font-size:10px; gap:4px; }
-  .extIcon{
-    width:28px;
-    height:28px;
-    font-size:12px;
-  }
+  .extIcon{ width:28px; height:28px; font-size:12px; }
   .acc{margin:4px 6px}
   .accHead{padding:6px 10px}
   .accTitle{font-size:13px}
   .accToggle{width:24px;height:24px;font-size:13px}
-  .groupTab{padding:7px 10px;font-size:11px;max-width:150px;min-height:38px}
+  .groupTab{padding:6px 10px;font-size:11px;max-width:150px;min-height:38px}
   .groupTab .ico{width:22px;height:22px;font-size:12px}
   .grid{min-width:720px}
   .gridHead,.gridRow{grid-template-columns:150px repeat(6,minmax(105px,1fr))}
@@ -714,9 +802,6 @@ select{background:var(--panel3);border:2px solid var(--line);border-radius:10px;
 }
 .acc, .playerCard, .card{position:relative}
 
-/* ============================================================
-   TV-LÄGE: kanal-overlay – FLIKAR MED STÖRRE KORT OCH IKONER
-   ============================================================ */
 #tvChannelOverlay{
   position:fixed;
   left:0; right:0; bottom:0;
@@ -752,8 +837,6 @@ body.tv-player-mode.tv-overlay-open #tvChannelOverlay{
 #tvChannelOverlay .tvOvTabs{
   display:flex; gap:8px; flex-wrap:wrap; align-items:center;
 }
-
-/* Stora tydliga flikkort i TV-läget */
 .tvOvTab{
   position:relative;
   display:inline-flex;
@@ -1333,11 +1416,9 @@ function showToast(msg){
   clearTimeout(showToast._t); showToast._t=setTimeout(()=>els.toast.classList.remove('show'),3000);
 }
 
-/* Automatisk ikon-generering för listor baserat på namn */
 function getGroupIcon(name){
   if(!name) return '✓';
   const n = name.toLowerCase();
-  /* Vanliga kategorier → emoji */
   if(/sport|fotboll|football|soccer/i.test(n)) return '⚽';
   if(/nyhet|news/i.test(n)) return '📰';
   if(/film|movie|cinema/i.test(n)) return '🎬';
@@ -1353,7 +1434,6 @@ function getGroupIcon(name){
   if(/arab|saudi|emirat/i.test(n)) return '🇸🇦';
   if(/tysk|german|deutsch/i.test(n)) return '🇩🇪';
   if(/fransk|french|france/i.test(n)) return '🇫🇷';
-  /* Fallback: första bokstaven i namnet */
   return name.trim().charAt(0).toUpperCase() || '✓';
 }
 
@@ -1416,7 +1496,7 @@ function updateGroupsSummary(){
   }
 }
 
-/* =============== GRUPPVÄLJARE =============== */
+/* =============== GRUPPVÄLJARE – ikoner i rutnät =============== */
 function openGroupPicker(channel){
   if(!channel){ showToast('Ingen kanal vald'); return; }
   const backdrop = document.createElement('div');
@@ -1432,11 +1512,17 @@ function openGroupPicker(channel){
       <button class="miniBtn primary" id="addGroupBtn" style="background:var(--accent2);border-color:var(--accent2);color:#fff;font-weight:700">➕ Skapa</button>
     </div>
     <div class="list" id="groupPickList">
-      ${groups.length ? groups.map(g=>`
-        <div class="row ${isChannelInGroup(channel.url, g.id)?'on':''}" data-gid="${g.id}">
-          <div class="nm">${getGroupIcon(g.name)} ${escapeHtml(g.name)} <span style="color:#94a3b8;font-weight:500">(${getGroupCount(g.id)})</span></div>
-          <div class="chk">${isChannelInGroup(channel.url, g.id)?'✓':'○'}</div>
-        </div>`).join('') : '<div class="note" style="padding:14px;text-align:center">Inga listor än – skapa en ovan 👆</div>'}
+      ${groups.length ? groups.map(g=>{
+        const isOn = isChannelInGroup(channel.url, g.id);
+        const ico = getGroupIcon(g.name);
+        const cnt = getGroupCount(g.id);
+        return `<div class="row ${isOn?'on':''}" data-gid="${g.id}">
+          <div class="chk">✓</div>
+          <div class="ico">${ico}</div>
+          <div class="nm">${escapeHtml(g.name)}</div>
+          <div class="cnt">${cnt}</div>
+        </div>`;
+      }).join('') : '<div class="note" style="padding:14px;text-align:center;grid-column:1/-1">Inga listor än – skapa en ovan 👆</div>'}
     </div>
     <div class="note" style="font-size:12px;color:#94a3b8;margin-bottom:12px;line-height:1.6">
       💡 <b>Tryck på en lista för att kryssa i/ur kanalen.</b><br>
@@ -1457,10 +1543,9 @@ function openGroupPicker(channel){
       toggleChannelInGroup(channel.url, row.dataset.gid);
       const isOn = isChannelInGroup(channel.url, row.dataset.gid);
       row.classList.toggle('on', isOn);
-      row.querySelector('.chk').textContent = isOn ? '✓' : '○';
+      const cntEl = row.querySelector('.cnt');
       const cnt = getGroupCount(row.dataset.gid);
-      const gObj = groups.find(g=>g.id===row.dataset.gid);
-      row.querySelector('.nm').innerHTML = `${getGroupIcon(gObj.name)} ${escapeHtml(gObj.name)} <span style="color:#94a3b8;font-weight:500">(${cnt})</span>`;
+      if(cntEl) cntEl.textContent = cnt;
       renderGroupTabs(); updateGroupsSummary();
     };
   });
