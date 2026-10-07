@@ -23,8 +23,6 @@ body{overflow:hidden;height:100dvh}
 @media (max-width:1024px){ body{overflow:auto;height:auto;min-height:100dvh} }
 ::-webkit-scrollbar{width:10px;height:10px}
 ::-webkit-scrollbar-thumb{background:#2a2a40;border-radius:5px}
-/* Tillåt normal textredigering i fält (user-select:none ärvs annars och gör
-   markering/backsteg svårt på mobil) */
 input,textarea,select,#search{
   -webkit-user-select:text !important;
   user-select:text !important;
@@ -67,25 +65,73 @@ body.tv-player-mode #rightPanel{width:100%}
 body.tv-player-mode .rightInner{max-width:none;padding:0}
 body.tv-player-mode .card{display:none}
 body.tv-player-mode .playerCard{border-radius:0;border:none;padding:0;height:calc(100dvh - 64px)}
-body.tv-player-mode #stickyPlayerWrap{position:static;box-shadow:none;border:none;border-radius:0;padding:0}
 body.tv-player-mode .playerWrap{height:calc(100dvh - 220px);aspect-ratio:auto;border-radius:0}
 /* Vensterpanelen blir en glidande kanalmeny i TV-läget */
 body.tv-player-mode #leftPanel{
   display:flex !important;
   position:fixed;
-  left:0; top:64px; bottom:0;
-  width:430px; max-width:92vw;
-  z-index:25;
+  left:0;
+  top:var(--headerH, 64px);
+  height:calc(100dvh - var(--headerH, 64px));
+  bottom:auto;
+  width:430px;
+  max-width:92vw;
+  z-index:60;
+  isolation:isolate;
   background:var(--panel);
   border-right:2px solid var(--accent);
   box-shadow:12px 0 40px rgba(0,0,0,.7);
   transform:translateX(-102%);
   transition:transform .25s ease;
 }
-body.tv-player-mode.tv-list-open #leftPanel{transform:none}
-/* Dölj in-line i kanallistan ser bättre ut i TV-läget */
+body.tv-player-mode.tv-list-open #leftPanel{transform:translateX(0)}
+/* Kanalpanelens scroll-höjd i TV-läge */
+body.tv-player-mode #channelListWrap{
+  flex:1 1 auto;
+  min-height:0;
+  overflow:hidden;
+}
+body.tv-player-mode #channelList{
+  overflow-y:auto;
+  -webkit-overflow-scrolling:touch;
+}
 body.tv-player-mode #channelList .channelRow{border-width:3px}
 body.tv-player-mode #channelList .channelRow.tv-focus{background:rgba(139,92,246,.25)}
+/* Global fokus-indikator i TV-läge (för native TV-fjärrkontroll/mus) */
+body.tv-player-mode *:focus{
+  outline:4px solid var(--tv-focus) !important;
+  outline-offset:3px;
+}
+
+/* TV-läge: spelaren fyller hela skärmen under headern */
+body.tv-player-mode #stickyPlayerWrap{
+  position:fixed !important;
+  top:var(--headerH, 64px) !important;
+  left:0 !important;
+  width:100vw !important;
+  height:calc(100dvh - var(--headerH, 64px)) !important;
+  padding:0 !important;
+  margin:0 !important;
+  border-radius:0 !important;
+  border:none !important;
+  background:#000 !important;
+  z-index:10 !important;
+  box-shadow:none !important;
+}
+body.tv-player-mode .playerWrap{
+  width:100% !important;
+  height:100% !important;
+  aspect-ratio:auto !important;
+  border-radius:0 !important;
+  max-height:none !important;
+  margin:0 !important;
+}
+body.tv-player-mode #video{
+  width:100% !important;
+  height:100% !important;
+  object-fit:contain;
+  background:#000;
+}
 
 .acc{background:var(--panel2);border:1px solid var(--line);border-radius:14px;
   margin:10px;overflow:hidden;flex-shrink:0}
@@ -251,8 +297,6 @@ select{background:var(--panel3);border:2px solid var(--line);border-radius:10px;
 /* ============================================================
    FAST SPELARE – alltid synlig vid skroll (mobil + desktop)
    ============================================================ */
-/* Desktop (>900px): fast i viewporten, placerad över höger panels område.
-   JS mäter vänsterkant/bredd (vänsterpanel kan vara 460px eller dold). */
 @media (min-width:901px){
   #stickyPlayerWrap{
     position:fixed;
@@ -270,7 +314,6 @@ select{background:var(--panel3);border:2px solid var(--line);border-radius:10px;
   #stickyPlayerWrap .playerWrap{border-radius:10px}
   .rightInner{padding-top:calc(var(--playerH,220px) - 12px)}
 }
-/* Mobil (≤900px): fast i viewporten under rubrikraden */
 @media (max-width:900px){
   #stickyPlayerWrap{
     position:fixed;
@@ -283,7 +326,7 @@ select{background:var(--panel3);border:2px solid var(--line);border-radius:10px;
   #stickyPlayerWrap .playerWrap{
     aspect-ratio:16/9;
     border-radius:0;
-    max-height:45vh;      /* inte för högt i landskap */
+    max-height:45vh;
     margin:0 auto;
   }
   #video{object-fit:contain;background:#000}
@@ -375,17 +418,11 @@ select{background:var(--panel3);border:2px solid var(--line);border-radius:10px;
 .progCard .n{font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .gridChips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
 
-/* ============================================================
-   MOBILANPASSNING – surfplatta
-   ============================================================ */
 @media (max-width:1024px) and (min-width:901px){
   #leftPanel{width:380px}
   .rightInner{max-width:none}
 }
 
-/* ============================================================
-   MOBILANPASSNING – mobil
-   ============================================================ */
 @media (max-width:900px){
   body{overflow:auto}
   header{height:auto;padding:10px 12px;flex-direction:column;gap:10px;position:sticky;top:0;
@@ -461,13 +498,9 @@ select{background:var(--panel3);border:2px solid var(--line);border-radius:10px;
   #playlistManager{max-height:220px}
   #netWarning{margin:0 10px}
 
-  /* Landningszon: hela sidan scrollar, kanallistan växer fritt */
   #channelListWrap{flex:none}
 }
 
-/* ============================================================
-   MOBILANPASSNING – liten mobil (<480px)
-   ============================================================ */
 @media (max-width:480px){
   .hbtns .hbtn .lbl{display:none}
   .hbtns .hbtn{min-width:46px;padding:10px 8px;font-size:14px}
@@ -483,12 +516,10 @@ select{background:var(--panel3);border:2px solid var(--line);border-radius:10px;
   .playerWrap{aspect-ratio:16/9}
 }
 
-/* Ligger-läge / små höjder: mindre spelare */
 @media (max-height:480px) and (max-width:900px){
   .playerWrap{aspect-ratio:auto;height:38vh}
 }
 
-/* Större pek-ytor: iOS-hantering */
 @media (hover:none) and (pointer:coarse){
   .channelRow,.favItem,.progCard,.gridCell.left{touch-action:manipulation}
   .plRemove,.favItemRemove,.extIcon,.favStar,.selCheck{touch-action:manipulation}
@@ -725,7 +756,6 @@ let epgLoading = false;
 let proxyMode = localStorage.getItem(LS.proxyMode) || 'auto';
 let favTab = 'favs';
 
-/* Mobil: färre rader i DOM för snabbare scroll på telefoner */
 const IS_MOBILE = window.matchMedia('(max-width:900px)').matches;
 const LIST_LIMIT = IS_MOBILE ? 250 : 600;
 
@@ -847,11 +877,6 @@ function showToast(msg){
   clearTimeout(showToast._t); showToast._t=setTimeout(()=>els.toast.classList.remove('show'),3000);
 }
 
-/* ============================================================
-   SPÄRRAD EXTERN-MINNE
-   Kanaler vars URL matchar något av dessa mönster hamnar ALDRIG
-   i extern-minnet. De försöker alltid spelas i spelaren.
-   ============================================================ */
 const NEVER_EXTERNAL_PATTERNS = [
   'ncdn.telewebion.ir',
   'ncdn.telewebion.net',
@@ -879,9 +904,6 @@ function markExternalOnly(url){
   extOnly.add(url); save();
 }
 
-/* ============================================================
-   CORS-PROXY-FALLBACK
-   ============================================================ */
 const STREAM_PROXIES = [
   {id:'allorig',   name:'AllOrigins',  build:u=>`https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`},
   {id:'corsproxy', name:'corsproxy',   build:u=>`https://corsproxy.io/?${encodeURIComponent(u)}`},
@@ -972,7 +994,6 @@ function setRowStatus(id,text,state){
   if(el){ el.textContent=text; el.className='status '+(state||'idle'); }
 }
 
-/* ================= Lägg till egen spellista ================= */
 async function addCustomPlaylist({name, url, flag, country, silent}){
   name = (name||'').trim();
   url = (url||'').trim();
@@ -1018,7 +1039,6 @@ function deleteCustomPlaylist(id){
   }
 }
 
-/* ================= Playlist manager ================= */
 function renderManager(){
   els.playlistManager.innerHTML='';
   const bCount = channelsByPlaylist[BUILTIN_ID]?.length||0;
@@ -1303,9 +1323,6 @@ function renderFavPanel(){
   });
 }
 
-/* ============================================================
-   PLAYBACK – HLS med automatisk CORS-fallback
-   ============================================================ */
 function stopPlayer(){
   clearTimeout(playChannel._timeout);
   if(hls){ hls.destroy(); hls=null; }
@@ -1330,8 +1347,6 @@ function playChannel(c){
   updateActiveChannelRow();
   renderFavPanel();
 
-  // Spelaren är fast på mobil – ingen scroll behövs vid kanalbyte
-  // ENDAST för icke-spärrade kanaler: om känd som extern-only, hoppa direkt
   if(isExternalOnly(c.url)){
     showExternalFallback(c, 'Känd för att kräva extern flik (CORS)', true);
     renderEPG(); renderGrid();
@@ -1345,9 +1360,7 @@ function playChannel(c){
 function tryNextCandidate(c, candidates, idx){
   if(idx >= candidates.length){
     const tried = playChannel._attempts.map(a=>a.id).join(' → ');
-    // Mahabad/Telewebion: markera inte som extern-only
     markExternalOnly(c.url);
-    // För spärrade kanaler: visa manuell fallback UTAN auto-öppning
     if(isNeverExternal(c.url)){
       showOverlay(
         '🚫 <b>Kanalen kunde inte spelas just nu.</b><br>'+
@@ -1485,8 +1498,6 @@ function openStreamExternal(channel, silent){
   const c = channel || currentChannel;
   if(!c || !c.url){ if(!silent) showToast('Ingen kanal vald'); return; }
   if(!/^https?:\/\//i.test(c.url)){ if(!silent) showToast('Ogiltig URL'); return; }
-  // Spärrade domäner (karwan.tv, mypsx.net m.fl.) öppnas ALDRIG externt –
-  // de ska spelas i spelaren
   if(isNeverExternal(c.url)){
     if(!silent) showToast('Denna kanal spelas bara i spelaren');
     if(c !== currentChannel) playChannel(c);
@@ -1533,8 +1544,6 @@ function openInVlc(){
   const vlcUrl = 'vlc://' + c.url;
 
   if(isMacOS()){
-    // macOS registrerar inte alltid vlc://-protokollet automatiskt.
-    // Försök öppna, och visa tydlig fallback med instruktioner om det misslyckas.
     let opened = false;
     const fallback = ()=>{
       if(opened) return;
@@ -1557,15 +1566,12 @@ function openInVlc(){
         ]
       );
     };
-    // Sikta på en "tvärtom" navigation; om VLC tar över ser vi inga fler ticks
     try{ window.location.href = vlcUrl; }catch(e){ fallback(); return; }
     let ticks = 0;
     openInVlc._poll = setInterval(()=>{
       ticks++;
-      // Om sidan fortfarande körs efter ~2,5 s tog inte VLC emot protokollet
       if(ticks > 5){ clearInterval(openInVlc._poll); fallback(); }
     }, 500);
-    // "pagehide"/"blur" körs om VLC-appen tar fokus
     const onHide = ()=>{ opened = true; clearInterval(openInVlc._poll); window.removeEventListener('pagehide', onHide); window.removeEventListener('blur', onHide); };
     window.addEventListener('pagehide', onHide);
     window.addEventListener('blur', onHide);
@@ -1573,7 +1579,6 @@ function openInVlc(){
     return;
   }
 
-  // Windows/Linux: vlc:// fungerar direkt om VLC är installerat
   window.location.href = vlcUrl;
   showToast('Försöker öppna i VLC');
 }
@@ -1738,6 +1743,9 @@ function renderGrid(){
   });
 }
 
+/* ============================================================
+   TV-NAVIGATION – fixad för att fungera i TV-läge
+   ============================================================ */
 const tvNav = {
   zones: ['leftPanel','rightPanel'],
   currentZone: 0,
@@ -1746,10 +1754,21 @@ const tvNav = {
   getZoneEl(){ return document.getElementById(this.zones[this.currentZone]); },
   refresh(){
     const zone = this.getZoneEl();
+    if(!zone){ this.elements = []; return; }
     const sel = 'button:not([disabled]), [tabindex]:not([tabindex="-1"]), input, select, .channelRow, .progCard, .gridCell.left, .chip, .toggle, .favItem, .favTab';
     this.elements = [...zone.querySelectorAll(sel)].filter(el=>{
-      if(el.offsetParent === null) return false;
+      // Skippa element i stängd overlay
       if(el.closest('#loadingOverlay')) return false;
+      // Skippa element som är display:none / visibility:hidden
+      const cs = getComputedStyle(el);
+      if(cs.display === 'none' || cs.visibility === 'hidden') return false;
+      // Skippa element vars förälder är display:none
+      let p = el.parentElement;
+      while(p){
+        const pcs = getComputedStyle(p);
+        if(pcs.display === 'none' || pcs.visibility === 'hidden') return false;
+        p = p.parentElement;
+      }
       return true;
     });
     if(this.focusIndex >= this.elements.length) this.focusIndex = 0;
@@ -1759,8 +1778,10 @@ const tvNav = {
     this.elements.forEach((el, i)=>{ el.classList.toggle('tv-focus', i === this.focusIndex); });
     const el = this.elements[this.focusIndex];
     if(el) el.scrollIntoView({block:'nearest', behavior:'smooth'});
-    document.getElementById('leftPanel').classList.toggle('tv-zone-active', this.zones[this.currentZone]==='leftPanel');
-    document.getElementById('rightPanel').classList.toggle('tv-zone-active', this.zones[this.currentZone]==='rightPanel');
+    const lp = document.getElementById('leftPanel');
+    const rp = document.getElementById('rightPanel');
+    if(lp) lp.classList.toggle('tv-zone-active', this.zones[this.currentZone]==='leftPanel');
+    if(rp) rp.classList.toggle('tv-zone-active', this.zones[this.currentZone]==='rightPanel');
   },
   move(dir){
     if(!this.elements.length) this.refresh();
@@ -1824,13 +1845,14 @@ function toggleTvMode(){
   const on = document.body.classList.toggle('tv-player-mode');
   localStorage.setItem(LS.tvMode, on?'1':'0');
   if(!on) closeTvChannelPanel();
-  showToast(on?'🖥️ TV-läge PÅ':'🖥️ TV-läge AV');
+  showToast(on?'🖥️ TV-läge PÅ – tryck OK för kanaler':'🖥️ TV-läge AV');
   if(on){
-    els.video.focus();
-    showToast('OK = kanallista');
+    tvNav.currentZone = 1;   // låt OK öppna panelen
+    tvNav.focusIndex = 0;
+    setTimeout(()=>tvNav.refresh(), 50);
   }
-  tvNav.refresh();
-  if(typeof updateStickyPlayerLayout === 'function') setTimeout(updateStickyPlayerLayout, 50);
+  updateStickyPlayerLayout();
+  setTimeout(updateStickyPlayerLayout, 100);
 }
 
 /* TV-läge: kanalpanel som glider in över videon */
@@ -1838,7 +1860,12 @@ function openTvChannelPanel(){
   document.body.classList.add('tv-list-open');
   tvNav.currentZone = 0;
   tvNav.focusIndex = 0;
-  setTimeout(()=>tvNav.refresh(), 260);
+  setTimeout(()=>tvNav.refresh(), 350);
+  const panel = document.getElementById('leftPanel');
+  if(panel){
+    const onEnd = ()=>{ panel.removeEventListener('transitionend', onEnd); tvNav.refresh(); };
+    panel.addEventListener('transitionend', onEnd, {once:true});
+  }
   showToast('◀▶ zon · ▲▼ kanal · OK spela · ⌫ stäng');
 }
 function closeTvChannelPanel(){
@@ -1850,14 +1877,11 @@ document.addEventListener('keydown', e=>{
   const key = e.key;
   const code = e.keyCode;
 
-  // SKYDDA TEXTFÄLT: när användaren skriver i ett fält ska TV-navigation,
-  // backsteg och piltangenter INTE fångas – annars kan man inte redigera text.
   const ae = document.activeElement;
   if(ae && (ae.tagName === 'INPUT' || ae.tagName === 'TEXTAREA' ||
      ae.tagName === 'SELECT' || ae.isContentEditable)){
-    // Endast Escape får lämna fältet
     if(key === 'Escape'){ e.target.blur(); return; }
-    return; // låt webbläsaren sköta tangenterna normalt
+    return;
   }
 
   if(els.overlay.classList.contains('show')){
@@ -1888,7 +1912,6 @@ document.addEventListener('keydown', e=>{
 
   if(code === 8 || code === 461 || key === 'Escape'){
     e.preventDefault();
-    // I TV-läge med kanalpanelen öppen: stäng panelen först
     if(document.body.classList.contains('tv-player-mode') &&
        document.body.classList.contains('tv-list-open')){
       closeTvChannelPanel();
@@ -1905,7 +1928,6 @@ document.addEventListener('keydown', e=>{
 
   if(code === 13 || key === 'Enter'){
     e.preventDefault();
-    // I TV-läge utan öppen panel: OK öppnar kanalpanelen
     if(document.body.classList.contains('tv-player-mode') &&
        !document.body.classList.contains('tv-list-open')){
       openTvChannelPanel();
@@ -1922,14 +1944,12 @@ document.addEventListener('keydown', e=>{
   }
 });
 
-/* Sök: debounced så tangentbordet inte hackar på mobil + behåll fokus */
 let _searchT = null;
 els.search.addEventListener('input', e=>{
   searchQ = e.target.value;
   clearTimeout(_searchT);
   _searchT = setTimeout(applyFilters, IS_MOBILE ? 250 : 0);
 });
-/* iOS/Android: hoppa inte ur fältet när listan ritas om */
 els.search.addEventListener('focus', ()=>{ searchQ = els.search.value; });
 document.addEventListener('focusout', e=>{
   if(e.target === els.search) clearTimeout(_searchT);
@@ -2166,7 +2186,6 @@ $('clearFilters').onclick = ()=>{
 };
 
 /* ================= Init ================= */
-/* Fast mobilspelare: håll topp-offset och utrymme under spelaren synkat */
 function updateStickyPlayerLayout(){
   const isMobile = window.matchMedia('(max-width:900px)').matches;
   const header = document.querySelector('header');
@@ -2175,15 +2194,17 @@ function updateStickyPlayerLayout(){
   if(!header || !sticky) return;
   const hH = header.offsetHeight;
   root.style.setProperty('--headerH', hH + 'px');
+
   if(document.body.classList.contains('tv-player-mode')){
+    // I TV-läge: spelaren är helskärm under headern – inget mer behövs
     root.style.setProperty('--playerH', '0px');
     return;
   }
+
   if(isMobile){
     const pH = sticky.offsetHeight;
     root.style.setProperty('--playerH', (pH + hH) + 'px');
   } else {
-    // Desktop: mät höger panels område (vänsterpanel 460px eller dold)
     const right = document.getElementById('rightPanel');
     if(right){
       const r = right.getBoundingClientRect();
@@ -2198,7 +2219,14 @@ window.addEventListener('resize', ()=>{ clearTimeout(updateStickyPlayerLayout._t
 window.addEventListener('orientationchange', ()=>setTimeout(updateStickyPlayerLayout, 250));
 window.addEventListener('load', updateStickyPlayerLayout);
 const stickyPlayerMQ = window.matchMedia('(max-width:900px)');
-if(stickyPlayerMQ.addEventListener){ stickyPlayerMQ.addEventListener('change', updateStickyPlayerLayout); }
+if(stickyPlayerMQ.addEventListener){
+  stickyPlayerMQ.addEventListener('change', ()=>{
+    // Rensa tv-list-open om vi byter mellan mobil/desktop
+    document.body.classList.remove('tv-list-open');
+    updateStickyPlayerLayout();
+    tvNav.refresh();
+  });
+}
 setTimeout(updateStickyPlayerLayout, 100);
 setTimeout(updateStickyPlayerLayout, 600);
 
