@@ -1116,8 +1116,8 @@ body.tv-player-mode.tv-overlay-open #tvChannelOverlay{
   z-index:75;
   transition:transform .28s ease, opacity .28s;
   flex-wrap:nowrap;
-  justify-content:center;
-  max-width:96vw;
+  justify-content:flex-start;
+  max-width:min(96vw, 1100px);
   overflow-x:auto;
   overflow-y:hidden;
   -webkit-overflow-scrolling:touch;
@@ -1125,6 +1125,7 @@ body.tv-player-mode.tv-overlay-open #tvChannelOverlay{
   backdrop-filter:blur(10px);
   opacity:0;
   pointer-events:none;
+  box-sizing:border-box;
 }
 #tvNavBar::-webkit-scrollbar{ display:none; }
 
@@ -1163,96 +1164,108 @@ body.tv-player-mode.tv-overlay-open #tvNavBar{
 }
 .tvNavBtn.primary .kbd{ background:rgba(255,255,255,.15); color:#fff; }
 
-#tvChannelBadge{
-  position:fixed;
-  top:14px;
-  right:18px;
-  background:rgba(15,15,26,.9);
-  border:2px solid var(--line);
-  border-radius:12px;
-  padding:10px 14px;
-  z-index:14;
-  font-size:13px; font-weight:700;
-  display:none;
-  max-width:min(420px, 60vw);
-  pointer-events:none;
-  backdrop-filter:blur(6px);
-}
-body.tv-player-mode #tvChannelBadge{ display:block; }
-#tvChannelBadge .nm{
-  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
-  display:block;
-}
-#tvChannelBadge .idx{
-  font-size:11px; color:var(--muted); font-weight:600;
-  margin-top:3px; display:block;
-}
-#tvChannelBadge .scope{
-  font-size:10px; color:#c4b5fd; font-weight:800;
-  margin-top:3px; display:block;
+/* ============================================================
+   ===== MOBIL: TV-toolbar får plats på skärmen =====
+   Måste ligga EFTER huvudreglerna för att inte överskridas
+   ============================================================ */
+@media (max-width: 768px){
+  #tvNavBar{
+    left:0 !important;
+    right:0 !important;
+    bottom:8px !important;
+    width:100% !important;
+    max-width:100% !important;
+    transform:none !important;
+    border-radius:0;
+    border-left:none;
+    border-right:none;
+    padding:8px 10px;
+    gap:6px;
+    justify-content:flex-start;
+    box-sizing:border-box;
+  }
+  .tvNavBtn{
+    padding:9px 12px;
+    font-size:12px;
+    min-height:44px;
+    min-width:44px;
+    gap:6px;
+  }
+  .tvNavBtn .kbd{
+    display:none !important;
+  }
+  .tvNavBtn > span:not(.kbd):not(.ntb-icon){
+    display:none !important;
+  }
+  .tvNavBtn.primary > span:not(.kbd){
+    display:inline !important;
+  }
+  /* Idle-animation på mobil – glid rakt ned */
+  body.tv-player-mode.tv-idle #tvNavBar{
+    transform:translateY(140%) !important;
+  }
 }
 
 /* ============================================================
    ===== TV-KLOCKA (tid + datum, styrs via toolbar-knappen 🕐) =====
+   Transparent bakgrund, inga skuggor, inget ✕
    ============================================================ */
 #tvClock{
   position:fixed;
   top:14px;
   left:18px;
   z-index:14;
-  background:rgba(15,15,26,.9);
-  backdrop-filter:blur(10px);
-  border:2px solid var(--line);
-  border-radius:14px;
-  padding:9px 14px;
+  background:transparent;
+  border:none;
+  border-radius:0;
+  padding:0;
   display:none;
-  align-items:center;
-  gap:10px;
-  box-shadow:0 8px 28px rgba(0,0,0,0.6);
+  flex-direction:column;
+  align-items:flex-start;
+  gap:2px;
+  box-shadow:none;
   pointer-events:none;
-  transition:opacity .4s, transform .4s, background .4s, border-color .4s, box-shadow .4s;
+  transition:opacity .4s, transform .4s;
 }
 body.tv-player-mode #tvClock{ display:flex; }
 #tvClock .tvClockTime{
-  font-family:'Courier New',monospace; font-weight:800; font-size:1.15rem;
+  font-family:'Courier New',monospace; font-weight:800; font-size:1.4rem;
   letter-spacing:2px; color:var(--tv-focus);
-  text-shadow:0 0 14px rgba(250,204,21,.55);
   white-space:nowrap; line-height:1.1;
+  transition:font-size .4s ease, letter-spacing .4s ease;
 }
 #tvClock .tvClockDate{
-  font-size:0.78rem; opacity:0.9; color:#e0e7ff; white-space:nowrap;
+  font-size:0.8rem; font-weight:700; color:#e0e7ff;
+  white-space:nowrap;
 }
 
 /* Gömd av användaren – enda sättet klockan försvinner helt (styrs via toolbar-knappen 🕐) */
 body.tv-player-mode.tv-clock-off #tvClock{ display:none !important; }
 
-/* Vid inaktivitet: bara SIFFRORNA kvar – datum göms,
-   ram och bakgrund blir transparenta (matchar toolbar-beteendet) */
-body.tv-player-mode.tv-idle #tvClock .tvClockDate{
-  display:none;
-}
-body.tv-player-mode.tv-idle #tvClock{
-  background:transparent;
-  border-color:transparent;
-  box-shadow:none;
-  padding:4px 8px;
+/* Vid inaktivitet: bara SIFFRORNA kvar – datum göms tillsammans med toolbar */
+body.tv-player-mode.tv-idle #tvClock .tvClockDate{ display:none; }
+body.tv-player-mode.tv-idle #tvClockBtn{ opacity:.55; }
+
+/* När toolbaren göms (idle): klockan blir dubbelt så stor */
+body.tv-player-mode.tv-idle #tvClock .tvClockTime{
+  font-size:2.8rem;
+  letter-spacing:4px;
 }
 
-/* ===== Dölj UI i TV-läge vid inaktivitet (END. toolbar + badge) ===== */
+/* ===== Dölj UI i TV-läge vid inaktivitet (END. toolbar) ===== */
 body.tv-player-mode.tv-idle #tvNavBar{
-  transform:translateX(-50%) translateY(140%);
   opacity:0;
   pointer-events:none;
+  transform:translateY(140%);
 }
-body.tv-player-mode.tv-idle #tvChannelBadge{
-  opacity:0;
-  transition:opacity .4s;
+@media (min-width: 769px){
+  body.tv-player-mode.tv-idle #tvNavBar{
+    transform:translateX(-50%) translateY(140%);
+  }
 }
 body.tv-player-mode.tv-idle #stickyPlayerWrap video{
   cursor:none;
 }
-body.tv-player-mode.tv-idle #tvClockBtn{ opacity:.55; }
-#tvChannelBadge{transition:opacity .4s}
 #tvNavBar{transition:transform .28s ease, opacity .28s}
 
 /* ===== Riktig fullscreen för hela appen ===== */
@@ -1308,12 +1321,6 @@ body.app-fullscreen #layout{height:100dvh}
   <button class="tvNavBtn" id="tvClockBtn" title="Visa/göm klockan">🕐 <span class="kbd">K</span></button>
   <button class="tvNavBtn" id="tvFsBtn" title="Fullskärm av/på">⛶ <span class="kbd">F</span></button>
   <button class="tvNavBtn" id="tvExitBtn" title="Avsluta TV-läge">✖ <span class="kbd">Esc</span></button>
-</div>
-
-<div id="tvChannelBadge">
-  <span class="nm" id="tvBadgeName">Ingen kanal</span>
-  <span class="idx" id="tvBadgeIdx"></span>
-  <span class="scope" id="tvBadgeScope"></span>
 </div>
 
 <div id="layout">
@@ -3295,27 +3302,7 @@ function reloadCurrentChannel(){
   playChannel(currentChannel);
 }
 function updateTvChannelBadge(){
-  const nameEl = $('tvBadgeName');
-  const idxEl = $('tvBadgeIdx');
-  const scopeEl = $('tvBadgeScope');
-  if(!nameEl || !idxEl) return;
-  if(!currentChannel){ nameEl.textContent = 'Ingen kanal'; idxEl.textContent = ''; if(scopeEl) scopeEl.textContent = ''; return; }
-  const seq = getChannelSequence();
-  const idx = seq.findIndex(c => c.url === currentChannel.url);
-  nameEl.textContent = currentChannel.name;
-  idxEl.textContent = idx >= 0
-    ? `Kanal ${idx+1} av ${seq.length}`
-    : 'Kanal ej i aktuell lista';
-  if(scopeEl){
-    if(activeGroupId){
-      const g = groups.find(x=>x.id===activeGroupId);
-      scopeEl.textContent = `📁 Fram/bak: ${g?.name||''}`;
-    } else if(favs.size){
-      scopeEl.textContent = '⭐ Fram/bak: Favoriter';
-    } else {
-      scopeEl.textContent = '';
-    }
-  }
+  /* Info-badge borttagen – no-op för att inte bryta anrop */
 }
 
 $('tvPrevBtn').onclick = ()=> goToAdjacentChannel(-1);
