@@ -1570,18 +1570,11 @@ const LIST_LIMIT = IS_MOBILE ? 250 : 600;
 let searchQ='', groupF='', showFavOnly=false;
 let countryFilter='Alla', langFilter='Alla', gridFilter='Alla';
 
-const BUILTIN_ID = 'builtin';
-channelsByPlaylist[BUILTIN_ID] = [
-  {name:'Red Bull TV', group:'Sport', lang:'eng', country:'AT', plCountry:'Internationell', flag:'🌍', tvgId:'', logo:'', playlistId:'builtin', url:'https://rbmn-live.akamaized.net/hls/live/590964/BoRB-AT/master.m3u8'},
-  {name:'NASA TV', group:'Dokumentär', lang:'eng', country:'US', plCountry:'USA', flag:'🇺🇸', tvgId:'', logo:'', playlistId:'builtin', url:'https://ntv1.akamaized.net/hls/live/2014075/NASA-NTV1-HLS/master.m3u8'},
-  {name:'Al Jazeera English', group:'Nyheter', lang:'eng', country:'QA', plCountry:'Internationell', flag:'🌍', tvgId:'', logo:'', playlistId:'builtin', url:'https://live-hls-web-aje.getaj.net/AJE/index.m3u8'},
-  {name:'DW English', group:'Nyheter', lang:'eng', country:'DE', plCountry:'Internationell', flag:'🌍', tvgId:'', logo:'', playlistId:'builtin', url:'https://dwamdstream102.akamaized.net/hls/live/2015525/dwstream102/index.m3u8'},
-  {name:'France 24 English', group:'Nyheter', lang:'eng', country:'FR', plCountry:'Internationell', flag:'🌍', tvgId:'', logo:'', playlistId:'builtin', url:'https://static.france24.com/live/F24_EN_LO_HLS/live_web.m3u8'},
-  {name:'TRT World', group:'Nyheter', lang:'eng', country:'TR', plCountry:'Turkiet', flag:'🇹🇷', tvgId:'', logo:'', playlistId:'builtin', url:'https://tv-trtworld.live.trt.com.tr/master.m3u8'},
-  {name:'CGTN Documentary', group:'Dokumentär', lang:'eng', country:'CN', plCountry:'Internationell', flag:'🌍', tvgId:'', logo:'', playlistId:'builtin', url:'https://livedoc.cgtn.com/500d/prog_index.m3u8'},
-];
-loaded.add(BUILTIN_ID);
-if(active.size===0){ active.add(BUILTIN_ID); }
+/* ============================================================
+   INBYGGDA STARTKANALER BORTTAGNA
+   Tidigare fanns en BUILTIN_ID-lista med startkanaler här.
+   Den är helt borttagen – inga kanaler är förvalda.
+   ============================================================ */
 
 (function loadPlaylistMeta(){
   const saved = JSON.parse(localStorage.getItem(LS.plMeta) || '{}');
@@ -2318,21 +2311,10 @@ function deleteCustomPlaylist(id){
 
 function renderManager(){
   els.playlistManager.innerHTML='';
-  const bCount = channelsByPlaylist[BUILTIN_ID]?.length||0;
-  const bRow = document.createElement('div');
-  bRow.className='plRow';
-  bRow.innerHTML = `
-    <div class="plInfo">
-      <span style="font-size:18px">📌</span>
-      <div style="flex:1;min-width:0">
-        <div class="plName">Inbyggda startkanaler</div>
-        <div class="plMeta">Alltid tillgängliga</div>
-      </div>
-      <span class="status loaded">${bCount} kan</span>
-    </div>`;
-  els.playlistManager.appendChild(bRow);
   const list = PLAYLISTS.filter(p=>!removed.has(p.id));
-  if(!list.length){ els.playlistManager.innerHTML+='<div class="note" style="padding:8px">Alla listor borttagna.</div>'; }
+  if(!list.length){
+    els.playlistManager.innerHTML='<div class="note" style="padding:8px">Inga listor kvar – lägg till en egen nedan.</div>';
+  }
   for(const p of list){
     const isActive = active.has(p.id);
     const isLoaded = loaded.has(p.id);
@@ -2413,8 +2395,11 @@ function updateFilterSummary(){
 }
 
 function rebuildAll(){
-  allChannels = (channelsByPlaylist[BUILTIN_ID]||[]).slice();
-  for(const id of active){ if(id!==BUILTIN_ID && channelsByPlaylist[id]) allChannels = allChannels.concat(channelsByPlaylist[id]); }
+  /* Inbyggda startkanaler är borttagna – bygg bara från aktiva spellistor */
+  allChannels = [];
+  for(const id of active){
+    if(channelsByPlaylist[id]) allChannels = allChannels.concat(channelsByPlaylist[id]);
+  }
   const groups2 = [...new Set(allChannels.map(c=>c.group).filter(Boolean))].sort();
   const cur = els.groupSelect.value;
   els.groupSelect.innerHTML = '<option value="">Alla kategorier</option>'+groups2.map(g=>`<option>${escapeHtml(g)}</option>`).join('');
