@@ -1193,7 +1193,7 @@ body.tv-player-mode #tvChannelBadge{ display:block; }
 }
 
 /* ============================================================
-   ===== TV-KLOCKA (visas ALLTID i TV-läge, göms bara manuellt) =====
+   ===== TV-KLOCKA (endast siffror, göms manuellt) =====
    ============================================================ */
 #tvClock{
   position:fixed;
@@ -1210,7 +1210,7 @@ body.tv-player-mode #tvChannelBadge{ display:block; }
   gap:10px;
   box-shadow:0 8px 28px rgba(0,0,0,0.6);
   pointer-events:auto;
-  transition:opacity .4s;
+  transition:opacity .4s, transform .4s, background .4s, border-color .4s, box-shadow .4s;
 }
 body.tv-player-mode #tvClock{ display:flex; }
 #tvClock .tvClockTime{
@@ -1218,9 +1218,6 @@ body.tv-player-mode #tvClock{ display:flex; }
   letter-spacing:2px; color:var(--tv-focus);
   text-shadow:0 0 14px rgba(250,204,21,.55);
   white-space:nowrap; line-height:1.1;
-}
-#tvClock .tvClockDate{
-  font-size:0.78rem; opacity:0.9; color:#e0e7ff; white-space:nowrap;
 }
 #tvClockHide{
   background:rgba(0,0,0,0.6); border:1px solid var(--line);
@@ -1230,8 +1227,19 @@ body.tv-player-mode #tvClock{ display:flex; }
 }
 #tvClockHide:hover{ background:var(--tv-focus); color:#000; }
 
-/* Gömd av användaren – enda sättet klockan försvinner */
+/* Gömd av användaren – enda sättet klockan försvinner helt */
 body.tv-player-mode.tv-clock-off #tvClock{ display:none !important; }
+
+/* Vid inaktivitet: bara siffror kvar – ingen ✕-knapp, ingen ram/bakgrund */
+body.tv-player-mode.tv-idle #tvClockHide{
+  display:none;
+}
+body.tv-player-mode.tv-idle #tvClock{
+  background:transparent;
+  border-color:transparent;
+  box-shadow:none;
+  padding:4px 8px;
+}
 
 /* ===== Dölj UI i TV-läge vid inaktivitet (END. toolbar + badge) ===== */
 body.tv-player-mode.tv-idle #tvNavBar{
@@ -1288,10 +1296,9 @@ body.app-fullscreen #layout{height:100dvh}
   <div class="tvOvGrid" id="tvOvGrid"></div>
 </div>
 
-<!-- ===== TV-KLOCKA (Heval-liknande) ===== -->
+<!-- ===== TV-KLOCKA (endast siffror) ===== -->
 <div id="tvClock" title="Klicka ✕ för att gömma">
   <div class="tvClockTime" id="tvClockDisplay">--:--:--</div>
-  <div class="tvClockDate" id="tvClockDate">Laddar...</div>
   <button id="tvClockHide" title="Göm klockan">✕</button>
 </div>
 
@@ -3321,19 +3328,15 @@ $('tvListBtn').onclick = openTvOverlay;
 $('tvOvClose').onclick = closeTvOverlay;
 $('createGroupBtn').onclick = openCreateGroupModal;
 
-/* ===== TV-klocka: uppdatering + göm/visa ===== */
+/* ===== TV-klocka: uppdatering (endast tid) + göm/visa ===== */
 function updateTvClockDisplay(){
   const timeEl = $('tvClockDisplay');
-  const dateEl = $('tvClockDate');
-  if(!timeEl || !dateEl) return;
+  if(!timeEl) return;
   const now = new Date();
   const hh = String(now.getHours()).padStart(2,'0');
   const mm = String(now.getMinutes()).padStart(2,'0');
   const ss = String(now.getSeconds()).padStart(2,'0');
   timeEl.textContent = `${hh}:${mm}:${ss}`;
-  const daysShort = ['Sön','Mån','Tis','Ons','Tor','Fre','Lör'];
-  const monthsShort = ['jan','feb','mar','apr','maj','jun','jul','aug','sep','okt','nov','dec'];
-  dateEl.textContent = `${daysShort[now.getDay()]} ${now.getDate()} ${monthsShort[now.getMonth()]} ${now.getFullYear()}`;
 }
 updateTvClockDisplay();
 setInterval(updateTvClockDisplay, 1000);
