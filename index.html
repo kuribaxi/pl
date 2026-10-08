@@ -350,6 +350,9 @@ body.tv-player-mode #video{
 .plRemove{background:none;border:2px solid transparent;color:var(--muted);font-size:15px;
   cursor:pointer;padding:6px;border-radius:8px;min-width:36px;min-height:36px}
 .plRemove:hover{color:#fca5a5}
+.plView{background:none;border:2px solid transparent;color:var(--muted);font-size:15px;
+  cursor:pointer;padding:6px;border-radius:8px;min-width:36px;min-height:36px}
+.plView:hover{color:#7dd3fc;background:rgba(125,211,252,.1)}
 .toggle{width:46px;height:26px;background:#2a2a40;border-radius:999px;position:relative;
   cursor:pointer;transition:.2s;flex:0 0 auto;border:2px solid transparent}
 .toggle.on{background:var(--accent)}
@@ -724,6 +727,53 @@ body.multi-mode .channelRow .listStar{ display:none; }
   .groupPickerModal .row .nm{ font-size:11px; }
 }
 
+/* ===== M3U VIEWER-MODAL ===== */
+.m3uViewerModal{
+  background:var(--panel2);
+  border:2px solid var(--focus);
+  border-radius:16px;
+  padding:18px;
+  max-width:900px;
+  width:100%;
+  max-height:88vh;
+  display:flex;
+  flex-direction:column;
+  box-shadow:0 20px 60px rgba(0,0,0,.9);
+}
+.m3uViewerModal h3{
+  margin:0 0 6px 0;font-size:17px;font-weight:800;
+  display:flex;align-items:center;gap:8px;color:#7dd3fc;
+}
+.m3uViewerModal .m3uMeta{
+  font-size:12px;color:var(--muted);margin-bottom:12px;
+  display:flex;flex-wrap:wrap;gap:10px;align-items:center;
+}
+.m3uViewerModal .m3uMeta b{color:#e5e7eb}
+.m3uViewerModal textarea{
+  flex:1 1 auto;
+  width:100%;
+  min-height:300px;
+  background:#0a0f33;
+  color:#d1d9ff;
+  border:2px solid var(--line);
+  border-radius:10px;
+  padding:12px;
+  font-family:'Courier New',monospace;
+  font-size:12px;
+  line-height:1.5;
+  resize:vertical;
+  outline:none;
+  white-space:pre;
+  overflow:auto;
+  -webkit-user-select:text !important;
+  user-select:text !important;
+}
+.m3uViewerModal textarea:focus{border-color:var(--focus)}
+.m3uViewerModal .actions{
+  display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;
+}
+.m3uViewerModal .actions .miniBtn{flex:1;min-width:120px;justify-content:center;display:inline-flex;align-items:center}
+
 .rightInner{padding:14px;display:grid;gap:14px;max-width:1400px}
 .playerCard{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:14px}
 .playerWrap{position:relative;aspect-ratio:16/9;background:linear-gradient(180deg,#0a0f33,#0d1440);border-radius:12px;overflow:hidden}
@@ -925,6 +975,9 @@ body.multi-mode .channelRow .listStar{ display:none; }
   #playlistManager{max-height:220px}
   #netWarning{margin:0 10px}
   #channelListWrap{flex:none}
+  .m3uViewerModal{padding:14px}
+  .m3uViewerModal textarea{min-height:220px;font-size:11px}
+  .m3uViewerModal .actions .miniBtn{flex:1 1 calc(50% - 4px);min-width:0}
 }
 @media (max-width:480px){
   .hbtns .hbtn .lbl{display:none}
@@ -1368,6 +1421,7 @@ body.app-fullscreen #layout{height:100dvh}
           <div class="presetRow">
             <button data-preset="kurd" class="presetBtn">☀️ Kurdistan</button>
             <button data-preset="tr" class="presetBtn">🇹🇷 Turkiet</button>
+            <button data-preset="ir" class="presetBtn">🇮🇷 Iran</button>
             <button data-preset="all" class="presetBtn">🌍 Alla</button>
           </div>
           <label class="autoLabel"><input type="checkbox" id="autoLoadCheck"/> Ladda valda automatiskt</label>
@@ -1518,6 +1572,11 @@ body.app-fullscreen #layout{height:100dvh}
 </div>
 
 <script>
+/* ============================================================
+   === VIKTIGT: byt ut DITT-NAMN mot din Cloudflare Worker ===
+   ============================================================ */
+const MY_WORKER = 'https://hls-proxy.DITT-NAMN.workers.dev/proxy?url=';
+
 const PLAYLISTS = [
  {id:'movies', name:'Filmer', country:'Internationell', flag:'🎬', url:'https://iptv-org.github.io/iptv/categories/movies.m3u'},
  {id:'series', name:'Serier', country:'Internationell', flag:'📺', url:'https://iptv-org.github.io/iptv/categories/series.m3u'},
@@ -1526,6 +1585,7 @@ const PLAYLISTS = [
  {id:'sdh', name:'Södra kurdiska', country:'Kurdistan', flag:'☀️', url:'https://iptv-org.github.io/iptv/languages/sdh.m3u'},
  {id:'enigma', name:'Enigma - Kurdish', country:'Kurdistan', flag:'☀️', url:'https://raw.githubusercontent.com/Enigma402/Iptv/refs/heads/main/2.m3u'},
  {id:'iran', name:'Iran', country:'Iran', flag:'🇮🇷', url:'https://iptv-org.github.io/iptv/countries/ir.m3u'},
+ {id:'iran_shayan', name:'Iran - shayanline', country:'Iran', flag:'🇮🇷', url:'https://raw.githubusercontent.com/shayanline/iptv-iran/main/playlists/iran.m3u'},
  {id:'us', name:'USA', country:'USA', flag:'🇺🇸', url:'https://iptv-org.github.io/iptv/countries/us.m3u'},
  {id:'uk', name:'UK', country:'UK', flag:'🇬🇧', url:'https://iptv-org.github.io/iptv/countries/uk.m3u'},
  {id:'au', name:'Australien', country:'Australien', flag:'🇦🇺', url:'https://iptv-org.github.io/iptv/countries/au.m3u'},
@@ -1533,15 +1593,17 @@ const PLAYLISTS = [
  {id:'turk2', name:'Turkiet - Uzun', country:'Turkiet', flag:'🇹🇷', url:'https://streams.uzunmuhalefet.com/lists/tr.m3u'},
  {id:'ukgeo', name:'UK - Geo (ungeouk)', country:'UK', flag:'🇬🇧', url:'https://tinyurl.com/ungeouk'},
 ];
+
 const LS = {
   active:'iptv_active_playlists', removed:'iptv_removed_playlists',
   favs:'iptv_favorites', groups:'iptv_groups', groupMembers:'iptv_group_members',
   autoload:'iptv_autoload',
-  epg:'iptv_epg_url', extOnly:'iptv_external_only', proxyMode:'iptv_proxy_mode',
+  epg:'iptv_epg_url', extOnly:'iptv_external_only', proxyMode:'iptv_proxy_mode_v2',
   tvMode:'iptv_tv_mode', accOpen:'iptv_acc_open',
   customPls:'iptv_custom_playlists', plMeta:'iptv_playlist_meta',
   activeGroup:'iptv_active_group', tvClockOff:'iptv_tv_clock_off'
 };
+
 let active   = new Set(JSON.parse(localStorage.getItem(LS.active)  ||'[]'));
 let removed  = new Set(JSON.parse(localStorage.getItem(LS.removed) ||'[]'));
 let favs     = new Set(JSON.parse(localStorage.getItem(LS.favs)    ||'[]'));
@@ -1558,7 +1620,10 @@ let currentChannel = null;
 let hls = null;
 let epg = {};
 let epgLoading = false;
-let proxyMode = localStorage.getItem(LS.proxyMode) || 'auto';
+
+/* Default = 'always' eftersom iranska strömmar kräver proxyn */
+let proxyMode = localStorage.getItem(LS.proxyMode) || 'always';
+
 let activeGroupId = localStorage.getItem(LS.activeGroup) || null;
 
 let multiMode = false;
@@ -1570,11 +1635,7 @@ const LIST_LIMIT = IS_MOBILE ? 250 : 600;
 let searchQ='', groupF='', showFavOnly=false;
 let countryFilter='Alla', langFilter='Alla', gridFilter='Alla';
 
-/* ============================================================
-   INBYGGDA STARTKANALER BORTTAGNA
-   Tidigare fanns en BUILTIN_ID-lista med startkanaler här.
-   Den är helt borttagen – inga kanaler är förvalda.
-   ============================================================ */
+/* INBYGGDA STARTKANALER BORTTAGNA */
 
 (function loadPlaylistMeta(){
   const saved = JSON.parse(localStorage.getItem(LS.plMeta) || '{}');
@@ -1705,6 +1766,110 @@ function getGroupIcon(name){
   if(/tysk|german|deutsch/i.test(n)) return '🇩🇪';
   if(/fransk|french|france/i.test(n)) return '🇫🇷';
   return name.trim().charAt(0).toUpperCase() || '✓';
+}
+
+/* ============================================================
+   ===== M3U VIEWER (visa + kopiera spellistans .m3u-text) =====
+   ============================================================ */
+function channelsToM3U(chans){
+  let m3u = '#EXTM3U\n';
+  chans.forEach(c=>{
+    const attrs = [];
+    if(c.tvgId) attrs.push(`tvg-id="${c.tvgId}"`);
+    if(c.logo)  attrs.push(`tvg-logo="${c.logo}"`);
+    if(c.group) attrs.push(`group-title="${c.group}"`);
+    if(c.lang && c.lang!=='unknown') attrs.push(`tvg-language="${c.lang}"`);
+    if(c.country) attrs.push(`tvg-country="${c.country}"`);
+    m3u += `#EXTINF:-1 ${attrs.join(' ')},${c.name||'Okänd'}\n${c.url}\n`;
+  });
+  return m3u;
+}
+
+async function openM3UViewer(playlistId){
+  const pl = PLAYLISTS.find(p=>p.id===playlistId);
+  if(!pl){ showToast('Spellistan hittades inte'); return; }
+
+  const backdrop = document.createElement('div');
+  backdrop.className = 'groupPickerBackdrop';
+  backdrop.onclick = e => { if(e.target === backdrop) close(); };
+
+  const modal = document.createElement('div');
+  modal.className = 'm3uViewerModal';
+  modal.innerHTML = `
+    <h3>📄 ${escapeHtml(pl.flag||'')} ${escapeHtml(pl.name)}</h3>
+    <div class="m3uMeta">
+      <span>📡 <b>Källa:</b> ${pl.url ? escapeHtml(pl.url) : 'Lokal fil'}</span>
+      <span id="m3uStats">⏳ Laddar…</span>
+    </div>
+    <textarea id="m3uText" readonly spellcheck="false">Laddar spellista…</textarea>
+    <div class="actions">
+      <button class="miniBtn primary" id="m3uCopyAll" style="background:var(--accent);border-color:var(--accent);color:#fff;font-weight:700">📋 Kopiera allt</button>
+      <button class="miniBtn" id="m3uDownload">💾 Ladda ner .m3u</button>
+      <button class="miniBtn" id="m3uReload">🔄 Ladda om</button>
+      <button class="miniBtn" id="m3uSelectAll">🔲 Markera allt</button>
+      <button class="miniBtn" id="m3uClose">✖ Stäng</button>
+    </div>
+  `;
+  backdrop.appendChild(modal);
+  document.body.appendChild(backdrop);
+
+  const ta = modal.querySelector('#m3uText');
+  const statsEl = modal.querySelector('#m3uStats');
+
+  function close(){ document.body.removeChild(backdrop); }
+
+  async function loadText(){
+    ta.value = 'Laddar spellista…';
+    statsEl.textContent = '⏳ Laddar…';
+    let text = '';
+    try{
+      if(pl.url){
+        text = await fetchM3U(pl.url);
+      } else if(channelsByPlaylist[playlistId]){
+        text = channelsToM3U(channelsByPlaylist[playlistId]);
+      } else {
+        text = '# Ingen data – ladda spellistan först\n';
+      }
+    }catch(e){
+      text = '# Kunde inte hämta spellistan\n# ' + (e?.message||e) + '\n';
+    }
+    ta.value = text;
+    const lines = text.split(/\r?\n/).length;
+    const kb = (new Blob([text]).size / 1024).toFixed(1);
+    statsEl.textContent = `📊 ${lines} rader · ${kb} kB`;
+    return text;
+  }
+
+  modal.querySelector('#m3uClose').onclick = close;
+  modal.querySelector('#m3uReload').onclick = loadText;
+  modal.querySelector('#m3uSelectAll').onclick = ()=>{
+    ta.focus(); ta.select();
+  };
+  modal.querySelector('#m3uCopyAll').onclick = async ()=>{
+    try{
+      await navigator.clipboard.writeText(ta.value);
+      showToast('📋 Hela listan kopierad!');
+    }catch(e){
+      ta.focus(); ta.select();
+      try{ document.execCommand('copy'); showToast('📋 Kopierat!'); }
+      catch(err){ showToast('Kunde inte kopiera – markera manuellt'); }
+    }
+  };
+  modal.querySelector('#m3uDownload').onclick = ()=>{
+    const blob = new Blob([ta.value], {type:'application/x-mpegURL'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    const fname = (pl.name||'spellista').replace(/[^\w\-]+/g,'_') + '.m3u';
+    a.download = fname;
+    a.click();
+    showToast('💾 Nedladdning startad: ' + fname);
+  };
+
+  const onKey = e=>{ if(e.key === 'Escape'){ close(); document.removeEventListener('keydown', onKey); } };
+  document.addEventListener('keydown', onKey);
+
+  setTimeout(()=>loadText(), 50);
+  setTimeout(()=>ta.focus(), 100);
 }
 
 /* ================= Multi-select ================= */
@@ -2194,7 +2359,11 @@ function setRowStatus(id,text,state){
   if(el){ el.textContent=text; el.className='status '+(state||'idle'); }
 }
 
+/* ============================================================
+   STREAM PROXIES — Workern ligger först
+   ============================================================ */
 const STREAM_PROXIES = [
+  {id:'worker',    name:'Min Worker',  build:u=> MY_WORKER + encodeURIComponent(u)},
   {id:'allorig',   name:'AllOrigins',  build:u=>`https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`},
   {id:'corsproxy', name:'corsproxy',   build:u=>`https://corsproxy.io/?${encodeURIComponent(u)}`},
   {id:'codetabs',  name:'codetabs',    build:u=>`https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(u)}`},
@@ -2223,6 +2392,7 @@ function hideProxyBadge(){
 
 const proxies = [
   u=>u,
+  u=> MY_WORKER + encodeURIComponent(u),
   u=>`https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`,
   u=>`https://corsproxy.io/?${encodeURIComponent(u)}`,
   u=>`https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(u)}`
@@ -2332,6 +2502,7 @@ function renderManager(){
         <span class="status ${isLoaded?'loaded':'idle'}">${isLoaded?(count?'Laddad ('+count+')':'Laddad'):'Ej laddad'}</span>
       </div>
       <div class="plActions">
+        <button class="plView" data-view="${p.id}" title="Visa .m3u-innehåll">📄</button>
         <div class="toggle ${isActive?'on':''}" data-toggle="${p.id}" tabindex="0" role="switch" aria-checked="${isActive}"></div>
         <button class="plRemove" data-remove="${p.id}" title="Ta bort">✕</button>
       </div>`;
@@ -2343,6 +2514,12 @@ function renderManager(){
       if(active.has(id)){ active.delete(id); showToast('Lista avvald'); }
       else{ active.add(id); showToast('Laddar lista...'); await loadPlaylist(id); showToast((channelsByPlaylist[id]?.length||0)+' kanaler tillagda'); }
       save(); renderManager(); rebuildAll();
+    };
+  });
+  els.playlistManager.querySelectorAll('[data-view]').forEach(b=>{
+    b.onclick = (e)=>{
+      e.stopPropagation();
+      openM3UViewer(b.dataset.view);
     };
   });
   els.playlistManager.querySelectorAll('[data-remove]').forEach(b=>{
@@ -2395,7 +2572,6 @@ function updateFilterSummary(){
 }
 
 function rebuildAll(){
-  /* Inbyggda startkanaler är borttagna – bygg bara från aktiva spellistor */
   allChannels = [];
   for(const id of active){
     if(channelsByPlaylist[id]) allChannels = allChannels.concat(channelsByPlaylist[id]);
@@ -3286,9 +3462,7 @@ function reloadCurrentChannel(){
   showToast('🔄 Laddar om '+currentChannel.name+'…');
   playChannel(currentChannel);
 }
-function updateTvChannelBadge(){
-  /* Info-badge borttagen – no-op för att inte bryta anrop */
-}
+function updateTvChannelBadge(){ /* no-op */ }
 
 $('tvPrevBtn').onclick = ()=> goToAdjacentChannel(-1);
 $('tvNextBtn').onclick = ()=> goToAdjacentChannel(1);
@@ -3297,7 +3471,7 @@ $('tvListBtn').onclick = openTvOverlay;
 $('tvOvClose').onclick = closeTvOverlay;
 $('createGroupBtn').onclick = openCreateGroupModal;
 
-/* ===== TV-klocka: tid + datum, göms tillsammans med toolbar ===== */
+/* ===== TV-klocka ===== */
 function updateTvClockDisplay(){
   const timeEl = $('tvClockDisplay');
   const dateEl = $('tvClockDate');
@@ -3335,10 +3509,7 @@ if(localStorage.getItem(LS.tvClockOff) === '1'){
 }
 $('tvClockBtn').onclick = toggleTvClock;
 
-/* ===== Fullskärm (hela appen) i TV-läge ===== */
 $('tvFsBtn').onclick = toggleFullscreen;
-
-/* ===== Avsluta TV-läge ===== */
 $('tvExitBtn').onclick = ()=> toggleTvMode();
 
 function toggleTvMode(){
@@ -3631,6 +3802,7 @@ document.querySelectorAll('[data-preset]').forEach(b=>{
     const p=b.dataset.preset;
     if(p==='kurd') ['kurdistan','sdh','enigma','movies','series','kids'].forEach(id=>active.add(id));
     else if(p==='tr') ['turk1','turk2'].forEach(id=>active.add(id));
+    else if(p==='ir') ['iran','iran_shayan'].forEach(id=>active.add(id));
     else PLAYLISTS.forEach(pl=>{ if(!removed.has(pl.id)) active.add(pl.id); });
     save(); renderManager(); els.loadBtn.click();
   };
@@ -3785,7 +3957,6 @@ if(localStorage.getItem(LS.tvMode)==='1') toggleTvMode();
 setTimeout(()=>tvNav.refresh(), 200);
 setTimeout(()=>updateTvChannelBadge(), 400);
 
-/* ===== Dölj UI i TV-läge efter inaktivitet ===== */
 const TV_IDLE_MS = 4000;
 let tvIdleTimer = null;
 function isTvIdleAllowed(){
@@ -3814,7 +3985,6 @@ els.video.addEventListener('pause', ()=>{
 });
 els.video.addEventListener('waiting', ()=>document.body.classList.remove('tv-idle'));
 
-/* ===== Fullscreen-läge för hela appen ===== */
 function isAppFullscreen(){
   return !!(document.fullscreenElement || document.webkitFullscreenElement);
 }
@@ -3845,7 +4015,6 @@ $('fullscreenBtn').onclick = toggleFullscreen;
   })
 );
 
-/* ============ Klocka & datum (header) ============ */
 function updateClock(){
   const tEl = $('clockTime');
   const dEl = $('clockDate');
