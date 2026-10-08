@@ -4,7 +4,8 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
 <title>IPTV Grid TV</title>
-<script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+<!-- FIX 7: låst version av hls.js -->
+<script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.7/dist/hls.min.js"></script>
 <style>
 :root{
   --bg:#0d1440; --panel:#131a4d; --panel2:#182059; --panel3:#1e2766;
@@ -840,7 +841,6 @@ body.app-fullscreen #layout{height:100dvh}
 #fullscreenBtn{font-size:17px}
 #tvNavBar .tvNavBtn.fs{padding:10px 14px}
 
-/* Indikator för JS av */
 body.js-off #video{ filter:brightness(.45) grayscale(.6); }
 body.js-off .js-off-badge{
   position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
@@ -1029,7 +1029,7 @@ body.js-off .js-off-badge small{font-size:13px;font-weight:600;color:#e5e7eb;}
       <div class="playerCard">
         <div id="stickyPlayerWrap">
           <div class="playerWrap">
-            <video id="video" controls autoplay playsinline></video>
+            <video id="video" controls autoplay playsinline muted></video>
             <div id="proxyBadge"></div>
             <div id="loadingOverlay"></div>
           </div>
@@ -1094,9 +1094,14 @@ body.js-off .js-off-badge small{font-size:13px;font-weight:600;color:#e5e7eb;}
 
 <script>
 /* ============================================================
-   === VIKTIGT: byt ut DITT-NAMN mot din Cloudflare Worker ===
+   FIX 1: Byt ut 'DITT-NAMN' mot din riktiga Cloudflare Worker.
+   Lämna tom sträng '' om du INTE har en egen worker (då hoppas
+   den över helt och publika proxys används istället).
    ============================================================ */
-const MY_WORKER = 'https://hls-proxy.DITT-NAMN.workers.dev/proxy?url=';
+const MY_WORKER_HOST = 'DITT-NAMN';   // t.ex. 'hls-proxy.abc123'
+const MY_WORKER = MY_WORKER_HOST && MY_WORKER_HOST !== 'DITT-NAMN'
+  ? `https://${MY_WORKER_HOST}.workers.dev/proxy?url=`
+  : '';   // tom = används inte alls
 
 const PLAYLISTS = [
  {id:'movies', name:'Filmer', country:'Internationell', flag:'🎬', url:'https://iptv-org.github.io/iptv/categories/movies.m3u'},
@@ -1119,7 +1124,7 @@ const LS = {
   active:'iptv_active_playlists', removed:'iptv_removed_playlists',
   favs:'iptv_favorites', groups:'iptv_groups', groupMembers:'iptv_group_members',
   autoload:'iptv_autoload',
-  epg:'iptv_epg_url', extOnly:'iptv_external_only', proxyMode:'iptv_proxy_mode_v2',
+  epg:'iptv_epg_url', extOnly:'iptv_external_only', proxyMode:'iptv_proxy_mode_v3',
   tvMode:'iptv_tv_mode', accOpen:'iptv_acc_open',
   customPls:'iptv_custom_playlists', plMeta:'iptv_playlist_meta',
   activeGroup:'iptv_active_group', tvClockOff:'iptv_tv_clock_off',
@@ -1142,10 +1147,12 @@ let currentChannel = null;
 let hls = null;
 let epg = {};
 let epgLoading = false;
-let proxyMode = localStorage.getItem(LS.proxyMode) || 'always';
+
+/* FIX 1: default = auto (inte always) */
+let proxyMode = localStorage.getItem(LS.proxyMode) || 'auto';
+
 let activeGroupId = localStorage.getItem(LS.activeGroup) || null;
 
-/* JS av/på */
 let jsOff = localStorage.getItem(LS.jsOff) === '1';
 
 let multiMode = false;
@@ -1259,7 +1266,10 @@ document.querySelectorAll('.accToggle[data-acc-toggle]').forEach(btn=>{
 function escapeHtml(s){ return String(s??'').replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
 function fmtTime(d){ return new Intl.DateTimeFormat('sv-SE',{hour:'2-digit',minute:'2-digit'}).format(d); }
 function fmtDay(d){ return new Intl.DateTimeFormat('sv-SE',{weekday:'short',hour:'2-digit',minute:'2-digit'}).format(d); }
-function channelKey(c){ return c.tvgId || c.url; }
+
+/* FIX 6: channelKey returnerar bara URL (undviker krockar med tomma tvg-id) */
+function channelKey(c){ return c.url; }
+
 function findChannelByKey(k){ return allChannels.find(c=>channelKey(c)===k); }
 function findChannelByUrl(u){ return allChannels.find(c=>c.url===u); }
 function showToast(msg){
@@ -1300,7 +1310,6 @@ function setJsOff(off){
     btn.classList.toggle('js-off', jsOff);
     btn.title = jsOff ? 'JavaScript är AV – tryck för att slå på (J)' : 'JavaScript är PÅ – tryck för att slå av (J)';
   }
-  // Lägg till/ta bort overlay-badge
   const wrap = document.querySelector('.playerWrap');
   if(wrap){
     let badge = wrap.querySelector('.js-off-badge');
@@ -1315,7 +1324,6 @@ function setJsOff(off){
       badge.remove();
     }
   }
-  // Pausa / återuppta uppspelning
   if(jsOff){
     stopPlayer();
     try{ els.video.pause(); }catch(e){}
@@ -1324,24 +1332,26 @@ function setJsOff(off){
   }
   showToast(jsOff ? '🔌 JavaScript AV' : '🔌 JavaScript PÅ');
 }
-function toggleJs(){
-  setJsOff(!jsOff);
-}
+function toggleJs(){ setJsOff(!jsOff); }
 $('tvJsBtn').onclick = toggleJs;
 
 /* ============================================================
-   ÖPPNA EXTERNT – fix för Iran-kanaler
+   ÖPPNA EXTERNT
+   FIX 5+7: iranska + turkiska kanaler öppnas utan noopener,
+   så Referer skickas med. Auto-markera INTE som extOnly.
    ============================================================ */
-const IRAN_HOST_HINTS = [
+const REFERER_HINTS = [
   'irib','irinn','telewebion','glwiz','manoto','iranintl','parstv','shabak',
   'persian','iran','fars','mehr','tasnim','presstv','alalam','khabar',
-  'toosheh','kabootar','ava','varzesh','varzesh3','namava','filimo',
-  '.ir/','.ir?','.ir:'
+  'toosheh','kabootar','ava','varzesh','namava','filimo',
+  '.ir/','.ir?','.ir:',
+  'trt','turkuvaz','atv.com.tr','showtv','star.com.tr','tv8','ntv.com.tr',
+  'haber','kanald','cnnturk','.tr/','.tr?','.tr:'
 ];
-function isLikelyIranian(url){
+function needsReferer(url){
   if(!url) return false;
   const u = url.toLowerCase();
-  return IRAN_HOST_HINTS.some(h => u.includes(h));
+  return REFERER_HINTS.some(h => u.includes(h));
 }
 
 function openStreamExternal(channel, silent){
@@ -1349,7 +1359,6 @@ function openStreamExternal(channel, silent){
   if(!c || !c.url){ if(!silent) showToast('Ingen kanal vald'); return; }
   if(!/^https?:\/\//i.test(c.url)){ if(!silent) showToast('Ogiltig URL'); return; }
 
-  // Kanaler som ALDRIG ska öppnas externt (spelas bara i spelaren)
   if(isNeverExternal(c.url)){
     if(!silent) showToast('Denna kanal spelas bara i spelaren');
     if(c !== currentChannel) playChannel(c);
@@ -1359,7 +1368,6 @@ function openStreamExternal(channel, silent){
   if(openStreamExternal._last === c.url && !silent){ showToast('Redan öppnad'); return; }
   openStreamExternal._last = c.url;
 
-  // TV-miljö: visa dialog
   if(isTvEnvironment()){
     showOverlay(
       '🔗 <b>Öppna stream externt?</b><br><br>'+
@@ -1375,47 +1383,29 @@ function openStreamExternal(channel, silent){
     return;
   }
 
-  // Iran-kanaler: öppna utan noopener så att Referer kan skickas med.
-  // Många iranska servrar kräver Referer från samma domän, och med
-  // noopener så kan webbläsaren skicka Referer: null vilket ofta ger 403.
-  const iranian = isLikelyIranian(c.url);
-  const useNoopener = !iranian;
+  const useReferer = needsReferer(c.url);
+  const useNoopener = !useReferer;
 
   let win = null;
   try{
     win = window.open(c.url, '_blank', useNoopener ? 'noopener,noreferrer' : '');
-  }catch(e){
-    win = null;
-  }
+  }catch(e){ win = null; }
 
   if(win){
-    if(iranian){
-      // Försök sätta referer via location (fungerar bara delvis i moderna webbläsare, men bättre än inget)
-      try{
-        if(!win.document || win.location.href === 'about:blank'){
-          win.location.href = c.url;
-        }
-      }catch(e){ /* cross-origin, ignorera */ }
-      if(!silent) showToast('🔗 Öppnar ' + c.name + ' externt (iransk kanal)…');
-    } else {
-      if(!silent) showToast('🔗 Öppnar externt: ' + c.name);
-    }
+    if(!silent) showToast('🔗 Öppnar externt: ' + c.name);
     return;
   }
 
-  // Popup blockerades → visa hjälpdialog
   showOverlay(
     '🚫 <b>Popup blockerades</b>'+
-    (iranian ? '<br><span style="font-size:12px;color:#fcd34d">Obs: Iranska kanaler kan kräva att du tillåter popup-fönster för den här sidan.</span>' : '')+
+    (useReferer ? '<br><span style="font-size:12px;color:#fcd34d">Obs: vissa kanaler kräver att du tillåter popup-fönster.</span>' : '')+
     '<br><br>'+
     '<span style="font-size:11px;color:#94a3b8;word-break:break-all">'+escapeHtml(c.url)+'</span>',
     true,
     [
       {label:'🔗 Försök igen', primary:true, action:()=>{
         hideOverlay();
-        setTimeout(()=>{
-          try{ window.open(c.url, '_blank'); }catch(e){}
-        }, 100);
+        setTimeout(()=>{ try{ window.open(c.url, '_blank'); }catch(e){} }, 100);
       }},
       {label:'📋 Kopiera URL', action:()=>{ navigator.clipboard.writeText(c.url); showToast('URL kopierad – klistra in i ny flik'); }},
       {label:'✖ Stäng', action:()=>hideOverlay()}
@@ -1469,7 +1459,6 @@ async function openM3UViewer(playlistId){
 
   const ta = modal.querySelector('#m3uText');
   const statsEl = modal.querySelector('#m3uStats');
-
   function close(){ document.body.removeChild(backdrop); }
 
   async function loadText(){
@@ -1512,14 +1501,11 @@ async function openM3UViewer(playlistId){
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
     const fname = (pl.name||'spellista').replace(/[^\w\-]+/g,'_') + '.m3u';
-    a.download = fname;
-    a.click();
+    a.download = fname; a.click();
     showToast('💾 Nedladdning startad: ' + fname);
   };
-
   const onKey = e=>{ if(e.key === 'Escape'){ close(); document.removeEventListener('keydown', onKey); } };
   document.addEventListener('keydown', onKey);
-
   setTimeout(()=>loadText(), 50);
   setTimeout(()=>ta.focus(), 100);
 }
@@ -1605,23 +1591,14 @@ function multiSelectAddToGroup(){
   backdrop.appendChild(modal);
   document.body.appendChild(backdrop);
   const close = ()=> document.body.removeChild(backdrop);
-
-  modal.querySelectorAll('.row').forEach(row=>{
-    row.onclick = ()=>{
-      row.classList.toggle('on');
-    };
-  });
-
+  modal.querySelectorAll('.row').forEach(row=>{ row.onclick = ()=>{ row.classList.toggle('on'); }; });
   const applyTo = (gids, closeAfter)=>{
     if(!gids.length){ showToast('Välj minst en lista'); return; }
     let added = 0;
     gids.forEach(gid=>{
       if(!groupMembers[gid]) groupMembers[gid] = [];
       multiSelected.forEach(url=>{
-        if(!groupMembers[gid].includes(url)){
-          groupMembers[gid].push(url);
-          added++;
-        }
+        if(!groupMembers[gid].includes(url)){ groupMembers[gid].push(url); added++; }
       });
     });
     save();
@@ -1629,21 +1606,13 @@ function multiSelectAddToGroup(){
     showToast(`✓ ${multiSelected.size} kanaler → ${gids.length} lista(or) (${added} tillägg)`);
     multiSelected.clear();
     updateMultiToolbar();
-    if(closeAfter){
-      close();
-      toggleMultiMode(false);
-    } else {
-      close();
-    }
+    close();
+    if(closeAfter) toggleMultiMode(false);
   };
-
   modal.querySelector('#multiCreateGroup').onclick = ()=>{
     const inp = modal.querySelector('#multiNewGroup');
     const g = createGroup(inp.value);
-    if(g){
-      inp.value = '';
-      applyTo([g.id], true);
-    }
+    if(g){ inp.value = ''; applyTo([g.id], true); }
   };
   modal.querySelector('#multiNewGroup').addEventListener('keydown', e=>{
     if(e.key === 'Enter'){ e.preventDefault(); modal.querySelector('#multiCreateGroup').click(); }
@@ -1658,9 +1627,7 @@ function multiSelectAddToGroup(){
 function multiSelectFavourite(){
   if(!multiSelected.size){ showToast('Markera minst en kanal'); return; }
   let added = 0;
-  multiSelected.forEach(url=>{
-    if(!favs.has(url)){ favs.add(url); added++; }
-  });
+  multiSelected.forEach(url=>{ if(!favs.has(url)){ favs.add(url); added++; } });
   save(); updateSummary(); renderFavPanel(); renderChannelList(); renderTvOvTabs();
   showToast(`⭐ ${added} nya favoriter (av ${multiSelected.size})`);
 }
@@ -1683,8 +1650,7 @@ function createGroup(name){
   groupMembers[g.id] = [];
   save();
   renderGroupTabs(); renderGroupPanel(); renderTvOvTabs();
-  updateGroupsSummary();
-  updateSummary();
+  updateGroupsSummary(); updateSummary();
   return g;
 }
 function deleteGroup(id){
@@ -1710,19 +1676,13 @@ function toggleChannelInGroup(url, groupId){
   else arr.push(url);
   save();
 }
-function isChannelInGroup(url, groupId){
-  return (groupMembers[groupId]||[]).includes(url);
-}
-function getChannelGroups(url){
-  return groups.filter(g => isChannelInGroup(url, g.id));
-}
+function isChannelInGroup(url, groupId){ return (groupMembers[groupId]||[]).includes(url); }
+function getChannelGroups(url){ return groups.filter(g => isChannelInGroup(url, g.id)); }
 function getGroupChannels(groupId){
   const urls = groupMembers[groupId] || [];
   return urls.map(u => findChannelByUrl(u)).filter(Boolean);
 }
-function getGroupCount(groupId){
-  return (groupMembers[groupId]||[]).length;
-}
+function getGroupCount(groupId){ return (groupMembers[groupId]||[]).length; }
 function updateGroupsSummary(){
   const el = $('groupsSummary');
   if(el){
@@ -1798,9 +1758,7 @@ function openGroupPicker(channel){
   modal.querySelector('#addGroupBtn').onclick = doAdd;
   modal.querySelector('#gpClose').onclick = close;
   const inp = modal.querySelector('#newGroupName');
-  inp.addEventListener('keydown', e=>{
-    if(e.key === 'Enter'){ e.preventDefault(); doAdd(); }
-  });
+  inp.addEventListener('keydown', e=>{ if(e.key === 'Enter'){ e.preventDefault(); doAdd(); } });
   setTimeout(()=>inp.focus(), 80);
 }
 
@@ -1829,13 +1787,7 @@ function openCreateGroupModal(){
   document.body.appendChild(backdrop);
   const close = ()=>{ document.body.removeChild(backdrop); };
   const inp = modal.querySelector('#newGroupNameModal');
-  const doSave = ()=>{
-    const g = createGroup(inp.value);
-    if(g){
-      close();
-      showToast(`✓ "${g.name}" skapad!`);
-    }
-  };
+  const doSave = ()=>{ const g = createGroup(inp.value); if(g){ close(); showToast(`✓ "${g.name}" skapad!`); } };
   modal.querySelector('#saveGroup').onclick = doSave;
   modal.querySelector('#cancelGroup').onclick = close;
   inp.addEventListener('keydown', e=>{
@@ -1870,8 +1822,7 @@ function openRenameGroupModal(group){
     const nn = inp.value.trim();
     if(!nn){ showToast('Ange ett namn'); return; }
     renameGroup(group.id, nn);
-    close();
-    showToast('Namn uppdaterat');
+    close(); showToast('Namn uppdaterat');
   };
   modal.querySelector('#saveRename').onclick = doSave;
   modal.querySelector('#cancelRename').onclick = close;
@@ -1884,11 +1835,7 @@ function openRenameGroupModal(group){
 
 function renderGroupTabs(){
   if(!els.groupTabList) return;
-  if(!groups.length){
-    els.groupTabList.innerHTML = '';
-    updateGroupsSummary();
-    return;
-  }
+  if(!groups.length){ els.groupTabList.innerHTML = ''; updateGroupsSummary(); return; }
   els.groupTabList.innerHTML = groups.map(g=>{
     const cnt = getGroupCount(g.id);
     const isActive = activeGroupId === g.id;
@@ -1920,8 +1867,7 @@ function renderGroupTabs(){
 function renderGroupPanel(){
   if(!els.groupPanel) return;
   if(!activeGroupId || !groups.find(g=>g.id===activeGroupId)){
-    els.groupPanel.innerHTML = '';
-    return;
+    els.groupPanel.innerHTML = ''; return;
   }
   const g = groups.find(x=>x.id===activeGroupId);
   const chans = getGroupChannels(g.id);
@@ -1950,8 +1896,7 @@ function renderGroupPanel(){
   els.groupPanel.querySelectorAll('.favItem').forEach(el=>{
     el.onclick = e=>{
       if(e.target.classList.contains('favItemRemove')) return;
-      const ch = findChannelByUrl(el.dataset.url);
-      if(ch) playChannel(ch);
+      const ch = findChannelByUrl(el.dataset.url); if(ch) playChannel(ch);
     };
   });
   els.groupPanel.querySelectorAll('.favItemRemove').forEach(b=>{
@@ -1963,8 +1908,7 @@ function renderGroupPanel(){
   });
   els.groupPanel.querySelector('#gpPlayAll').onclick = ()=>{
     const first = getGroupChannels(g.id)[0];
-    if(first) playChannel(first);
-    else showToast('Inga kanaler i listan');
+    if(first) playChannel(first); else showToast('Inga kanaler i listan');
   };
   els.groupPanel.querySelector('#gpExport').onclick = ()=>{
     const chans = getGroupChannels(g.id);
@@ -1979,9 +1923,7 @@ function renderGroupPanel(){
       `<span style="font-size:13px;color:#94a3b8">Kanalerna finns kvar – bara listan tas bort.</span>`,
       true,
       [
-        {label:'🗑️ Ja, ta bort', primary:true, action:()=>{
-          deleteGroup(g.id); hideOverlay(); showToast('Lista borttagen');
-        }},
+        {label:'🗑️ Ja, ta bort', primary:true, action:()=>{ deleteGroup(g.id); hideOverlay(); showToast('Lista borttagen'); }},
         {label:'✖ Avbryt', action:()=>hideOverlay()}
       ]
     );
@@ -2011,12 +1953,19 @@ function setRowStatus(id,text,state){
   if(el){ el.textContent=text; el.className='status '+(state||'idle'); }
 }
 
-const STREAM_PROXIES = [
-  {id:'worker',    name:'Min Worker',  build:u=> MY_WORKER + encodeURIComponent(u)},
+/* ============================================================
+   STREAM PROXIES
+   FIX 1+7: Worker bara om den är konfigurerad, ingen 'direkt' först.
+   ============================================================ */
+const STREAM_PROXIES = [];
+if(MY_WORKER){
+  STREAM_PROXIES.push({id:'worker', name:'Min Worker', build:u=> MY_WORKER + encodeURIComponent(u)});
+}
+STREAM_PROXIES.push(
   {id:'allorig',   name:'AllOrigins',  build:u=>`https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`},
   {id:'corsproxy', name:'corsproxy',   build:u=>`https://corsproxy.io/?${encodeURIComponent(u)}`},
   {id:'codetabs',  name:'codetabs',    build:u=>`https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(u)}`},
-];
+);
 function buildStreamCandidates(url){
   const out = [];
   if(proxyMode === 'always'){
@@ -2039,12 +1988,13 @@ function hideProxyBadge(){
   els.proxyBadge.style.display = 'none';
 }
 
+/* FIX 7: ingen u=>u först – proxys används innan direkt */
 const proxies = [
-  u=>u,
-  u=> MY_WORKER + encodeURIComponent(u),
+  ...(MY_WORKER ? [u=> MY_WORKER + encodeURIComponent(u)] : []),
   u=>`https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`,
   u=>`https://corsproxy.io/?${encodeURIComponent(u)}`,
-  u=>`https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(u)}`
+  u=>`https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(u)}`,
+  u=>u,   // sista utväg
 ];
 async function fetchM3U(url){
   for(const p of proxies){
@@ -2093,9 +2043,13 @@ function isExternalOnly(url){
   if(isNeverExternal(url)) return false;
   return extOnly.has(url);
 }
+
+/* FIX 5: auto-markera INTE iranska/turkiska kanaler som extOnly,
+   så spelaren försöker igen med proxy nästa gång. */
 function markExternalOnly(url){
   if(!url || extOnly.has(url)) return;
   if(isNeverExternal(url)) return;
+  if(needsReferer(url)) return;   // <-- ny: iranska/turkiska sparas inte
   extOnly.add(url); save();
 }
 
@@ -2166,10 +2120,7 @@ function renderManager(){
     };
   });
   els.playlistManager.querySelectorAll('[data-view]').forEach(b=>{
-    b.onclick = (e)=>{
-      e.stopPropagation();
-      openM3UViewer(b.dataset.view);
-    };
+    b.onclick = (e)=>{ e.stopPropagation(); openM3UViewer(b.dataset.view); };
   });
   els.playlistManager.querySelectorAll('[data-remove]').forEach(b=>{
     b.onclick = ()=>{
@@ -2201,12 +2152,10 @@ function renderManager(){
   const restoreBtn = $('restoreRemoved');
   if(restoreBtn) restoreBtn.style.display = removed.size > 0 ? 'inline' : 'none';
 }
-
-/* --------- FIX: räkna bara synliga + aktiva spellistor --------- */
 function getVisibleActiveCount(){
   let n = 0;
   for(const id of active){
-    if(removed.has(id)) continue;                    // hoppa över borttagna
+    if(removed.has(id)) continue;
     const pl = PLAYLISTS.find(p=>p.id===id);
     if(pl) n++;
   }
@@ -2216,7 +2165,6 @@ function updateSummary(){
   const total = PLAYLISTS.filter(p=>!removed.has(p.id)).length;
   const activeVisible = getVisibleActiveCount();
   const proxyLabel = {off:'🚫', auto:'🌐', always:'🔁'}[proxyMode] || '';
-
   els.manageSummary.textContent = `${activeVisible}/${total} aktiva · proxy ${proxyLabel}`;
   els.loadBtn.textContent = activeVisible > 0
     ? `▶️ Ladda kanaler (${activeVisible} valda)`
@@ -2238,7 +2186,7 @@ function updateFilterSummary(){
 function rebuildAll(){
   allChannels = [];
   for(const id of active){
-    if(removed.has(id)) continue;                    // FIX: hoppa över borttagna
+    if(removed.has(id)) continue;
     if(channelsByPlaylist[id]) allChannels = allChannels.concat(channelsByPlaylist[id]);
   }
   const groups2 = [...new Set(allChannels.map(c=>c.group).filter(Boolean))].sort();
@@ -2367,7 +2315,6 @@ function renderChannelList(){
       save(); updateSummary(); updateFavBtn(); renderFavPanel();
       b.textContent = favs.has(ch.url)?'⭐':'☆';
       b.classList.toggle('notFav', !favs.has(ch.url));
-      b.title = favs.has(ch.url)?'Ta bort från favoriter':'Lägg till i favoriter';
       if(document.body.classList.contains('tv-overlay-open')) renderTvOverlay();
     };
   });
@@ -2528,8 +2475,13 @@ function tryNextCandidate(c, candidates, idx){
   let resolved = false;
   const success = ()=>{
     if(resolved) return; resolved = true;
+    clearTimeout(playChannel._timeout);          // FIX 4
     hideOverlay();
     showProxyBadge(cand.id==='direct' ? '🛰 Direkt' : '🛰 Proxy: '+cand.id);
+    // FIX 3: försök spela upp ljud efter lyckad start
+    if(els.video.muted){
+      els.video.muted = false;
+    }
   };
   const failNext = (reason)=>{
     if(resolved) return; resolved = true;
@@ -2540,10 +2492,24 @@ function tryNextCandidate(c, candidates, idx){
     tryNextCandidate(c, candidates, idx+1);
   };
   const url = cand.url;
-  if(url.includes('.m3u8') && window.Hls && Hls.isSupported()){
+
+  // FIX 2: bättre HLS-detektion – inte bara .m3u8
+  const isHls = url.includes('.m3u8') || url.includes('.m3u') ||
+                !/\.(mp4|mp3|mpd|aac|webm|ogg)(\?|$)/i.test(url);
+  const canUseHls = window.Hls && Hls.isSupported();
+  const canUseNativeHls = els.video.canPlayType('application/vnd.apple.mpegurl');
+
+  if(isHls && canUseHls){
+    // Använd hls.js
     hls = new Hls({enableWorker:true, lowLatencyMode:true});
     hls.loadSource(url); hls.attachMedia(els.video);
-    hls.on(Hls.Events.MANIFEST_PARSED, ()=>{ els.video.play().then(success).catch(success); });
+    hls.on(Hls.Events.MANIFEST_PARSED, ()=>{
+      els.video.play().then(success).catch(()=>{
+        // Autoplay blockerat – starta muted
+        els.video.muted = true;
+        els.video.play().then(success).catch(()=>failNext('autoplay blockerades'));
+      });
+    });
     hls.on(Hls.Events.ERROR, (_, d)=>{
       if(!d.fatal) return;
       if(d.type === Hls.ErrorTypes.MEDIA_ERROR){
@@ -2555,7 +2521,18 @@ function tryNextCandidate(c, candidates, idx){
     clearTimeout(playChannel._timeout);
     playChannel._timeout = setTimeout(()=>{
       if(els.video.readyState < 2 || els.video.paused) failNext('timeout');
-    }, idx===0 ? 8000 : 12000);
+    }, idx===0 ? 10000 : 15000);
+  } else if(isHls && canUseNativeHls){
+    // Safari native HLS
+    els.video.src = url;
+    els.video.play().then(success).catch(()=>{
+      els.video.muted = true;
+      els.video.play().then(success).catch(()=>failNext('autoplay blockerades'));
+    });
+    els.video.onplaying = success;
+    els.video.onerror = ()=>failNext('native HLS-fel');
+    clearTimeout(playChannel._timeout);
+    playChannel._timeout = setTimeout(()=>{ if(els.video.readyState < 2) failNext('timeout native'); }, 12000);
   } else if(url.includes('.mpd')){
     els.video.src = url;
     els.video.play().then(success).catch(()=>{});
@@ -2565,7 +2542,10 @@ function tryNextCandidate(c, candidates, idx){
     playChannel._timeout = setTimeout(()=>{ if(els.video.readyState < 2) failNext('timeout DASH'); }, 10000);
   } else if(url){
     els.video.src = url;
-    els.video.play().then(success).catch(()=>{});
+    els.video.play().then(success).catch(()=>{
+      els.video.muted = true;
+      els.video.play().then(success).catch(()=>failNext('autoplay blockerades'));
+    });
     els.video.onplaying = success;
     els.video.onerror = ()=>{
       const err = els.video.error;
@@ -2683,8 +2663,9 @@ function openAllVisibleTabs(){
           window.location.href = list[0].url;
         } else {
           list.forEach((c, i)=>{
+            const needsRef = needsReferer(c.url);
             setTimeout(()=>{
-              const w = window.open(c.url, '_blank', 'noopener,noreferrer');
+              const w = window.open(c.url, '_blank', needsRef ? '' : 'noopener,noreferrer');
               if(!w) showToast('🚫 Popup blockerades vid kanal '+(i+1));
             }, i * 250);
           });
@@ -3134,9 +3115,7 @@ function setTvClockOff(off){
     btn.style.borderColor = off ? '#a05560' : '';
   }
 }
-function toggleTvClock(){
-  setTvClockOff(!document.body.classList.contains('tv-clock-off'));
-}
+function toggleTvClock(){ setTvClockOff(!document.body.classList.contains('tv-clock-off')); }
 if(localStorage.getItem(LS.tvClockOff) === '1'){
   document.body.classList.add('tv-clock-off');
 }
@@ -3148,10 +3127,7 @@ $('tvExitBtn').onclick = ()=> toggleTvMode();
 function toggleTvMode(){
   const on = document.body.classList.toggle('tv-player-mode');
   localStorage.setItem(LS.tvMode, on?'1':'0');
-  if(!on){
-    closeTvChannelPanel();
-    document.body.classList.remove('tv-overlay-open');
-  }
+  if(!on){ closeTvChannelPanel(); document.body.classList.remove('tv-overlay-open'); }
   showToast(on?'🖥️ TV-läge PÅ':'🖥️ TV-läge AV');
   if(on){
     tvNav.currentZone = 1;
@@ -3338,8 +3314,7 @@ els.clearExtOnlyBtn.onclick = clearExternalOnly;
 
 els.playAllFavs.onclick = ()=>{
   const first = allChannels.find(c => favs.has(c.url));
-  if(first) playChannel(first);
-  else showToast('Inga favoriter');
+  if(first) playChannel(first); else showToast('Inga favoriter');
 };
 els.openAllFavs.onclick = ()=>{
   const chans = allChannels.filter(c=>favs.has(c.url));
@@ -3351,7 +3326,8 @@ els.openAllFavs.onclick = ()=>{
       {label:'✅ Öppna alla', primary:true, action:()=>{
         hideOverlay();
         chans.forEach((c, i)=>{
-          setTimeout(()=>window.open(c.url, '_blank', 'noopener,noreferrer'), i * 250);
+          const needsRef = needsReferer(c.url);
+          setTimeout(()=>window.open(c.url, '_blank', needsRef ? '' : 'noopener,noreferrer'), i * 250);
         });
         showToast(`Öppnar ${chans.length} flikar...`);
       }},
@@ -3487,9 +3463,7 @@ $('addPlFile').onchange = async e=>{
     savePlaylistMeta(); saveCustomPlaylists(); save();
     renderManager(); rebuildAll();
     showToast(chans.length+' kanaler från fil');
-  }catch(err){
-    showToast('Kunde inte läsa filen');
-  }
+  }catch(err){ showToast('Kunde inte läsa filen'); }
   e.target.value = '';
 };
 
@@ -3527,9 +3501,7 @@ els.fileInput.onchange = async e=>{
     savePlaylistMeta(); saveCustomPlaylists(); save();
     renderManager(); rebuildAll();
     showToast(chans.length+' kanaler från fil');
-  }catch(err){
-    showToast('Kunde inte läsa filen');
-  }
+  }catch(err){ showToast('Kunde inte läsa filen'); }
   e.target.value = '';
 };
 els.autoLoadCheck.onchange = e=>localStorage.setItem(LS.autoload, e.target.checked?'1':'0');
@@ -3639,9 +3611,7 @@ async function toggleFullscreen(){
       else if(document.webkitExitFullscreen) document.webkitExitFullscreen();
       showToast('⛶ Fullskärm AV');
     }
-  }catch(e){
-    showToast('Fullskärm blockerad av webbläsaren');
-  }
+  }catch(e){ showToast('Fullskärm blockerad av webbläsaren'); }
 }
 $('fullscreenBtn').onclick = toggleFullscreen;
 ['fullscreenchange','webkitfullscreenchange'].forEach(ev=>
