@@ -744,6 +744,7 @@ body.app-fullscreen #layout{height:100dvh}
 <div id="tvNavBar" role="toolbar" aria-label="TV navigering">
   <button class="tvNavBtn" id="tvPrevBtn" title="Föregående kanal">⏮ <span class="kbd">◀</span></button>
   <button class="tvNavBtn primary" id="tvListBtn" title="Öppna kanallista">📺 <span>Kanaler</span> <span class="kbd">OK</span></button>
+  <button class="tvNavBtn" id="tvAddBtn" title="Ny lista / lägg kanalen i lista">➕ <span class="kbd">A</span></button>
   <button class="tvNavBtn" id="tvNextBtn" title="Nästa kanal">⏭ <span class="kbd">▶</span></button>
   <button class="tvNavBtn" id="tvJsBtn" title="hls.js-motorn av/på">⚡ <span class="kbd">J</span></button>
   <button class="tvNavBtn" id="tvReloadBtn" title="Ladda om kanal">🔄 <span class="kbd">R</span></button>
@@ -2625,7 +2626,13 @@ function renderTvOvTabs(){
     <span class="ico">📋</span>
     <span class="nm">Alla</span>
   </button>`;
+  html += `<button class="tvOvTab allTab" id="tvOvNewList" title="Skapa ny lista / lägg kanalen i lista">
+    <span class="ico">➕</span>
+    <span class="nm">Ny lista</span>
+  </button>`;
   els.tvOvTabs.innerHTML = html;
+  const nlBtn = els.tvOvTabs.querySelector('#tvOvNewList');
+  if(nlBtn) nlBtn.onclick = (e)=>{ e.stopPropagation(); tvListDialog(currentChannel); };
   els.tvOvTabs.querySelectorAll('.tvOvTab[data-tvtab]').forEach(t=>{
     t.onclick = ()=> switchTvOvTab(t.dataset.tvtab);
   });
@@ -2654,6 +2661,51 @@ function closeTvOverlay(){
   tvNav.currentZone = 1;
   tvNav.focusIndex = 0;
   tvNav.refresh();
+}
+
+/* ===== TV-LÄGE: NY LISTA / LÄGG KANAL I LISTA ===== */
+function tvListDialog(channel){
+  const c = channel || currentChannel;
+  const chanHtml = c
+    ? `<span style="font-size:13px;color:#94a3b8">Kanal: <b style="color:#eef1fb">${escapeHtml(c.name)}</b></span><br>`
+    : `<span style="font-size:12px;color:#94a3b8">Ingen kanal vald – du kan bara skapa en ny lista.</span><br>`;
+  const acts = [];
+  acts.push({label:'➕ Ny lista' + (c ? ' (med kanalen)' : ''), primary:true, action:()=>{
+    showOverlay(
+      `➕ <b>Skapa ny lista</b><br><br>${chanHtml}<br>`+
+      `<input id="tvNewListName" placeholder="Listnamn (t.ex. Nyheter)" maxlength="40" autocomplete="off" style="width:100%;padding:10px;border-radius:8px;border:2px solid var(--line);background:#1e1e33;color:var(--text);font-size:15px">`,
+      true,
+      [
+        {label:'✅ Skapa', primary:true, action:()=>{
+          const inp = $('tvNewListName');
+          const g = inp ? createGroup(inp.value) : null;
+          if(!g){ showToast('Skriv ett listnamn'); return; }
+          if(c) toggleChannelInGroup(c.url, g.id);
+          hideOverlay();
+          renderTvOvTabs(); renderGroupTabs(); renderGroupPanel(); updateGroupsSummary();
+          showToast(c ? `✓ "${g.name}" skapad – kanalen tillagd` : `✓ "${g.name}" skapad`);
+        }},
+        {label:'✖ Avbryt', action:()=>hideOverlay()}
+      ]
+    );
+    setTimeout(()=>{ const i = $('tvNewListName'); if(i) i.focus(); }, 80);
+  }});
+  groups.forEach(g=>{
+    const isIn = c ? isChannelInGroup(c.url, g.id) : false;
+    acts.push({
+      label:`${getGroupIcon(g.name)} ${escapeHtml(g.name)}${isIn?' ✓':''}`,
+      action:()=>{
+        if(!c){ showToast('Ingen kanal vald'); return; }
+        toggleChannelInGroup(c.url, g.id);
+        const now = isChannelInGroup(c.url, g.id);
+        renderTvOvTabs(); renderGroupTabs(); renderGroupPanel(); updateGroupsSummary(); renderTvOverlay();
+        showToast(now ? `✓ Tillagd i "${g.name}"` : `Borttagen ur "${g.name}"`);
+        tvListDialog(c); // uppdatera dialogen
+      }
+    });
+  });
+  acts.push({label:'✖ Stäng', action:()=>hideOverlay()});
+  showOverlay(`➕ <b>Listor</b><br><br>${chanHtml}`, true, acts);
 }
 function renderTvOverlay(){
   const list = getTvList();
@@ -2897,7 +2949,8 @@ document.addEventListener('keydown', e=>{
     if(key === 'f' || key === 'F'){ e.preventDefault(); toggleFullscreen(); return; }
     if(key === 'ArrowRight'){ e.preventDefault(); goToAdjacentChannel(1); return; }
     if(key === 'ArrowLeft'){ e.preventDefault(); goToAdjacentChannel(-1); return; }
-    if(key === 'r' || key === 'R'){ e.preventDefault(); reloadCurrentChannel(); return; }
+  if(key === 'r' || key === 'R'){ e.preventDefault(); reloadCurrentChannel(); return; }
+  if(key === 'a' || key === 'A'){ e.preventDefault(); tvListDialog(currentChannel); return; }
     if(key === 'k' || key === 'K'){ e.preventDefault(); toggleTvClock(); return; }
     if(key === 'j' || key === 'J'){ e.preventDefault(); toggleHlsJs(); return; }
     if(key === 'g' || key === 'G'){
@@ -3013,6 +3066,7 @@ els.openAllBtn.onclick = openAllVisibleTabs;
 els.tvModeBtn.onclick = toggleTvMode;
 els.hlsJsBtn.onclick = ()=>toggleHlsJs();
 $('tvJsBtn').onclick = ()=>toggleHlsJs();
+$('tvAddBtn').onclick = ()=>tvListDialog(currentChannel);
 updateJsButtons();
 els.clearExtOnlyBtn.onclick = clearExternalOnly;
 
