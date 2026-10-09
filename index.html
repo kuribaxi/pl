@@ -679,6 +679,36 @@ body.tv-player-mode.tv-overlay-open #tvNavBar{ transform:translateX(-50%) transl
   .tvNavBtn.primary > span:not(.kbd){ display:inline !important; }
   body.tv-player-mode.tv-idle #tvNavBar{ transform:translateY(140%) !important; }
 }
+/* ============================================================
+   TV-KANALNAMN-BADGE (övre höger hörn i TV-läge)
+   ============================================================ */
+#tvChanName{
+  position:fixed; top:14px; right:16px; z-index:5200;
+  background:rgba(6,20,25,.85);
+  border:2px solid var(--tv-focus);
+  border-radius:14px;
+  padding:10px 18px;
+  font-size:1.1rem; font-weight:800; color:var(--tv-focus);
+  display:none;
+  flex-direction:column; align-items:flex-end; gap:3px;
+  box-shadow:0 8px 28px rgba(0,0,0,.6), 0 0 18px rgba(250,204,21,.25);
+  pointer-events:none;
+  max-width:min(60vw, 520px);
+  transition:opacity .35s, transform .35s;
+}
+#tvChanName .tvChanTag{
+  font-size:0.62rem; font-weight:800; color:#b8c3ff;
+  letter-spacing:1.5px; text-transform:uppercase;
+}
+#tvChanName #tvChanNameText{
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%;
+}
+body.tv-player-mode #tvChanName{ display:flex; }
+/* Göms tillsammans med toolbaren vid inaktivitet */
+body.tv-player-mode.tv-idle #tvChanName{
+  opacity:0; transform:translateX(130%); pointer-events:none;
+}
+
 #tvClock{
   position:fixed; top:14px; left:18px; z-index:14; background:transparent; border:none;
   border-radius:0; padding:0; display:none; flex-direction:column; align-items:flex-start;
@@ -739,6 +769,12 @@ body.app-fullscreen #layout{height:100dvh}
 <div id="tvClock">
   <div class="tvClockTime" id="tvClockDisplay">--:--:--</div>
   <div class="tvClockDate" id="tvClockDateTv">Laddar...</div>
+</div>
+
+<!-- ===== TV-KANALNAMN (övre höger hörn) ===== -->
+<div id="tvChanName">
+  <div class="tvChanTag" id="tvChanTag">LIVE</div>
+  <div id="tvChanNameText">Ingen kanal</div>
 </div>
 
 <div id="tvNavBar" role="toolbar" aria-label="TV navigering">
@@ -2841,7 +2877,27 @@ function reloadCurrentChannel(){
   showToast('🔄 Laddar om '+currentChannel.name+'…');
   playChannel(currentChannel);
 }
-function updateTvChannelBadge(){ /* no-op */ }
+/* ===== TV-KANALNAMN-BADGE (övre höger hörn i TV-läge) ===== */
+function updateTvChannelBadge(){
+  const nameEl = $('tvChanNameText');
+  const tagEl  = $('tvChanTag');
+  if(!nameEl) return;
+  if(currentChannel){
+    nameEl.textContent = currentChannel.name;
+    if(tagEl){
+      /* Visa grupp + land som tagg */
+      const parts = [];
+      const chGroups = getChannelGroups(currentChannel.url);
+      if(chGroups.length) parts.push(getGroupIcon(chGroups[0].name) + ' ' + chGroups[0].name);
+      else if(favs.has(currentChannel.url)) parts.push('⭐ FAVORIT');
+      parts.push((currentChannel.flag||'') + ' ' + (currentChannel.plCountry||currentChannel.country||''));
+      tagEl.textContent = 'LIVE · ' + parts.join(' · ');
+    }
+  } else {
+    nameEl.textContent = 'Ingen kanal';
+    if(tagEl) tagEl.textContent = 'LIVE';
+  }
+}
 
 $('tvPrevBtn').onclick = ()=> goToAdjacentChannel(-1);
 $('tvNextBtn').onclick = ()=> goToAdjacentChannel(1);
