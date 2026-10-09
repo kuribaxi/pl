@@ -2167,9 +2167,23 @@ function tryNextCandidate(c, candidates, idx){
   };
   const url = cand.url;
   if(/\.m3u8?(\?|$)/i.test(url) && hlsJsOn && window.Hls && Hls.isSupported()){
-    hls = new Hls({enableWorker:true, lowLatencyMode:true});
+    hls = new Hls({
+      enableWorker:true,
+      // FIX: spola tillbaka (timeshift/DVR) i telewebion m.fl. livesändningar
+      lowLatencyMode:false,        // låg-latens låser spelaren vid livekanten och dödar spolning
+      liveDurationInfinity:true,   // tillåter oändlig duration och sökning bakåt i live-DVR-fönstret
+      backBufferLength:Infinity,   // behåll hela bufferten bakåt
+      liveBackBufferLength:Infinity,
+      maxBufferLength:60,          // buffra 60s framåt
+      maxMaxBufferLength:120,
+      maxBufferSize: 60*1000*1000
+    });
     hls.loadSource(url); hls.attachMedia(els.video);
-    hls.on(Hls.Events.MANIFEST_PARSED, ()=>{ els.video.play().then(success).catch(success); });
+    hls.on(Hls.Events.MANIFEST_PARSED, ()=>{
+      // säkerställ att sökbarhets-reglaget uppdateras för live-DVR
+      try{ if(hls.liveSyncPosition !== undefined && els.video.seekable.length) els.video.currentTime = hls.liveSyncPosition; }catch(e){}
+      els.video.play().then(success).catch(success);
+    });
     hls.on(Hls.Events.ERROR, (_, d)=>{
       if(!d.fatal) return;
       if(d.type === Hls.ErrorTypes.MEDIA_ERROR){
