@@ -433,13 +433,15 @@ body.multi-mode .channelRow .favStar, body.multi-mode .channelRow .listStar{ dis
   background:rgba(245,158,11,.15);color:#fcd34d}
 .epgBadge.ok{background:rgba(34,197,94,.18);color:#86efac}
 .nowActions{display:flex;gap:8px;flex:0 0 auto}
-#favBtn,#openExternalBtn,#vlcBtn{background:var(--panel3);border:3px solid var(--line);border-radius:12px;
+#favBtn,#openExternalBtn,#vlcBtn,#hlsJsBtn{background:var(--panel3);border:3px solid var(--line);border-radius:12px;
   font-size:24px;width:54px;height:54px;cursor:pointer;flex:0 0 auto;transition:.2s}
 #favBtn{color:var(--fav)}
 #openExternalBtn{color:var(--focus);font-size:22px}
 #vlcBtn{color:#f97316;font-size:14px;font-weight:800}
-#favBtn:hover,#openExternalBtn:hover,#vlcBtn:hover{background:#26264a;border-color:var(--accent)}
-@media (hover:none){ #favBtn:hover,#openExternalBtn:hover,#vlcBtn:hover{background:var(--panel3)} }
+#hlsJsBtn{color:#94a3b8;font-size:14px;font-weight:800}
+#hlsJsBtn.on{color:#86efac;border-color:#22c55e}
+#favBtn:hover,#openExternalBtn:hover,#vlcBtn:hover,#hlsJsBtn:hover{background:#26264a;border-color:var(--accent)}
+@media (hover:none){ #favBtn:hover,#openExternalBtn:hover,#vlcBtn:hover,#hlsJsBtn:hover{background:var(--panel3)} }
 #openExternalBtn:disabled,#vlcBtn:disabled{opacity:.35;cursor:not-allowed}
 .pRow{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;align-items:center}
 .miniBtn{font-size:14px;background:#1e1e33;color:var(--text);border:2px solid var(--line);
@@ -743,6 +745,7 @@ body.app-fullscreen #layout{height:100dvh}
   <button class="tvNavBtn" id="tvPrevBtn" title="Föregående kanal">⏮ <span class="kbd">◀</span></button>
   <button class="tvNavBtn primary" id="tvListBtn" title="Öppna kanallista">📺 <span>Kanaler</span> <span class="kbd">OK</span></button>
   <button class="tvNavBtn" id="tvNextBtn" title="Nästa kanal">⏭ <span class="kbd">▶</span></button>
+  <button class="tvNavBtn" id="tvJsBtn" title="hls.js-motorn av/på">⚡ <span class="kbd">J</span></button>
   <button class="tvNavBtn" id="tvReloadBtn" title="Ladda om kanal">🔄 <span class="kbd">R</span></button>
   <button class="tvNavBtn" id="tvClockBtn" title="Visa/göm klockan">🕐 <span class="kbd">K</span></button>
   <button class="tvNavBtn" id="tvFsBtn" title="Fullskärm av/på">⛶ <span class="kbd">F</span></button>
@@ -896,6 +899,7 @@ body.app-fullscreen #layout{height:100dvh}
           <div class="nowActions">
             <button id="openExternalBtn" title="Öppna externt" disabled>🔗</button>
             <button id="vlcBtn" title="Öppna i VLC" disabled>VLC</button>
+            <button id="hlsJsBtn" title="hls.js-motorn av/på (av = webbläsarens inbyggda HLS)">JS</button>
             <button id="favBtn" title="Favorit">☆</button>
           </div>
         </div>
@@ -1018,6 +1022,23 @@ let countryFilter='Alla', langFilter='Alla', gridFilter='Alla';
 const BUILTIN_ID = 'builtin';
 // FIX: inga inbyggda standardkanaler längre
 channelsByPlaylist[BUILTIN_ID] = [];
+// FIX: "builtin" som sparats i localStorage tidigare räknas inte som vald lista
+active.delete(BUILTIN_ID);
+
+// hls.js-motor av/på (JS-knappen i toolbar:erna)
+let hlsJsOn = localStorage.getItem('iptv_hlsjs_on') !== '0';
+function updateJsButtons(){
+  const b = els.hlsJsBtn, tv = $('tvJsBtn');
+  if(b){ b.classList.toggle('on', hlsJsOn); b.title = hlsJsOn ? 'hls.js-motor: PÅ – klicka för att stänga av (använder webbläsarens inbyggda HLS)' : 'hls.js-motor: AV – klicka för att slå på'; }
+  if(tv){ tv.style.opacity = hlsJsOn ? '1' : '.5'; tv.title = hlsJsOn ? 'hls.js-motor PÅ (J = av/på)' : 'hls.js-motor AV (J = av/på)'; }
+}
+function toggleHlsJs(force){
+  hlsJsOn = typeof force === 'boolean' ? force : !hlsJsOn;
+  localStorage.setItem('iptv_hlsjs_on', hlsJsOn ? '1' : '0');
+  updateJsButtons();
+  showToast(hlsJsOn ? '⚡ hls.js-motor PÅ' : '⚡ hls.js-motor AV – inbyggd HLS används');
+  if(currentChannel) playChannel(currentChannel);
+}
 
 (function loadPlaylistMeta(){
   const saved = JSON.parse(localStorage.getItem(LS.plMeta) || '{}');
@@ -1053,7 +1074,7 @@ const els = {
   programCount:$('programCount'), grid:$('grid'), gridFilters:$('gridFilters'),
   exportFav:$('exportFav'), exportGroupsBtn:$('exportGroupsBtn'), customUrl:$('customUrl'),
   addCustom:$('addCustom'), fileInput:$('fileInput'), autoLoadCheck:$('autoLoadCheck'),
-  openExternalBtn:$('openExternalBtn'), vlcBtn:$('vlcBtn'),
+  openExternalBtn:$('openExternalBtn'), vlcBtn:$('vlcBtn'), hlsJsBtn:$('hlsJsBtn'),
   proxySelect:$('proxySelect'), openAllBtn:$('openAllBtn'), tvModeBtn:$('tvModeBtn'),
   clearExtOnlyBtn:$('clearExtOnlyBtn'),
   filterSummary:$('filterSummary'), proxyBadge:$('proxyBadge'),
@@ -1766,6 +1787,10 @@ function renderManager(){
         <div style="flex:1;min-width:0">
           <div class="plName">${escapeHtml(p.name)}${p.custom?'<span class="customBadge">EGEN</span>':''}</div>
           <div class="plMeta">${escapeHtml(p.country)}${count?' • '+count+' kanaler':''}</div>
+          ${p.url?`<div class="plUrlRow" style="display:flex;align-items:center;gap:6px;margin-top:3px">
+            <span class="plUrl" data-copyurl="${p.id}" title="Klicka för att kopiera" style="font-size:11px;opacity:.8;text-decoration:underline dotted;cursor:pointer;word-break:break-all;white-space:normal">${escapeHtml(p.url)}</span>
+            <button class="plCopyBtn" data-copyurl="${p.id}" title="Kopiera m3u-länken" style="flex:none;background:none;border:1px solid rgba(255,255,255,.25);border-radius:6px;color:inherit;padding:1px 6px;cursor:pointer;font-size:11px">📋</button>
+          </div>`:''}
         </div>
         <span class="status ${isLoaded?'loaded':'idle'}">${isLoaded?(count?'Laddad ('+count+')':'Laddad'):'Ej laddad'}</span>
       </div>
@@ -1775,6 +1800,19 @@ function renderManager(){
       </div>`;
     els.playlistManager.appendChild(row);
   }
+  els.playlistManager.querySelectorAll('[data-copyurl]').forEach(el=>{
+    el.onclick = async ()=>{
+      const pl = PLAYLISTS.find(p=>p.id===el.dataset.copyurl);
+      if(!pl?.url) return;
+      try{
+        await navigator.clipboard.writeText(pl.url);
+        showToast('m3u-länk kopierad');
+      }catch(e){
+        showOverlay(`<b>m3u-länk:</b><br><input readonly value="${escapeHtml(pl.url)}" style="width:100%;margin-top:8px" onclick="this.select()">`, false,
+          [{label:'✖ Stäng', action:()=>hideOverlay()}]);
+      }
+    };
+  });
   els.playlistManager.querySelectorAll('[data-toggle]').forEach(t=>{
     t.onclick = async ()=>{
       const id=t.dataset.toggle;
@@ -1815,9 +1853,10 @@ function renderManager(){
 }
 function updateSummary(){
   const total = PLAYLISTS.filter(p=>!removed.has(p.id)).length;
+  const activeCount = [...active].filter(id=>id!==BUILTIN_ID).length;
   const proxyLabel = {off:'🚫', auto:'🌐', always:'🔁'}[proxyMode] || '';
-  els.manageSummary.textContent = `${active.size}/${total} aktiva · proxy ${proxyLabel}${WORKER_URL?' + 🛰':''}`;
-  els.loadBtn.textContent = `▶️ Ladda kanaler (${active.size} valda)`;
+  els.manageSummary.textContent = `${activeCount}/${total} aktiva · proxy ${proxyLabel}${WORKER_URL?' + 🛰':''}`;
+  els.loadBtn.textContent = `▶️ Ladda kanaler (${activeCount} valda)`;
   els.stats.textContent = `${allChannels.length} kan • ${favs.size} ⭐ • ${groups.length} ✓`;
   els.favSummary.textContent = `${favs.size} ⭐`;
   updateGroupsSummary();
@@ -2126,7 +2165,7 @@ function tryNextCandidate(c, candidates, idx){
     tryNextCandidate(c, candidates, idx+1);
   };
   const url = cand.url;
-  if(/\.m3u8?(\?|$)/i.test(url) && window.Hls && Hls.isSupported()){
+  if(/\.m3u8?(\?|$)/i.test(url) && hlsJsOn && window.Hls && Hls.isSupported()){
     hls = new Hls({enableWorker:true, lowLatencyMode:true});
     hls.loadSource(url); hls.attachMedia(els.video);
     hls.on(Hls.Events.MANIFEST_PARSED, ()=>{ els.video.play().then(success).catch(success); });
@@ -2217,8 +2256,19 @@ function openStreamExternal(channel, silent){
   if(!c || !c.url){ if(!silent) showToast('Ingen kanal vald'); return; }
   if(!/^https?:\/\//i.test(c.url)){ if(!silent) showToast('Ogiltig URL'); return; }
   if(isNeverExternal(c.url)){
-    if(!silent) showToast('Denna kanal spelas bara i spelaren');
-    if(c !== currentChannel) playChannel(c);
+    // FIX: blockera inte länken – erbjud istället att kopiera / VLC / öppna ändå
+    showOverlay(
+      '🔗 <b>Öppna länk externt</b><br><br>'+
+      '<span style="font-size:11px;color:#94a3b8;word-break:break-all">'+escapeHtml(c.url)+'</span><br><br>'+
+      '<span style="font-size:12px;color:#94a3b8">Denna server tillåter ofta inte uppspelning direkt i en webbläsarflik.<br>Kopiera URL:en och öppna i VLC för bäst resultat.</span>',
+      true,
+      [
+        {label:'📋 Kopiera URL', primary:true, action:()=>{ navigator.clipboard.writeText(c.url); showToast('URL kopierad – klistra in i VLC'); }},
+        {label:'🎬 VLC', action:()=>{ hideOverlay(); openInVlcFor(c); }},
+        {label:'🔗 Öppna ändå', action:()=>{ hideOverlay(); window.open(c.url, '_blank', 'noopener,noreferrer'); }},
+        {label:'✖ Avbryt', action:()=>hideOverlay()}
+      ]
+    );
     return;
   }
   if(openStreamExternal._last === c.url && !silent){ showToast('Redan öppnad'); return; }
@@ -2294,6 +2344,11 @@ function openInVlc(){
   }
   window.location.href = vlcUrl;
   showToast('Försöker öppna i VLC');
+}
+function openInVlcFor(c){
+  if(!c?.url){ showToast('Ingen URL'); return; }
+  currentChannel = c;
+  openInVlc();
 }
 function openAllVisibleTabs(){
   const list = filtered.slice(0, 15);
@@ -2844,6 +2899,7 @@ document.addEventListener('keydown', e=>{
     if(key === 'ArrowLeft'){ e.preventDefault(); goToAdjacentChannel(-1); return; }
     if(key === 'r' || key === 'R'){ e.preventDefault(); reloadCurrentChannel(); return; }
     if(key === 'k' || key === 'K'){ e.preventDefault(); toggleTvClock(); return; }
+    if(key === 'j' || key === 'J'){ e.preventDefault(); toggleHlsJs(); return; }
     if(key === 'g' || key === 'G'){
       e.preventDefault();
       if(currentChannel) openGroupPicker(currentChannel);
@@ -2955,6 +3011,9 @@ els.proxySelect.onchange = e=>{
 };
 els.openAllBtn.onclick = openAllVisibleTabs;
 els.tvModeBtn.onclick = toggleTvMode;
+els.hlsJsBtn.onclick = ()=>toggleHlsJs();
+$('tvJsBtn').onclick = ()=>toggleHlsJs();
+updateJsButtons();
 els.clearExtOnlyBtn.onclick = clearExternalOnly;
 
 els.playAllFavs.onclick = ()=>{
@@ -3040,9 +3099,10 @@ els.exportGroupsBtn.onclick = ()=>{
 };
 
 els.loadBtn.onclick = async ()=>{
-  if(!active.size){ showToast('Välj minst en spellista först!'); return; }
+  const activeCount = [...active].filter(id=>id!==BUILTIN_ID).length;
+  if(!activeCount){ showToast('Välj minst en spellista först!'); return; }
   els.loadBtn.disabled=true;
-  const ids=[...active];
+  const ids=[...active].filter(id=>id!==BUILTIN_ID);
   for(let i=0;i<ids.length;i++){
     els.loadBtn.textContent=`⏳ Laddar ${i+1}/${ids.length}...`;
     await loadPlaylist(ids[i]);
@@ -3208,7 +3268,7 @@ setTimeout(updateStickyPlayerLayout, 600);
 renderManager(); rebuildAll(); setEPGStatus('EPG ej laddad','warn');
 applyAccordion();
 renderFavPanel();
-if(localStorage.getItem(LS.autoload)==='1' && active.size>0) els.loadBtn.click();
+if(localStorage.getItem(LS.autoload)==='1' && [...active].some(id=>id!==BUILTIN_ID)) els.loadBtn.click();
 if(localStorage.getItem(LS.tvMode)==='1') toggleTvMode();
 setTimeout(()=>tvNav.refresh(), 200);
 setTimeout(()=>updateTvChannelBadge(), 400);
