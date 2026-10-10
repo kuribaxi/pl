@@ -679,9 +679,6 @@ body.tv-player-mode.tv-overlay-open #tvNavBar{ transform:translateX(-50%) transl
   .tvNavBtn.primary > span:not(.kbd){ display:inline !important; }
   body.tv-player-mode.tv-idle #tvNavBar{ transform:translateY(140%) !important; }
 }
-/* ============================================================
-   TV-KANALNAMN-BADGE (övre höger hörn i TV-läge)
-   ============================================================ */
 #tvChanName{
   position:fixed; top:14px; right:16px; z-index:5200;
   background:rgba(6,20,25,.85);
@@ -704,11 +701,9 @@ body.tv-player-mode.tv-overlay-open #tvNavBar{ transform:translateX(-50%) transl
   white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%;
 }
 body.tv-player-mode #tvChanName{ display:flex; }
-/* Göms tillsammans med toolbaren vid inaktivitet */
 body.tv-player-mode.tv-idle #tvChanName{
   opacity:0; transform:translateX(130%); pointer-events:none;
 }
-
 #tvClock{
   position:fixed; top:14px; left:18px; z-index:14; background:transparent; border:none;
   border-radius:0; padding:0; display:none; flex-direction:column; align-items:flex-start;
@@ -771,7 +766,6 @@ body.app-fullscreen #layout{height:100dvh}
   <div class="tvClockDate" id="tvClockDateTv">Laddar...</div>
 </div>
 
-<!-- ===== TV-KANALNAMN (övre höger hörn) ===== -->
 <div id="tvChanName">
   <div class="tvChanTag" id="tvChanTag">LIVE</div>
   <div id="tvChanNameText">Ingen kanal</div>
@@ -999,18 +993,6 @@ body.app-fullscreen #layout{height:100dvh}
 </div>
 
 <script>
-/* ============================================================
-   FIXAR I DENNA VERSION:
-   1. Inbyggda standardkanaler BORT (channelsByPlaylist[BUILTIN_ID] = [])
-   2. Worker-proxy STÖD (WORKER_URL) — löser CORS/mixed content
-      i webbläsare för t.ex. telewebion/persiana-kanaler.
-      Fyll i WORKER_URL efter att du deployat Cloudflare Workern!
-   3. corsproxy.io borttaget (kräver betalplan)
-   4. Telewebion ur NEVER_EXTERNAL (funkar nu via workern) —
-      fortfarande kvar som reserv om workern inte är satt.
-   5. Iran-preset-knapp + shayanline-listan i PLAYLISTS
-   ============================================================ */
-
 // >>> FYLL I DIN WORKER-ADRESS (efter deploy på Cloudflare):
 const WORKER_URL = ''; // t.ex. 'https://hls-proxy.ditt-namn.workers.dev/proxy?url='
 // Lämna '' om du inte satt upp workern — appen använder då övriga proxys.
@@ -1019,6 +1001,8 @@ const PLAYLISTS = [
  {id:'iran', name:'Iran (shayanline)', country:'Iran', flag:'🇮🇷', url:'https://raw.githubusercontent.com/shayanline/iptv-iran/main/playlists/iran.m3u'},
  {id:'iranmom', name:'Iran (Momo, geo-fri)', country:'Iran', flag:'🇮🇷', url:'https://raw.githubusercontent.com/Momo1530/iptv-iran/main/playlists/momo-verified.m3u'},
  {id:'movies', name:'Filmer', country:'Internationell', flag:'🎬', url:'https://iptv-org.github.io/iptv/categories/movies.m3u'},
+ {id:'kuribaxi', name:'Kuribaxi – Film & Underhållning', country:'Internationell', flag:'🎥', url:'https://gist.githubusercontent.com/kuribaxi/311162c90b3750405f34775eef0beadc/raw/c88a94063182e6fcd920a0b4f0efcd96e5f8e617/gistfile1.txt'},
+ {id:'comedy', name:'Komedifilmer (TMDB)', country:'Internationell', flag:'😂', url:'https://aymrgknetzpucldhpkwm.supabase.co/storage/v1/object/public/tmdb/comedy-movies.m3u'},
  {id:'series', name:'Serier', country:'Internationell', flag:'📺', url:'https://iptv-org.github.io/iptv/categories/series.m3u'},
  {id:'kids', name:'Barn', country:'Internationell', flag:'🧒', url:'https://iptv-org.github.io/iptv/categories/kids.m3u'},
  {id:'kurdistan', name:'Kurdistan IPTV', country:'Kurdistan', flag:'☀️', url:'https://raw.githubusercontent.com/kurdishiptvchannels/KURDISTANIPTV/refs/heads/main/KURDISTAN%20IPTV.m3u'},
@@ -1071,20 +1055,14 @@ let searchQ='', groupF='', showFavOnly=false;
 let countryFilter='Alla', langFilter='Alla', gridFilter='Alla';
 
 const BUILTIN_ID = 'builtin';
-// FIX: inga inbyggda standardkanaler längre
 channelsByPlaylist[BUILTIN_ID] = [];
 
-/* ===== EGENA ENSKILDA STREAMS =====
-   Sparade stream-URL:er användaren testat och lagt till.
-   De blir en egen "spellista" så att de kan läggas i listor
-   (grupper) och spelas via fram/bak-navigation. */
 const SINGLES_ID = 'singles';
 let singleStreams = JSON.parse(localStorage.getItem(LS.singles) || '[]');
 function saveSingleStreams(){
   localStorage.setItem(LS.singles, JSON.stringify(singleStreams));
 }
 function syncSinglesPlaylist(){
-  /* Skapa/uppdatera den virtuella spellistan med egna streams */
   let pl = PLAYLISTS.find(p=>p.id===SINGLES_ID);
   if(!pl){
     pl = {id:SINGLES_ID, name:'Mina streams', country:'Egen', flag:'🔌', url:'', custom:true};
@@ -1100,10 +1078,23 @@ function syncSinglesPlaylist(){
   loaded.add(SINGLES_ID);
 }
 syncSinglesPlaylist();
-// FIX: "builtin" som sparats i localStorage tidigare räknas inte som vald lista
 active.delete(BUILTIN_ID);
 
-// hls.js-motor av/på (JS-knappen i toolbar:erna)
+/* ===== KLASSISKA FILMER & WESTERN (inbäddade kanaler) ===== */
+const MANUAL_CW_ID = 'manualcw';
+PLAYLISTS.push({id:MANUAL_CW_ID, name:'Klassiska filmer & Western', country:'Internationell', flag:'🤠', url:''});
+channelsByPlaylist[MANUAL_CW_ID] = [
+  {name:'Classic Cinema', url:'https://rpn.bozztv.com/gusa/gusa-classiccinema/index.m3u8', logo:'', tvgId:'', lang:'unknown', country:'USA', plCountry:'Internationell', flag:'🎬', group:'Klassiska filmer', playlistId:MANUAL_CW_ID},
+  {name:'Classic Movies Channel (Pluto)', url:'http://cfd-v4-service-channel-stitcher-use1-1.prd.pluto.tv/stitch/hls/channel/561c5b0dada51f8004c4d855/master.m3u8', logo:'', tvgId:'', lang:'unknown', country:'USA', plCountry:'Internationell', flag:'🎬', group:'Klassiska filmer', playlistId:MANUAL_CW_ID},
+  {name:'30A TV Classic Movies', url:'https://30a-tv.com/feeds/pzaz/30atvmovies.m3u8', logo:'', tvgId:'', lang:'unknown', country:'USA', plCountry:'Internationell', flag:'🎬', group:'Klassiska filmer', playlistId:MANUAL_CW_ID},
+  {name:'Grjngo Western (FI)', url:'https://amogonetworx-grjngo-3-fi.samsung.wurl.tv/playlist.m3u8', logo:'', tvgId:'', lang:'unknown', country:'Internationell', plCountry:'Internationell', flag:'🤠', group:'Western', playlistId:MANUAL_CW_ID},
+  {name:'Grjngo Western (DK)', url:'https://amogonetworx-grjngo-3-dk.samsung.wurl.tv/playlist.m3u8', logo:'', tvgId:'', lang:'unknown', country:'Internationell', plCountry:'Internationell', flag:'🤠', group:'Western', playlistId:MANUAL_CW_ID},
+  {name:'Pluto TV Westerns (USA)', url:'https://jmp2.uk/plu-5b4e94282d4ec87bdcbb87cd.m3u8', logo:'', tvgId:'', lang:'unknown', country:'USA', plCountry:'Internationell', flag:'🤠', group:'Western', playlistId:MANUAL_CW_ID},
+  {name:'Pluto TV Westerns (UK)', url:'https://jmp2.uk/plu-5d4bdb635ce813b38639e6a3.m3u8', logo:'', tvgId:'', lang:'unknown', country:'UK', plCountry:'Internationell', flag:'🤠', group:'Western', playlistId:MANUAL_CW_ID},
+  {name:'CineWestern (Zylo)', url:'https://d2nq34q0i1r3la.cloudfront.net/v1/master/3722c60a815c199d9c0ef36c5b73da68a62b09d1/cc-awohw8g217ho8/CineWestern_ES.m3u8', logo:'', tvgId:'', lang:'unknown', country:'Spanien', plCountry:'Internationell', flag:'🤠', group:'Western', playlistId:MANUAL_CW_ID},
+];
+loaded.add(MANUAL_CW_ID);
+
 let hlsJsOn = localStorage.getItem('iptv_hlsjs_on') !== '0';
 function updateJsButtons(){
   const b = els.hlsJsBtn, tv = $('tvJsBtn');
@@ -1730,7 +1721,6 @@ function setRowStatus(id,text,state){
   if(el){ el.textContent=text; el.className='status '+(state||'idle'); }
 }
 
-/* FIX: Worker-proxy först (om satt), corsproxy.io borttaget */
 const STREAM_PROXIES = [];
 if(WORKER_URL){ STREAM_PROXIES.push({id:'worker', name:'Worker', build:u=>WORKER_URL + encodeURIComponent(u)}); }
 STREAM_PROXIES.push({id:'allorig',  name:'AllOrigins', build:u=>`https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`});
@@ -1758,7 +1748,6 @@ function hideProxyBadge(){
   els.proxyBadge.style.display = 'none';
 }
 
-/* FIX: Worker + corsproxy.io borttaget; worker först om satt */
 const proxies = [
   u=>u,
   ...(WORKER_URL ? [u=>WORKER_URL + encodeURIComponent(u)] : []),
@@ -1800,8 +1789,6 @@ function parseM3U(text, pl){
   return out;
 }
 
-/* FIX: telewebion kan nu spelas via worker — bara kvar i listan
-   som reserv om ingen WORKER_URL är satt. */
 const NEVER_EXTERNAL_PATTERNS = WORKER_URL ? [] :
   ['ncdn.telewebion.ir','ncdn.telewebion.net','telewebion.ir','telewebion.net',
    'karwan.tv','karwantv','karwan','kurdmax','netonalive','mypsx.net','mypsx'];
@@ -1904,7 +1891,6 @@ function renderManager(){
       const id = b.dataset.remove;
       const pl = PLAYLISTS.find(p=>p.id===id);
       if(id === SINGLES_ID){
-        /* Rensa egna streams – radera inte den virtuella spellistan */
         if(!singleStreams.length){ showToast('Inga egna streams sparade'); return; }
         showOverlay(
           `🗑️ <b>Rensa ${singleStreams.length} egna streams?</b><br>`+
@@ -2264,18 +2250,16 @@ function tryNextCandidate(c, candidates, idx){
   if(/\.m3u8?(\?|$)/i.test(url) && hlsJsOn && window.Hls && Hls.isSupported()){
     hls = new Hls({
       enableWorker:true,
-      // FIX: spola tillbaka (timeshift/DVR) i telewebion m.fl. livesändningar
-      lowLatencyMode:false,        // låg-latens låser spelaren vid livekanten och dödar spolning
-      liveDurationInfinity:true,   // tillåter oändlig duration och sökning bakåt i live-DVR-fönstret
-      backBufferLength:Infinity,   // behåll hela bufferten bakåt
+      lowLatencyMode:false,
+      liveDurationInfinity:true,
+      backBufferLength:Infinity,
       liveBackBufferLength:Infinity,
-      maxBufferLength:60,          // buffra 60s framåt
+      maxBufferLength:60,
       maxMaxBufferLength:120,
       maxBufferSize: 60*1000*1000
     });
     hls.loadSource(url); hls.attachMedia(els.video);
     hls.on(Hls.Events.MANIFEST_PARSED, ()=>{
-      // säkerställ att sökbarhets-reglaget uppdateras för live-DVR
       try{ if(hls.liveSyncPosition !== undefined && els.video.seekable.length) els.video.currentTime = hls.liveSyncPosition; }catch(e){}
       els.video.play().then(success).catch(success);
     });
@@ -2366,7 +2350,6 @@ function openStreamExternal(channel, silent){
   if(!c || !c.url){ if(!silent) showToast('Ingen kanal vald'); return; }
   if(!/^https?:\/\//i.test(c.url)){ if(!silent) showToast('Ogiltig URL'); return; }
   if(isNeverExternal(c.url)){
-    // FIX: blockera inte länken – erbjud istället att kopiera / VLC / öppna ändå
     showOverlay(
       '🔗 <b>Öppna länk externt</b><br><br>'+
       '<span style="font-size:11px;color:#94a3b8;word-break:break-all">'+escapeHtml(c.url)+'</span><br><br>'+
@@ -2809,7 +2792,7 @@ function tvListDialog(channel){
         const now = isChannelInGroup(c.url, g.id);
         renderTvOvTabs(); renderGroupTabs(); renderGroupPanel(); updateGroupsSummary(); renderTvOverlay();
         showToast(now ? `✓ Tillagd i "${g.name}"` : `Borttagen ur "${g.name}"`);
-        tvListDialog(c); // uppdatera dialogen
+        tvListDialog(c);
       }
     });
   });
@@ -2936,7 +2919,6 @@ function reloadCurrentChannel(){
   showToast('🔄 Laddar om '+currentChannel.name+'…');
   playChannel(currentChannel);
 }
-/* ===== TV-KANALNAMN-BADGE (övre höger hörn i TV-läge) ===== */
 function updateTvChannelBadge(){
   const nameEl = $('tvChanNameText');
   const tagEl  = $('tvChanTag');
@@ -2944,7 +2926,6 @@ function updateTvChannelBadge(){
   if(currentChannel){
     nameEl.textContent = currentChannel.name;
     if(tagEl){
-      /* Visa grupp + land som tagg */
       const parts = [];
       const chGroups = getChannelGroups(currentChannel.url);
       if(chGroups.length) parts.push(getGroupIcon(chGroups[0].name) + ' ' + chGroups[0].name);
@@ -3232,7 +3213,6 @@ function testSingleStream(){
   const url  = ($('singleUrl').value  || '').trim();
   const name = ($('singleName').value || '').trim() || url.split('/').pop() || 'Test stream';
   if(!/^https?:\/\//i.test(url)){ showToast('Ange en giltig stream-URL (http/https)'); return; }
-  /* Spela direkt – behöver inte vara i kanallistan */
   playChannel(buildSingleChannel(name, url));
   showToast('🎥 Testar: ' + name);
 }
@@ -3248,7 +3228,6 @@ function addSingleStream(){
   showToast('💾 "'+name+'" sparad – syns under 🔌 Mina streams');
 }
 function singleToList(){
-  /* Lägg den aktuella kanalen (t.ex. just testad stream) i en egen lista */
   let c = currentChannel;
   if(!c || !c.single){
     const url = ($('singleUrl').value || '').trim();
@@ -3366,8 +3345,8 @@ document.querySelectorAll('[data-preset]').forEach(b=>{
   b.onclick = ()=>{
     active.clear();
     const p=b.dataset.preset;
-    if(p==='kurd') ['kurdistan','sdh','enigma','movies','series','kids'].forEach(id=>active.add(id));
-    else if(p==='iran') ['iran','iranmom'].forEach(id=>active.add(id));
+    if(p==='kurd') ['kurdistan','sdh','enigma','movies','kuribaxi','comedy','manualcw','series','kids'].forEach(id=>active.add(id));
+    else if(p==='iran') ['iran','iranmom','irorg'].forEach(id=>active.add(id));
     else if(p==='tr') ['turk1','turk2'].forEach(id=>active.add(id));
     else PLAYLISTS.forEach(pl=>{ if(!removed.has(pl.id)) active.add(pl.id); });
     save(); renderManager(); els.loadBtn.click();
@@ -3563,7 +3542,7 @@ async function toggleFullscreen(){
       showToast('⛶ Fullskärm PÅ');
     } else {
       if(document.exitFullscreen) await document.exitFullscreen();
-      else if(document.webkitExitFullscreen) await document.webkitExitFullscreen();
+      else if(document.webkitExitFullscreen) document.webkitExitFullscreen();
       showToast('⛶ Fullskärm AV');
     }
   }catch(e){
