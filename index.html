@@ -962,6 +962,19 @@ body.app-fullscreen #layout{height:100dvh}
             </div>
           </details>
         </div>
+        <div class="pRow">
+          <details style="font-size:13px;flex:1 0 100%">
+            <summary style="cursor:pointer;color:var(--muted);min-height:44px;display:flex;align-items:center">🎥 Testa enskild stream (och spara om den funkar)</summary>
+            <div class="pRow" style="margin-top:8px">
+              <input id="singleName" placeholder="Kanalnamn (t.ex. Test TV)" style="background:var(--panel3);border:2px solid var(--line);border-radius:10px;padding:11px 12px;color:var(--text);font-size:16px;flex:0 0 170px;min-width:0;outline:none;min-height:44px"/>
+              <input id="singleUrl" placeholder="https://.../stream.m3u8" type="url" style="background:var(--panel3);border:2px solid var(--line);border-radius:10px;padding:11px 12px;color:var(--text);font-size:16px;flex:1;min-width:140px;outline:none;min-height:44px"/>
+              <button id="testSingleBtn" class="miniBtn" title="Spela streamen direkt för att prova">▶ Testa</button>
+              <button id="addSingleBtn" class="miniBtn" title="Spara streamen – dök upp i kanallistan och kan läggas i dina listor" style="border-color:var(--accent2);color:#86efac">💾 Spara</button>
+              <button id="singleToListBtn" class="miniBtn" title="Lägg den spelade/sparade streamen i en av dina listor" style="border-color:var(--accent2);color:#86efac">✓ Lägg i lista</button>
+            </div>
+            <div class="note" id="singlesCount" style="font-size:11px;margin-top:4px">0 sparade egna streams</div>
+          </details>
+        </div>
         <div class="tvHint">
           <b style="color:#facc15">🎮 TV:</b>
           <kbd>OK</kbd> kanallista <kbd>◀ ▶</kbd> förra/nästa kanal
@@ -1026,7 +1039,8 @@ const LS = {
   epg:'iptv_epg_url', extOnly:'iptv_external_only', proxyMode:'iptv_proxy_mode',
   tvMode:'iptv_tv_mode', accOpen:'iptv_acc_open',
   customPls:'iptv_custom_playlists', plMeta:'iptv_playlist_meta',
-  activeGroup:'iptv_active_group', tvClockOff:'iptv_tv_clock_off'
+  activeGroup:'iptv_active_group', tvClockOff:'iptv_tv_clock_off',
+  singles:'iptv_single_streams'
 };
 let active   = new Set(JSON.parse(localStorage.getItem(LS.active)  ||'[]'));
 let removed  = new Set(JSON.parse(localStorage.getItem(LS.removed) ||'[]'));
@@ -1059,6 +1073,33 @@ let countryFilter='Alla', langFilter='Alla', gridFilter='Alla';
 const BUILTIN_ID = 'builtin';
 // FIX: inga inbyggda standardkanaler längre
 channelsByPlaylist[BUILTIN_ID] = [];
+
+/* ===== EGENA ENSKILDA STREAMS =====
+   Sparade stream-URL:er användaren testat och lagt till.
+   De blir en egen "spellista" så att de kan läggas i listor
+   (grupper) och spelas via fram/bak-navigation. */
+const SINGLES_ID = 'singles';
+let singleStreams = JSON.parse(localStorage.getItem(LS.singles) || '[]');
+function saveSingleStreams(){
+  localStorage.setItem(LS.singles, JSON.stringify(singleStreams));
+}
+function syncSinglesPlaylist(){
+  /* Skapa/uppdatera den virtuella spellistan med egna streams */
+  let pl = PLAYLISTS.find(p=>p.id===SINGLES_ID);
+  if(!pl){
+    pl = {id:SINGLES_ID, name:'Mina streams', country:'Egen', flag:'🔌', url:'', custom:true};
+    PLAYLISTS.push(pl);
+  }
+  channelsByPlaylist[SINGLES_ID] = singleStreams.map(s=>({
+    name: s.name, url: s.url, logo: s.logo||'',
+    group: s.group||'Egen stream', tvgId: s.tvgId||'', lang: s.lang||'unknown',
+    country: s.country||'Egen', plCountry:'Egen', flag:'🔌',
+    playlistId: SINGLES_ID, single:true
+  }));
+  if(singleStreams.length) active.add(SINGLES_ID);
+  loaded.add(SINGLES_ID);
+}
+syncSinglesPlaylist();
 // FIX: "builtin" som sparats i localStorage tidigare räknas inte som vald lista
 active.delete(BUILTIN_ID);
 
@@ -1862,6 +1903,24 @@ function renderManager(){
     b.onclick = ()=>{
       const id = b.dataset.remove;
       const pl = PLAYLISTS.find(p=>p.id===id);
+      if(id === SINGLES_ID){
+        /* Rensa egna streams – radera inte den virtuella spellistan */
+        if(!singleStreams.length){ showToast('Inga egna streams sparade'); return; }
+        showOverlay(
+          `🗑️ <b>Rensa ${singleStreams.length} egna streams?</b><br>`+
+          `<span style="font-size:13px;color:#94a3b8">Spellistan "Mina streams" finns kvar.</span>`,
+          true,
+          [
+            {label:'🗑️ Ja, rensa', primary:true, action:()=>{
+              singleStreams = []; saveSingleStreams(); syncSinglesPlaylist();
+              save(); renderManager(); rebuildAll(); updateSinglesCount(); hideOverlay();
+              showToast('Egna streams rensade');
+            }},
+            {label:'✖ Avbryt', action:()=>hideOverlay()}
+          ]
+        );
+        return;
+      }
       if(pl?.custom){
         showOverlay(
           `🗑️ <b>Ta bort "${escapeHtml(pl.name)}" permanent?</b>`,
@@ -3139,6 +3198,73 @@ $('tvJsBtn').onclick = ()=>toggleHlsJs();
 $('tvAddBtn').onclick = ()=>tvListDialog(currentChannel);
 updateJsButtons();
 els.clearExtOnlyBtn.onclick = clearExternalOnly;
+
+/* ================= EGNA ENSKILDA STREAMS ================= */
+function updateSinglesCount(){
+  const el = $('singlesCount');
+  if(el) el.textContent = singleStreams.length + ' sparade egna streams' +
+    (singleStreams.length ? ' · <button id="clearSingles" class="linkBtn" style="display:inline">🗑 Rensa</button>' : '');
+  const clearBtn = $('clearSingles');
+  if(clearBtn) clearBtn.onclick = ()=>{
+    if(!singleStreams.length) return;
+    showOverlay(
+      `🗑️ <b>Rensa alla ${singleStreams.length} egna streams?</b>`,
+      true,
+      [
+        {label:'🗑️ Ja, rensa', primary:true, action:()=>{
+          singleStreams = []; saveSingleStreams(); syncSinglesPlaylist();
+          save(); renderManager(); rebuildAll(); hideOverlay();
+          showToast('Egna streams rensade');
+        }},
+        {label:'✖ Avbryt', action:()=>hideOverlay()}
+      ]
+    );
+  };
+}
+function buildSingleChannel(name, url, group){
+  return {
+    name: name, url: url, logo:'', tvgId:'', lang:'unknown',
+    country:'Egen', plCountry:'Egen', flag:'🔌',
+    group: group || 'Egen stream', playlistId: SINGLES_ID, single:true
+  };
+}
+function testSingleStream(){
+  const url  = ($('singleUrl').value  || '').trim();
+  const name = ($('singleName').value || '').trim() || url.split('/').pop() || 'Test stream';
+  if(!/^https?:\/\//i.test(url)){ showToast('Ange en giltig stream-URL (http/https)'); return; }
+  /* Spela direkt – behöver inte vara i kanallistan */
+  playChannel(buildSingleChannel(name, url));
+  showToast('🎥 Testar: ' + name);
+}
+function addSingleStream(){
+  const url  = ($('singleUrl').value  || '').trim();
+  const name = ($('singleName').value || '').trim() || url.split('/').pop() || 'Egen stream';
+  if(!/^https?:\/\//i.test(url)){ showToast('Ange en giltig stream-URL (http/https)'); return; }
+  if(singleStreams.find(s=>s.url===url)){ showToast('Denna stream är redan sparad'); return; }
+  singleStreams.push({name, url});
+  saveSingleStreams(); syncSinglesPlaylist(); save();
+  renderManager(); rebuildAll(); updateSinglesCount();
+  $('singleUrl').value = ''; $('singleName').value = '';
+  showToast('💾 "'+name+'" sparad – syns under 🔌 Mina streams');
+}
+function singleToList(){
+  /* Lägg den aktuella kanalen (t.ex. just testad stream) i en egen lista */
+  let c = currentChannel;
+  if(!c || !c.single){
+    const url = ($('singleUrl').value || '').trim();
+    if(url){
+      const saved = singleStreams.find(s=>s.url===url);
+      c = saved ? buildSingleChannel(saved.name, saved.url) : null;
+    }
+  }
+  if(!c){ showToast('Testa eller spara en stream först'); return; }
+  openGroupPicker(c);
+}
+$('testSingleBtn').onclick = testSingleStream;
+$('addSingleBtn').onclick = addSingleStream;
+$('singleToListBtn').onclick = singleToList;
+$('singleUrl').addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); testSingleStream(); } });
+updateSinglesCount();
 
 els.playAllFavs.onclick = ()=>{
   const first = allChannels.find(c => favs.has(c.url));
