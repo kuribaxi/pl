@@ -122,7 +122,7 @@ body.tv-player-mode #video{ width:100% !important; height:100% !important; objec
 .accTitle .sub{font-size:11px;color:var(--muted);font-weight:500;margin-left:4px;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .accToggle{width:26px;height:26px;border-radius:7px;background:transparent;
-  border:1.5px solid var(--line); display:flex;align-items:center;justify-content:center;
+  border:1.5px solid var(--line); display:flex; align-items:center;justify-content:center;
   font-size:14px;font-weight:700; color:var(--muted);cursor:pointer;flex:0 0 auto;transition:.2s;
   line-height:1; padding:0}
 .accToggle:hover{background:#26264a;border-color:var(--accent);color:var(--text)}
@@ -958,13 +958,12 @@ body.app-fullscreen #layout{height:100dvh}
         </div>
         <div class="pRow">
           <details style="font-size:13px;flex:1 0 100%">
-            <summary style="cursor:pointer;color:var(--muted);min-height:44px;display:flex;align-items:center">🎥 Testa enskild stream (och spara om den funkar)</summary>
+            <summary style="cursor:pointer;color:var(--muted);min-height:44px;display:flex;align-items:center">▶ Spela enskild m3u8-länk (spelas direkt + sparas i Mina streams)</summary>
             <div class="pRow" style="margin-top:8px">
-              <input id="singleName" placeholder="Kanalnamn (t.ex. Test TV)" style="background:var(--panel3);border:2px solid var(--line);border-radius:10px;padding:11px 12px;color:var(--text);font-size:16px;flex:0 0 170px;min-width:0;outline:none;min-height:44px"/>
-              <input id="singleUrl" placeholder="https://.../stream.m3u8" type="url" style="background:var(--panel3);border:2px solid var(--line);border-radius:10px;padding:11px 12px;color:var(--text);font-size:16px;flex:1;min-width:140px;outline:none;min-height:44px"/>
-              <button id="testSingleBtn" class="miniBtn" title="Spela streamen direkt för att prova">▶ Testa</button>
-              <button id="addSingleBtn" class="miniBtn" title="Spara streamen – dök upp i kanallistan och kan läggas i dina listor" style="border-color:var(--accent2);color:#86efac">💾 Spara</button>
-              <button id="singleToListBtn" class="miniBtn" title="Lägg den spelade/sparade streamen i en av dina listor" style="border-color:var(--accent2);color:#86efac">✓ Lägg i lista</button>
+              <input id="singleName" placeholder="Kanalnamn (valfritt – fylls i automatiskt)" style="background:var(--panel3);border:2px solid var(--line);border-radius:10px;padding:11px 12px;color:var(--text);font-size:16px;flex:0 0 170px;min-width:0;outline:none;min-height:44px"/>
+              <input id="singleUrl" placeholder="https://.../stream.m3u8 (klistra in och tryck Enter)" type="url" style="background:var(--panel3);border:2px solid var(--line);border-radius:10px;padding:11px 12px;color:var(--text);font-size:16px;flex:1;min-width:140px;outline:none;min-height:44px"/>
+              <button id="testSingleBtn" class="miniBtn" title="Spela streamen direkt – sparas automatiskt i Mina streams" style="border-color:var(--accent);color:#c4b5fd;font-weight:700">▶ Spela nu</button>
+              <button id="singleToListBtn" class="miniBtn" title="Lägg streamen i en av dina listor" style="border-color:var(--accent2);color:#86efac">✓ Lägg i lista</button>
             </div>
             <div class="note" id="singlesCount" style="font-size:11px;margin-top:4px">0 sparade egna streams</div>
           </details>
@@ -3183,7 +3182,7 @@ els.clearExtOnlyBtn.onclick = clearExternalOnly;
 /* ================= EGNA ENSKILDA STREAMS ================= */
 function updateSinglesCount(){
   const el = $('singlesCount');
-  if(el) el.textContent = singleStreams.length + ' sparade egna streams' +
+  if(el) el.innerHTML = singleStreams.length + ' sparade egna streams' +
     (singleStreams.length ? ' · <button id="clearSingles" class="linkBtn" style="display:inline">🗑 Rensa</button>' : '');
   const clearBtn = $('clearSingles');
   if(clearBtn) clearBtn.onclick = ()=>{
@@ -3209,23 +3208,28 @@ function buildSingleChannel(name, url, group){
     group: group || 'Egen stream', playlistId: SINGLES_ID, single:true
   };
 }
-function testSingleStream(){
-  const url  = ($('singleUrl').value  || '').trim();
-  const name = ($('singleName').value || '').trim() || url.split('/').pop() || 'Test stream';
-  if(!/^https?:\/\//i.test(url)){ showToast('Ange en giltig stream-URL (http/https)'); return; }
-  playChannel(buildSingleChannel(name, url));
-  showToast('🎥 Testar: ' + name);
+function guessSingleName(url){
+  try{
+    const last = url.split('/').pop().split('?')[0];
+    const n = decodeURIComponent(last)
+      .replace(/\.(m3u8?|mp4|ts)$/i,'')
+      .replace(/[_\-.]+/g,' ').trim();
+    return n || 'Enskild stream';
+  }catch(e){ return 'Enskild stream'; }
 }
-function addSingleStream(){
-  const url  = ($('singleUrl').value  || '').trim();
-  const name = ($('singleName').value || '').trim() || url.split('/').pop() || 'Egen stream';
-  if(!/^https?:\/\//i.test(url)){ showToast('Ange en giltig stream-URL (http/https)'); return; }
-  if(singleStreams.find(s=>s.url===url)){ showToast('Denna stream är redan sparad'); return; }
-  singleStreams.push({name, url});
-  saveSingleStreams(); syncSinglesPlaylist(); save();
-  renderManager(); rebuildAll(); updateSinglesCount();
-  $('singleUrl').value = ''; $('singleName').value = '';
-  showToast('💾 "'+name+'" sparad – syns under 🔌 Mina streams');
+/* Spela en enskild m3u8-länk DIREKT – och spara den automatiskt i "Mina streams" */
+function playSingleNow(){
+  const url = ($('singleUrl').value || '').trim();
+  if(!/^https?:\/\//i.test(url)){ showToast('Klistra in en giltig länk (http/https)'); return; }
+  const name = ($('singleName').value || '').trim() || guessSingleName(url);
+  if(!singleStreams.find(s=>s.url===url)){
+    singleStreams.push({name, url});
+    saveSingleStreams(); syncSinglesPlaylist(); save();
+    renderManager(); rebuildAll(); updateSinglesCount();
+    showToast('💾 Sparad i Mina streams: ' + name);
+  }
+  playChannel(buildSingleChannel(name, url));
+  showToast('▶ Spelar: ' + name);
 }
 function singleToList(){
   let c = currentChannel;
@@ -3236,13 +3240,13 @@ function singleToList(){
       c = saved ? buildSingleChannel(saved.name, saved.url) : null;
     }
   }
-  if(!c){ showToast('Testa eller spara en stream först'); return; }
+  if(!c){ showToast('Klistra in en länk och spela den först'); return; }
   openGroupPicker(c);
 }
-$('testSingleBtn').onclick = testSingleStream;
-$('addSingleBtn').onclick = addSingleStream;
+$('testSingleBtn').onclick = playSingleNow;
 $('singleToListBtn').onclick = singleToList;
-$('singleUrl').addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); testSingleStream(); } });
+$('singleUrl').addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); playSingleNow(); } });
+$('singleName').addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); playSingleNow(); } });
 updateSinglesCount();
 
 els.playAllFavs.onclick = ()=>{
