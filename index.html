@@ -1714,13 +1714,16 @@ const STREAM_PROXIES = [];
 STREAM_PROXIES.push({id:'allorig',  name:'AllOrigins', build:u=>`https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`});
 STREAM_PROXIES.push({id:'codetabs', name:'codetabs',   build:u=>`https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(u)}`});
 
+function bustCache(u){
+  return u + (u.includes('?') ? '&' : '?') + '_cb=' + Date.now().toString(36) + Math.random().toString(36).slice(2,6);
+}
 function buildStreamCandidates(url){
   const out = [];
   if(proxyMode === 'always'){
-    STREAM_PROXIES.forEach(p=>out.push({id:p.id, url:p.build(url)}));
+    STREAM_PROXIES.forEach(p=>out.push({id:p.id, url:p.build(bustCache(url))}));
   } else if(proxyMode === 'auto'){
     out.push({id:'direct', url});
-    STREAM_PROXIES.forEach(p=>out.push({id:p.id, url:p.build(url)}));
+    STREAM_PROXIES.forEach(p=>out.push({id:p.id, url:p.build(bustCache(url))}));
   } else {
     out.push({id:'direct', url});
   }
@@ -2138,6 +2141,9 @@ function renderFavPanel(){
 function stopPlayer(){
   clearTimeout(playChannel._timeout);
   if(hls){ hls.destroy(); hls=null; }
+  els.video.onplaying = null;
+  els.video.onerror = null;
+  try{ els.video.pause(); }catch(e){}
   els.video.removeAttribute('src'); els.video.load();
 }
 function updatePlayerButtons(c){
@@ -2162,9 +2168,8 @@ function playChannel(c){
   if(document.body.classList.contains('tv-overlay-open')) renderTvOverlay();
 
   if(isExternalOnly(c.url)){
-    showExternalFallback(c, 'Känd för att kräva extern flik (CORS)', true);
-    renderEPG(); renderGrid();
-    return;
+    // Ge kanalen en ny chans i spelaren vid varje klick
+    extOnly.delete(c.url); save();
   }
   const candidates = buildStreamCandidates(c.url);
   playChannel._attempts = [];
@@ -2212,10 +2217,15 @@ function tryNextCandidate(c, candidates, idx){
     if(resolved) return; resolved = true;
     console.warn('Stream misslyckades ['+cand.id+']:', reason);
     if(hls){ try{ hls.destroy(); }catch(e){} hls=null; }
+    els.video.onplaying = null;
+    els.video.onerror = null;
+    try{ els.video.pause(); }catch(e){}
     els.video.removeAttribute('src'); els.video.load();
     clearTimeout(playChannel._timeout);
     tryNextCandidate(c, candidates, idx+1);
   };
+  els.video.onplaying = null;
+  els.video.onerror = null;
   const url = cand.url;
   if(/\.m3u8?(\?|$)/i.test(url) && hlsJsOn && window.Hls && Hls.isSupported()){
     hls = new Hls({
