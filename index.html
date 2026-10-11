@@ -855,12 +855,14 @@ body.app-fullscreen #layout{height:100dvh}
           </div>
         </div>
 
-        <div class="addPlBox">
-          <div class="addPlHead" id="singlePlHead">
-            <span>▶ Spela enskild m3u8-länk</span>
-            <button class="accToggle small" id="toggleSinglePl" aria-label="Öppna/stäng">+</button>
+        <div class="acc" id="accSingle" style="margin-top:10px">
+          <div class="accHead" data-acc="single" style="border-top:1px solid var(--line)">
+            <div class="accTitle">▶ <span>Spela enskild m3u8-länk</span>
+              <span class="accSub">Egen stream</span>
+            </div>
+            <button class="accToggle" data-acc-toggle="single" aria-label="Öppna/stäng">+</button>
           </div>
-          <div class="addPlBody" id="singlePlBody">
+          <div class="accBody" id="accBodySingle">
             <div class="addPlRow">
               <input id="singleName" placeholder="Kanalnamn (valfritt – fylls i automatiskt)" maxlength="60"/>
             </div>
@@ -3446,19 +3448,6 @@ $('addPlHead').addEventListener('click', e=>{
   $('toggleAddPl').click();
 });
 $('addPlDone').onclick = ()=> $('toggleAddPl').click();
-$('toggleSinglePl').onclick = e=>{
-  e.stopPropagation();
-  const body = $('singlePlBody');
-  const toggle = $('toggleSinglePl');
-  const open = body.classList.toggle('open');
-  toggle.classList.toggle('open', open);
-  toggle.textContent = open ? '−' : '+';
-  tvNav.refresh();
-};
-$('singlePlHead').addEventListener('click', e=>{
-  if(e.target.closest('#toggleSinglePl')) return;
-  $('toggleSinglePl').click();
-});
 (function initHideInactive(){
   const cb = $('hideInactivePl');
   if(!cb) return;
