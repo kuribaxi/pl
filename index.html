@@ -237,7 +237,7 @@ body.tv-player-mode #video{ width:100% !important; height:100% !important; objec
   padding:9px 6px;border-radius:10px;cursor:pointer;min-height:42px}
 .presetBtn:hover{background:#26264a}
 @media (hover:none){ .presetBtn:hover{background:#1e1e33} }
-.autoLabel{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted),
+.autoLabel{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted);
   margin-top:6px;cursor:pointer;min-height:40px}
 .autoLabel input{width:18px;height:18px;accent-color:var(--accent)}
 #search{width:100%;background:var(--panel3);border:2px solid var(--line);border-radius:10px;
@@ -257,7 +257,7 @@ select{background:var(--panel3);border:2px solid var(--line);border-radius:10px;
 #channelListWrap{flex:1 1 auto;min-height:200px;overflow:hidden;display:flex;flex-direction:column;position:relative}
 #multiToolbar{
   display:none; padding:8px;
-  background:linear-gradient(180deg, rgba(34,197,94,.15), rgba(34,197,94,.05)),
+  background:linear-gradient(180deg, rgba(34,197,94,.15), rgba(34,197,94,.05));
   border-bottom:2px solid var(--accent2); flex-wrap:wrap; gap:6px; align-items:center;
   position:sticky; top:0; z-index:10;
 }
@@ -524,6 +524,7 @@ body.multi-mode .channelRow .favStar, body.multi-mode .channelRow .listStar{ dis
   #epgUrl{flex:1 0 100%;min-width:0}
   #workerUrl{flex:1 0 100%;min-width:0}
   #proxySelect{flex:1 0 100%;min-width:0}
+  #delaySelect{flex:1 0 100%;min-width:0}
   .tvHint{display:none}
   .card{padding:12px}
   .cardHead h2{font-size:17px}
@@ -944,6 +945,19 @@ body.app-fullscreen #layout{height:100dvh}
             <option value="off">🚫 Ingen proxy</option>
             <option value="always">🔁 Tvinga proxy</option>
           </select>
+          <select id="delaySelect" title="Fördröjning (timeshift)" style="flex:0 0 auto;min-width:150px">
+            <option value="0">⏱ Ingen fördröjning</option>
+            <option value="0.5">⏱ 30 sek</option>
+            <option value="1">⏱ 1 min</option>
+            <option value="2">⏱ 2 min</option>
+            <option value="5">⏱ 5 min</option>
+            <option value="10">⏱ 10 min</option>
+            <option value="30">⏱ 30 min</option>
+          </select>
+          <button id="back10Btn" class="miniBtn" title="Spola tillbaka 10 sek">⏪10s</button>
+          <button id="back1Btn" class="miniBtn" title="Spola tillbaka 1 min">⏪1m</button>
+          <button id="liveBtn" class="miniBtn" title="Tillbaka till live">⏺ LIVE</button>
+          <span id="delayBadge" class="epgBadge" style="display:none"></span>
           <input id="workerUrl" type="url" placeholder="🛰 Worker-proxy: https://pl.ynaser2000.workers.dev/?url=" title="Din Cloudflare Worker-adress (ändra + Enter för att spara)"/>
           <input id="epgUrl" type="url" placeholder="EPG XMLTV URL"/>
           <button id="loadEPGBtn" class="miniBtn">📡 EPG</button>
@@ -977,7 +991,7 @@ body.app-fullscreen #layout{height:100dvh}
           <b style="color:#facc15">🎮 TV:</b>
           <kbd>OK</kbd> kanallista <kbd>◀ ▶</kbd> förra/nästa kanal
           <kbd>▲ ▼</kbd> navigera <kbd>R</kbd> ladda om
-          <kbd>G</kbd> listor <kbd>K</kbd> klocka <kbd>0-9</kbd> favorit <kbd>⌫</kbd> stäng/av
+          <kbd>D</kbd> spola 1 min bakåt <kbd>G</kbd> listor <kbd>K</kbd> klocka <kbd>0-9</kbd> favorit <kbd>⌫</kbd> stäng/av
         </div>
       </div>
 
@@ -1030,7 +1044,8 @@ const LS = {
   tvMode:'iptv_tv_mode', accOpen:'iptv_acc_open',
   customPls:'iptv_custom_playlists', plMeta:'iptv_playlist_meta',
   activeGroup:'iptv_active_group', tvClockOff:'iptv_tv_clock_off',
-  singles:'iptv_single_streams'
+  singles:'iptv_single_streams',
+  delayMin:'iptv_delay_min', delayMap:'iptv_delay_map'
 };
 let active   = new Set(JSON.parse(localStorage.getItem(LS.active)  ||'[]'));
 let removed  = new Set(JSON.parse(localStorage.getItem(LS.removed) ||'[]'));
@@ -2172,6 +2187,7 @@ function playChannel(c){
   updateActiveChannelRow();
   renderFavPanel();
   updateTvChannelBadge();
+  updateDelayBadge();
   if(document.body.classList.contains('tv-overlay-open')) renderTvOverlay();
 
   if(isExternalOnly(c.url)){
@@ -2243,8 +2259,16 @@ function tryNextCandidate(c, candidates, idx){
     });
     hls.loadSource(url); hls.attachMedia(els.video);
     hls.on(Hls.Events.MANIFEST_PARSED, ()=>{
-      try{ if(hls.liveSyncPosition !== undefined && els.video.seekable.length) els.video.currentTime = hls.liveSyncPosition; }catch(e){}
+      /* >>> TIMESHIFT: sök bakåt i DVR-fönstret om fördröjning är vald <<< */
+      const d = getDelayFor(c.url);
+      if(d > 0){
+        if(seekDelayed(d)) showToast('⏱ Spelar '+(d<1?Math.round(d*60)+' sek':d+' min')+' bakom live');
+        else if(hls.liveSyncPosition !== undefined && els.video.seekable.length) els.video.currentTime = hls.liveSyncPosition;
+      } else if(hls.liveSyncPosition !== undefined && els.video.seekable.length){
+        els.video.currentTime = hls.liveSyncPosition;
+      }
       els.video.play().then(success).catch(success);
+      updateDelayBadge();
     });
     hls.on(Hls.Events.ERROR, (_, d)=>{
       if(!d.fatal) return;
@@ -2268,7 +2292,13 @@ function tryNextCandidate(c, candidates, idx){
   } else if(url){
     els.video.src = url;
     els.video.play().then(success).catch(()=>{});
-    els.video.onplaying = success;
+    els.video.onplaying = ()=>{
+      /* >>> TIMESHIFT: även inbyggd HLS (hls.js av) kan fördröjas <<< */
+      const d = getDelayFor(c.url);
+      if(d > 0) seekDelayed(d);
+      updateDelayBadge();
+      success();
+    };
     els.video.onerror = ()=>{
       const err = els.video.error;
       const map = {1:'avbruten',2:'nätverksfel',3:'avkodningsfel',4:'formatet stöds inte'};
@@ -2280,6 +2310,73 @@ function tryNextCandidate(c, candidates, idx){
 
   renderEPG(); renderGrid();
 }
+
+/* ================= TIMESHIFT / FÖRDRÖJNING (DVR) ================= */
+let delayMinutes = parseFloat(localStorage.getItem(LS.delayMin) || '0') || 0;
+let DELAY_MAP = {};
+try{ DELAY_MAP = JSON.parse(localStorage.getItem(LS.delayMap) || '{}'); }catch(e){ DELAY_MAP = {}; }
+const DVR_DEFAULT_PATTERNS = /telewebion|okcdn\.ru/i; // kanaler med känt DVR-fönster
+
+function getDelayFor(url){
+  if(!url) return delayMinutes;
+  if(url in DELAY_MAP) return DELAY_MAP[url];
+  if(DVR_DEFAULT_PATTERNS.test(url)) return delayMinutes || 2; // default 2 min för DVR-kanaler
+  return delayMinutes;
+}
+function updateDelayBadge(){
+  const b = $('delayBadge');
+  if(!b) return;
+  if(!currentChannel){ b.style.display='none'; return; }
+  const d = getDelayFor(currentChannel.url);
+  if(d > 0){
+    b.style.display='';
+    b.textContent = '⏱ +'+(d<1?Math.round(d*60)+' sek':d+' min');
+  } else b.style.display='none';
+}
+function seekDelayed(delayMin){
+  const v = els.video;
+  if(!v.seekable || !v.seekable.length) return false;
+  const edge = (hls && typeof hls.liveSyncPosition === 'number')
+    ? hls.liveSyncPosition
+    : v.seekable.end(v.seekable.length - 1);
+  const target = Math.max(v.seekable.start(0) + 2, edge - delayMin * 60);
+  try{ v.currentTime = target; return true; }catch(e){ return false; }
+}
+function shiftTime(deltaSec){
+  const v = els.video;
+  if(!v.seekable || !v.seekable.length){ showToast('Kan inte spola i denna stream'); return; }
+  if(!currentChannel){ showToast('Ingen kanal vald'); return; }
+  const t = Math.min(Math.max(v.currentTime + deltaSec, v.seekable.start(0) + 2),
+                      v.seekable.end(v.seekable.length - 1) - 1);
+  try{ v.currentTime = t; showToast(deltaSec<0?('⏪ '+Math.abs(deltaSec)+' sek bakåt'):('⏩ '+deltaSec+' sek framåt')); }
+  catch(e){ showToast('Spolning misslyckades'); }
+}
+(function initDelayControls(){
+  const sel = $('delaySelect');
+  if(sel){
+    sel.value = String(delayMinutes || 0);
+    sel.onchange = e=>{
+      delayMinutes = parseFloat(e.target.value) || 0;
+      localStorage.setItem(LS.delayMin, String(delayMinutes));
+      if(currentChannel){
+        DELAY_MAP[currentChannel.url] = delayMinutes;
+        try{ localStorage.setItem(LS.delayMap, JSON.stringify(DELAY_MAP)); }catch(err){}
+        playChannel(currentChannel); // starta om med ny fördröjning
+      }
+      updateDelayBadge();
+    };
+  }
+  const b10 = $('back10Btn'); if(b10) b10.onclick = ()=> shiftTime(-10);
+  const b1  = $('back1Btn');  if(b1)  b1.onclick  = ()=> shiftTime(-60);
+  const lb  = $('liveBtn');
+  if(lb) lb.onclick = ()=>{
+    const v = els.video;
+    if(v.seekable && v.seekable.length){
+      try{ v.currentTime = v.seekable.end(v.seekable.length - 1); showToast('⏺ Live'); }catch(e){ showToast('Kunde inte hoppa till live'); }
+    } else showToast('Ingen stream spelar');
+  };
+})();
+updateDelayBadge();
 
 function showExternalFallback(c, reason, autoOpen){
   showOverlay(
@@ -3046,6 +3143,7 @@ document.addEventListener('keydown', e=>{
   if(key === 'a' || key === 'A'){ e.preventDefault(); tvListDialog(currentChannel); return; }
     if(key === 'k' || key === 'K'){ e.preventDefault(); toggleTvClock(); return; }
     if(key === 'j' || key === 'J'){ e.preventDefault(); toggleHlsJs(); return; }
+    if(key === 'd' || key === 'D'){ e.preventDefault(); shiftTime(-60); return; } // D = spola 1 min bakåt
     if(key === 'g' || key === 'G'){
       e.preventDefault();
       if(currentChannel) openGroupPicker(currentChannel);
