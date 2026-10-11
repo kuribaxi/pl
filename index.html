@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
-<title>IPTV Grid TV</title>
+<title>IPTV Grid TV v3</title>
 <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
 <style>
 :root{
@@ -2175,12 +2175,28 @@ function playChannel(c){
   playChannel._attempts = [];
   tryNextCandidate(c, candidates, 0);
 }
+function safePlay(){
+  const v = els.video;
+  let p;
+  try{ p = v.play(); }catch(e){ p = Promise.reject(e); }
+  if(p && p.catch){
+    p.catch(err=>{
+      // Autoplay blockerad av webbläsaren: försök tystat, visa tipps
+      if(err && (err.name === 'NotAllowedError' || err.name === 'AbortError')){
+        v.muted = true;
+        v.play().then(()=>{
+          showToast('🔇 Autoplay blockerad – spelar utan ljud, tryck ▶/🔊 i spelaren');
+        }).catch(()=>{});
+      }
+    });
+  }
+  return p;
+}
 function tryNextCandidate(c, candidates, idx){
   if(idx >= candidates.length){
     const tried = playChannel._attempts.map(a=>a.id).join(' → ');
-    markExternalOnly(c.url);
-    if(isNeverExternal(c.url)){
-      showOverlay(
+    // Svartlista INTE kanalen automatiskt – nästa klick försöker igen från början
+    showOverlay(
         '🚫 <b>Kanalen kunde inte spelas just nu.</b><br>'+
         `<span style="color:#94a3b8;font-size:13px">Testade: ${escapeHtml(tried)}</span><br><br>`+
         'Servern kan vara tillfälligt överbelastad.<br>'+
@@ -2193,9 +2209,6 @@ function tryNextCandidate(c, candidates, idx){
           {label:'✖ Stäng', action:()=>hideOverlay()}
         ]
       );
-    } else {
-      showExternalFallback(c, 'Testade: '+tried, true);
-    }
     stopPlayer();
     updateActiveChannelRow();
     renderChannelList();
@@ -2241,7 +2254,7 @@ function tryNextCandidate(c, candidates, idx){
     hls.loadSource(url); hls.attachMedia(els.video);
     hls.on(Hls.Events.MANIFEST_PARSED, ()=>{
       try{ if(hls.liveSyncPosition !== undefined && els.video.seekable.length) els.video.currentTime = hls.liveSyncPosition; }catch(e){}
-      els.video.play().then(success).catch(success);
+      safePlay().then(success).catch(success);
     });
     hls.on(Hls.Events.ERROR, (_, d)=>{
       if(!d.fatal) return;
@@ -2257,14 +2270,14 @@ function tryNextCandidate(c, candidates, idx){
     }, idx===0 ? 8000 : 12000);
   } else if(url.includes('.mpd')){
     els.video.src = url;
-    els.video.play().then(success).catch(()=>{});
+    safePlay().then(success).catch(()=>{});
     els.video.onplaying = success;
     els.video.onerror = ()=>failNext('DASH-fel');
     clearTimeout(playChannel._timeout);
     playChannel._timeout = setTimeout(()=>{ if(els.video.readyState < 2) failNext('timeout DASH'); }, 10000);
   } else if(url){
     els.video.src = url;
-    els.video.play().then(success).catch(()=>{});
+    safePlay().then(success).catch(()=>{});
     els.video.onplaying = success;
     els.video.onerror = ()=>{
       const err = els.video.error;
