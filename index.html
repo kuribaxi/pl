@@ -208,7 +208,7 @@ body.tv-player-mode #video{ width:100% !important; height:100% !important; objec
 .favItemRemove:hover{color:#fca5a5}
 #playlistManager{display:grid;gap:6px;max-height:260px;overflow-y:auto;padding-right:2px}
 .plRow{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 10px;
-  border-radius:10px;background:var(--panel3);min-height:48px;border:2px solid transparent}
+  border-radius:10px;background:var(--Manager3);min-height:48px;border:2px solid transparent}
 .plRow.off .plName,.plRow.off .plMeta{opacity:.45}
 .plInfo{display:flex;align-items:center;gap:10px;flex:1;min-width:0}
 .plName{font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -237,7 +237,7 @@ body.tv-player-mode #video{ width:100% !important; height:100% !important; objec
   padding:9px 6px;border-radius:10px;cursor:pointer;min-height:42px}
 .presetBtn:hover{background:#26264a}
 @media (hover:none){ .presetBtn:hover{background:#1e1e33} }
-.autoLabel{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted);
+.autoLabel{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted),
   margin-top:6px;cursor:pointer;min-height:40px}
 .autoLabel input{width:18px;height:18px;accent-color:var(--accent)}
 #search{width:100%;background:var(--panel3);border:2px solid var(--line);border-radius:10px;
@@ -257,7 +257,7 @@ select{background:var(--panel3);border:2px solid var(--line);border-radius:10px;
 #channelListWrap{flex:1 1 auto;min-height:200px;overflow:hidden;display:flex;flex-direction:column;position:relative}
 #multiToolbar{
   display:none; padding:8px;
-  background:linear-gradient(180deg, rgba(34,197,94,.15), rgba(34,197,94,.05));
+  background:linear-gradient(180deg, rgba(34,197,94,.15), rgba(34,197,94,.05)),
   border-bottom:2px solid var(--accent2); flex-wrap:wrap; gap:6px; align-items:center;
   position:sticky; top:0; z-index:10;
 }
@@ -450,6 +450,9 @@ body.multi-mode .channelRow .favStar, body.multi-mode .channelRow .listStar{ dis
 @media (hover:none){ .miniBtn:hover{background:#1e1e33} }
 #epgUrl{flex:1;min-width:180px;background:var(--panel3);border:2px solid var(--line);border-radius:10px;
   padding:11px 14px;color:var(--text);font-size:16px;outline:none;min-height:44px}
+#workerUrl{flex:1;min-width:180px;background:var(--panel3);border:2px solid var(--line);border-radius:10px;
+  padding:11px 14px;color:var(--text);font-size:16px;outline:none;min-height:44px}
+#workerUrl:focus{border-color:var(--accent)}
 #toast{font-size:14px;background:var(--accent);color:#fff;border-radius:10px;padding:9px 14px;
   opacity:0;transition:.3s;pointer-events:none;font-weight:700}
 #toast.show{opacity:1}
@@ -519,6 +522,7 @@ body.multi-mode .channelRow .favStar, body.multi-mode .channelRow .listStar{ dis
   .pRow{gap:6px}
   .miniBtn{flex:1;min-width:calc(50% - 3px)}
   #epgUrl{flex:1 0 100%;min-width:0}
+  #workerUrl{flex:1 0 100%;min-width:0}
   #proxySelect{flex:1 0 100%;min-width:0}
   .tvHint{display:none}
   .card{padding:12px}
@@ -658,7 +662,7 @@ body.tv-player-mode.tv-overlay-open #tvNavBar{ transform:translateX(-50%) transl
 .tvNavBtn{
   display:flex; align-items:center; gap:8px; background:#1e1e33; color:var(--text);
   border:2px solid var(--line); border-radius:999px; padding:10px 16px;
-  font-size:14px; font-weight:800; cursor:pointer; min-height:48px; min-width:48px;
+  font-size:14px;font-weight:800; cursor:pointer; min-height:48px; min-width:48px;
   transition:background .15s, border-color .15s; flex-shrink:0; white-space:nowrap;
 }
 .tvNavBtn:hover{ background:#26264a; border-color:var(--accent); }
@@ -940,6 +944,7 @@ body.app-fullscreen #layout{height:100dvh}
             <option value="off">🚫 Ingen proxy</option>
             <option value="always">🔁 Tvinga proxy</option>
           </select>
+          <input id="workerUrl" type="url" placeholder="🛰 Worker-proxy: https://pl.ynaser2000.workers.dev/?url=" title="Din Cloudflare Worker-adress (ändra + Enter för att spara)"/>
           <input id="epgUrl" type="url" placeholder="EPG XMLTV URL"/>
           <button id="loadEPGBtn" class="miniBtn">📡 EPG</button>
           <span id="epgStatus" class="epgBadge">EPG ej laddad</span>
@@ -958,11 +963,11 @@ body.app-fullscreen #layout{height:100dvh}
         </div>
         <div class="pRow">
           <details style="font-size:13px;flex:1 0 100%">
-            <summary style="cursor:pointer;color:var(--muted);min-height:44px;display:flex;align-items:center">▶ Spela enskild m3u8-länk (spelas direkt + sparas i Mina streams)</summary>
+            <summary style="cursor:pointer;color:var(--muted);min-height:44px;display:flex;align-items:center">▶ Spela enskild m3u8-länk (spelas direkt + hamnar i kanallistan)</summary>
             <div class="pRow" style="margin-top:8px">
               <input id="singleName" placeholder="Kanalnamn (valfritt – fylls i automatiskt)" style="background:var(--panel3);border:2px solid var(--line);border-radius:10px;padding:11px 12px;color:var(--text);font-size:16px;flex:0 0 170px;min-width:0;outline:none;min-height:44px"/>
               <input id="singleUrl" placeholder="https://.../stream.m3u8 (klistra in och tryck Enter)" type="url" style="background:var(--panel3);border:2px solid var(--line);border-radius:10px;padding:11px 12px;color:var(--text);font-size:16px;flex:1;min-width:140px;outline:none;min-height:44px"/>
-              <button id="testSingleBtn" class="miniBtn" title="Spela streamen direkt – sparas automatiskt i Mina streams" style="border-color:var(--accent);color:#c4b5fd;font-weight:700">▶ Spela nu</button>
+              <button id="testSingleBtn" class="miniBtn" title="Spela streamen direkt – hamnar automatiskt i kanallistan" style="border-color:var(--accent);color:#c4b5fd;font-weight:700">▶ Spela nu</button>
               <button id="singleToListBtn" class="miniBtn" title="Lägg streamen i en av dina listor" style="border-color:var(--accent2);color:#86efac">✓ Lägg i lista</button>
             </div>
             <div class="note" id="singlesCount" style="font-size:11px;margin-top:4px">0 sparade egna streams</div>
@@ -992,9 +997,11 @@ body.app-fullscreen #layout{height:100dvh}
 </div>
 
 <script>
-// >>> FYLL I DIN WORKER-ADRESS (efter deploy på Cloudflare):
-const WORKER_URL = ''; // t.ex. 'https://hls-proxy.ditt-namn.workers.dev/proxy?url='
-// Lämna '' om du inte satt upp workern — appen använder då övriga proxys.
+// >>> Worker-proxy (Cloudflare) – kan även ändras direkt i appen (fältet 🛰 Worker-proxy under spelaren):
+const WORKER_URL = (function(){
+  try{ return localStorage.getItem('iptv_worker_url') || 'https://pl.ynaser2000.workers.dev/?url='; }
+  catch(e){ return 'https://pl.ynaser2000.workers.dev/?url='; }
+})();
 
 const PLAYLISTS = [
  {id:'iran', name:'Iran (shayanline)', country:'Iran', flag:'🇮🇷', url:'https://raw.githubusercontent.com/shayanline/iptv-iran/main/playlists/iran.m3u'},
@@ -1062,19 +1069,13 @@ function saveSingleStreams(){
   localStorage.setItem(LS.singles, JSON.stringify(singleStreams));
 }
 function syncSinglesPlaylist(){
-  let pl = PLAYLISTS.find(p=>p.id===SINGLES_ID);
-  if(!pl){
-    pl = {id:SINGLES_ID, name:'Mina streams', country:'Egen', flag:'🔌', url:'', custom:true};
-    PLAYLISTS.push(pl);
-  }
-  channelsByPlaylist[SINGLES_ID] = singleStreams.map(s=>({
+  /* Egna streams läggs direkt i kanallistan (builtin) – ingen separat spellista */
+  channelsByPlaylist[BUILTIN_ID] = singleStreams.map(s=>({
     name: s.name, url: s.url, logo: s.logo||'',
     group: s.group||'Egen stream', tvgId: s.tvgId||'', lang: s.lang||'unknown',
     country: s.country||'Egen', plCountry:'Egen', flag:'🔌',
-    playlistId: SINGLES_ID, single:true
+    playlistId: BUILTIN_ID, single:true
   }));
-  if(singleStreams.length) active.add(SINGLES_ID);
-  loaded.add(SINGLES_ID);
 }
 syncSinglesPlaylist();
 active.delete(BUILTIN_ID);
@@ -1889,23 +1890,6 @@ function renderManager(){
     b.onclick = ()=>{
       const id = b.dataset.remove;
       const pl = PLAYLISTS.find(p=>p.id===id);
-      if(id === SINGLES_ID){
-        if(!singleStreams.length){ showToast('Inga egna streams sparade'); return; }
-        showOverlay(
-          `🗑️ <b>Rensa ${singleStreams.length} egna streams?</b><br>`+
-          `<span style="font-size:13px;color:#94a3b8">Spellistan "Mina streams" finns kvar.</span>`,
-          true,
-          [
-            {label:'🗑️ Ja, rensa', primary:true, action:()=>{
-              singleStreams = []; saveSingleStreams(); syncSinglesPlaylist();
-              save(); renderManager(); rebuildAll(); updateSinglesCount(); hideOverlay();
-              showToast('Egna streams rensade');
-            }},
-            {label:'✖ Avbryt', action:()=>hideOverlay()}
-          ]
-        );
-        return;
-      }
       if(pl?.custom){
         showOverlay(
           `🗑️ <b>Ta bort "${escapeHtml(pl.name)}" permanent?</b>`,
@@ -3182,7 +3166,7 @@ els.clearExtOnlyBtn.onclick = clearExternalOnly;
 /* ================= EGNA ENSKILDA STREAMS ================= */
 function updateSinglesCount(){
   const el = $('singlesCount');
-  if(el) el.innerHTML = singleStreams.length + ' sparade egna streams' +
+  if(el) el.innerHTML = singleStreams.length + ' sparade egna streams (syns i kanallistan under kategorin "Egen stream")' +
     (singleStreams.length ? ' · <button id="clearSingles" class="linkBtn" style="display:inline">🗑 Rensa</button>' : '');
   const clearBtn = $('clearSingles');
   if(clearBtn) clearBtn.onclick = ()=>{
@@ -3205,7 +3189,7 @@ function buildSingleChannel(name, url, group){
   return {
     name: name, url: url, logo:'', tvgId:'', lang:'unknown',
     country:'Egen', plCountry:'Egen', flag:'🔌',
-    group: group || 'Egen stream', playlistId: SINGLES_ID, single:true
+    group: group || 'Egen stream', playlistId: BUILTIN_ID, single:true
   };
 }
 function guessSingleName(url){
@@ -3217,7 +3201,7 @@ function guessSingleName(url){
     return n || 'Enskild stream';
   }catch(e){ return 'Enskild stream'; }
 }
-/* Spela en enskild m3u8-länk DIREKT – och spara den automatiskt i "Mina streams" */
+/* Spela en enskild m3u8-länk DIREKT – och lägg den direkt i kanallistan */
 function playSingleNow(){
   const url = ($('singleUrl').value || '').trim();
   if(!/^https?:\/\//i.test(url)){ showToast('Klistra in en giltig länk (http/https)'); return; }
@@ -3226,7 +3210,7 @@ function playSingleNow(){
     singleStreams.push({name, url});
     saveSingleStreams(); syncSinglesPlaylist(); save();
     renderManager(); rebuildAll(); updateSinglesCount();
-    showToast('💾 Sparad i Mina streams: ' + name);
+    showToast('💾 Tillagd i kanallistan: ' + name);
   }
   playChannel(buildSingleChannel(name, url));
   showToast('▶ Spelar: ' + name);
@@ -3578,6 +3562,25 @@ function updateClock(){
 }
 updateClock();
 setInterval(updateClock, 1000);
+
+/* ===== WORKER-PROXY INSTÄLLNING ===== */
+(function(){
+  const wEl = $('workerUrl');
+  if(!wEl) return;
+  wEl.value = WORKER_URL;
+  wEl.placeholder = '🛰 Worker-proxy: https://pl.ynaser2000.workers.dev/?url=';
+  wEl.onchange = ()=>{
+    let v = (wEl.value || '').trim();
+    if(!v){ localStorage.removeItem('iptv_worker_url'); showToast('🛰 Worker avstängd – laddar om…'); setTimeout(()=>location.reload(), 900); return; }
+    if(!/[?&]url=$/.test(v)){
+      if(!/\?/.test(v)) v += (v.endsWith('/') ? '?' : '/?') + 'url=';
+    }
+    if(!/^https:\/\//i.test(v)){ showToast('Worker-URL måste börja med https://'); return; }
+    localStorage.setItem('iptv_worker_url', v);
+    showToast('🛰 Worker sparad – laddar om appen…');
+    setTimeout(()=>location.reload(), 900);
+  };
+})();
 
 (async ()=>{
   try{
