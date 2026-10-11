@@ -129,6 +129,32 @@ body.tv-player-mode #video{ width:100% !important; height:100% !important; objec
 .accToggle.open{background:var(--accent);border-color:var(--accent);color:#fff}
 .accBody{display:none;padding:10px}
 .accBody.open{display:block}
+
+/* NYTT: Göm-funktion styling */
+.accHideBtn {
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 16px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: .2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.accHideBtn:hover {
+  background: rgba(255,255,255,.1);
+  color: #fff;
+}
+.accHideBtn.hidden {
+  color: #ef4444;
+}
+.accBody.collapsed {
+  display: none !important;
+}
+
 #accGroups{border:2px solid var(--accent); background:linear-gradient(180deg, rgba(139,92,246,.08), transparent)}
 #accGroups .accHead{background:linear-gradient(90deg, rgba(139,92,246,.22), transparent);}
 #accGroups .accTitle{font-size:14px}
@@ -366,13 +392,32 @@ body.multi-mode .channelRow .favStar, body.multi-mode .channelRow .listStar{ dis
   padding:20px;max-width:560px;width:100%;max-height:80vh;overflow-y:auto;
   box-shadow:0 20px 60px rgba(0,0,0,.9)}
 /* TV-läge: håll dialogen uppe, ovanför eventuell skärmtangentbord */
-body.tv-player-mode .groupPickerBackdrop{align-items:flex-start;padding-top:5vh;z-index:300}
-body.tv-player-mode .groupPickerModal{max-height:62vh}
+body.tv-player-mode .groupPickerBackdrop{align-items:flex-start;padding-top:2vh;z-index:300}
+body.tv-player-mode .groupPickerModal{max-height:50vh; border-radius:28px; border:3px solid var(--accent2); box-shadow:0 0 0 6px rgba(34,197,94,.2), 0 20px 60px rgba(0,0,0,.9);}
 .groupPickerModal .row.tvFocus{outline:3px solid var(--accent2);outline-offset:1px;
   border-color:var(--accent2);background:#1e1e33}
 .groupPickerModal h3{margin:0 0 12px 0;font-size:17px;font-weight:800;display:flex;align-items:center;gap:8px;color:#86efac}
 .groupPickerModal .chanName{font-size:13px;color:var(--muted);margin-bottom:14px;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* NYTT: Klar-knapp högst upp */
+.groupPickerModal .topActions {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 12px;
+}
+.groupPickerModal .topActions .miniBtn {
+  background: var(--accent2);
+  border-color: var(--accent2);
+  color: #fff;
+  font-weight: 800;
+  padding: 10px 20px;
+  border-radius: 12px;
+  min-height: 44px;
+  font-size: 15px;
+  cursor: pointer;
+}
+
 .groupPickerModal .list{ display:grid; grid-template-columns:repeat(auto-fill, minmax(110px, 1fr));
   gap:8px; margin-bottom:14px; }
 .groupPickerModal .row{ position:relative; display:flex; flex-direction:column; align-items:center;
@@ -807,11 +852,13 @@ body.app-fullscreen #layout{height:100dvh}
 <div id="layout">
   <aside id="leftPanel">
 
+    <!-- 1. SPELLISTOR -->
     <div class="acc" id="accPlaylists">
       <div class="accHead" data-acc="playlists">
         <div class="accTitle">⚙️ <span>Spellistor</span>
           <span class="sub" id="manageSummary">0 aktiva</span>
         </div>
+        <button class="accHideBtn" data-acc-hide="playlists" title="Göm innehåll">👁️</button>
         <button class="accToggle" data-acc-toggle="playlists" aria-label="Öppna/stäng">+</button>
       </div>
       <div class="accBody" id="accBodyPlaylists">
@@ -855,26 +902,6 @@ body.app-fullscreen #layout{height:100dvh}
           </div>
         </div>
 
-        <div class="acc" id="accSingle" style="margin-top:10px">
-          <div class="accHead" data-acc="single" style="border-top:1px solid var(--line)">
-            <div class="accTitle">▶ <span>Spela enskild m3u8-länk</span>
-              <span class="accSub">Egen stream</span>
-            </div>
-            <button class="accToggle" data-acc-toggle="single" aria-label="Öppna/stäng">+</button>
-          </div>
-          <div class="accBody" id="accBodySingle">
-            <div class="addPlRow">
-              <input id="singleName" placeholder="Kanalnamn (valfritt – fylls i automatiskt)" maxlength="60"/>
-            </div>
-            <input id="singleUrl" placeholder="https://.../stream.m3u8 (klistra in och tryck Enter)" type="url"/>
-            <div class="addPlActions">
-              <button id="testSingleBtn" class="miniBtn primary" title="Spela streamen direkt – hamnar automatiskt i kanallistan" style="border-color:var(--accent);color:#c4b5fd;font-weight:700">▶ Spela nu</button>
-              <button id="singleToListBtn" class="miniBtn" title="Lägg streamen i en av dina listor" style="border-color:var(--accent2);color:#86efac">✓ Lägg i lista</button>
-            </div>
-            <div class="note" id="singlesCount" style="margin-top:6px;font-size:11px">0 sparade egna streams</div>
-          </div>
-        </div>
-
         <div class="mgrBtns">
           <button id="loadBtn" class="primaryBtn">▶️ Ladda kanaler (0 valda)</button>
           <div class="presetRow" hidden>
@@ -884,11 +911,35 @@ body.app-fullscreen #layout{height:100dvh}
       </div>
     </div>
 
+    <!-- 2. SPELA ENSKILD M3U8-LÄNK (Flyttad ut hit) -->
+    <div class="acc" id="accSingle">
+      <div class="accHead" data-acc="single">
+        <div class="accTitle">▶ <span>Spela enskild m3u8-länk</span>
+          <span class="accSub">Egen stream</span>
+        </div>
+        <button class="accHideBtn" data-acc-hide="single" title="Göm innehåll">👁️</button>
+        <button class="accToggle" data-acc-toggle="single" aria-label="Öppna/stäng">+</button>
+      </div>
+      <div class="accBody" id="accBodySingle">
+        <div class="addPlRow">
+          <input id="singleName" placeholder="Kanalnamn (valfritt – fylls i automatiskt)" maxlength="60"/>
+        </div>
+        <input id="singleUrl" placeholder="https://.../stream.m3u8 (klistra in och tryck Enter)" type="url"/>
+        <div class="addPlActions">
+          <button id="testSingleBtn" class="miniBtn primary" title="Spela streamen direkt – hamnar automatiskt i kanallistan" style="border-color:var(--accent);color:#c4b5fd;font-weight:700">▶ Spela nu</button>
+          <button id="singleToListBtn" class="miniBtn" title="Lägg streamen i en av dina listor" style="border-color:var(--accent2);color:#86efac">✓ Lägg i lista</button>
+        </div>
+        <div class="note" id="singlesCount" style="margin-top:6px;font-size:11px">0 sparade egna streams</div>
+      </div>
+    </div>
+
+    <!-- 3. FAVORITER -->
     <div class="acc" id="accFavs">
       <div class="accHead" data-acc="favs">
         <div class="accTitle">⭐ <span>Favoriter</span>
           <span class="sub" id="favSummary">0 ⭐</span>
         </div>
+        <button class="accHideBtn" data-acc-hide="favs" title="Göm innehåll">👁️</button>
         <button class="accToggle" data-acc-toggle="favs" aria-label="Öppna/stäng">+</button>
       </div>
       <div class="accBody" id="accBodyFavs">
@@ -904,11 +955,13 @@ body.app-fullscreen #layout{height:100dvh}
       </div>
     </div>
 
+    <!-- 4. FILTER -->
     <div class="acc" id="accFilters">
       <div class="accHead" data-acc="filters">
         <div class="accTitle">🔍 <span>Filter</span>
           <span class="sub" id="filterSummary">Inga filter</span>
         </div>
+        <button class="accHideBtn" data-acc-hide="filters" title="Göm innehåll">👁️</button>
         <button class="accToggle" data-acc-toggle="filters" aria-label="Öppna/stäng">+</button>
       </div>
       <div class="accBody" id="accBodyFilters">
@@ -929,11 +982,13 @@ body.app-fullscreen #layout{height:100dvh}
       </div>
     </div>
 
+    <!-- 5. MINA LISTOR -->
     <div class="acc" id="accGroups">
       <div class="accHead" data-acc="groups">
         <div class="accTitle">✓ <span>Mina listor</span>
           <span class="sub" id="groupsSummary">0 listor</span>
         </div>
+        <button class="accHideBtn" data-acc-hide="groups" title="Göm innehåll">👁️</button>
         <button class="accToggle" data-acc-toggle="groups" aria-label="Öppna/stäng">+</button>
       </div>
       <div class="accBody" id="accBodyGroups">
@@ -1053,7 +1108,8 @@ let favs     = new Set(JSON.parse(localStorage.getItem(LS.favs)    ||'[]'));
 let groups   = JSON.parse(localStorage.getItem(LS.groups) || '[]');
 let groupMembers = JSON.parse(localStorage.getItem(LS.groupMembers) || '{}');
 let extOnly  = new Set(JSON.parse(localStorage.getItem(LS.extOnly) ||'[]'));
-let accOpen  = JSON.parse(localStorage.getItem(LS.accOpen) || '{"playlists":false,"filters":false,"favs":false,"groups":true}');
+let accOpen  = JSON.parse(localStorage.getItem(LS.accOpen) || '{"playlists":false,"single":false,"filters":false,"favs":false,"groups":true}');
+let accHidden = JSON.parse(localStorage.getItem('iptv_acc_hidden') || '{}'); // NY: Hanterar gömda fönster
 let customPlaylists = JSON.parse(localStorage.getItem(LS.customPls) || '[]');
 let channelsByPlaylist = {};
 let loaded = new Set();
@@ -1182,6 +1238,7 @@ function save(){
   localStorage.setItem(LS.extOnly, JSON.stringify([...extOnly]));
   localStorage.setItem(LS.proxyMode, proxyMode);
   localStorage.setItem(LS.accOpen, JSON.stringify(accOpen));
+  localStorage.setItem('iptv_acc_hidden', JSON.stringify(accHidden)); // NY
   if(activeGroupId) localStorage.setItem(LS.activeGroup, activeGroupId);
   else localStorage.removeItem(LS.activeGroup);
   savePlaylistMeta();
@@ -1195,11 +1252,25 @@ function applyAccordion(){
     const body = acc.querySelector('.accBody');
     const toggle = acc.querySelector('.accToggle');
     if(!key || !head || !body || !toggle) return;
+
     const isOpen = !!accOpen[key];
+    const isHidden = !!accHidden[key];
+
     head.classList.toggle('open', isOpen);
     body.classList.toggle('open', isOpen);
     toggle.classList.toggle('open', isOpen);
     toggle.textContent = isOpen ? '−' : '+';
+
+    // Hantera göm-funktionen
+    body.classList.toggle('collapsed', isHidden);
+    
+    // Uppdatera göm-knappens utseende om den finns
+    const hideBtn = head.querySelector('.accHideBtn');
+    if (hideBtn) {
+      hideBtn.textContent = isHidden ? '🙈' : '👁️';
+      hideBtn.title = isHidden ? 'Visa innehåll' : 'Göm innehåll';
+      hideBtn.classList.toggle('hidden', isHidden);
+    }
   });
 }
 function toggleAccordion(key){
@@ -1208,9 +1279,15 @@ function toggleAccordion(key){
   applyAccordion();
   setTimeout(()=>tvNav.refresh(), 100);
 }
+function toggleAccordionHide(key, btn) {
+  accHidden[key] = !accHidden[key];
+  localStorage.setItem('iptv_acc_hidden', JSON.stringify(accHidden));
+  applyAccordion();
+  tvNav.refresh();
+}
 document.querySelectorAll('.acc > .accHead').forEach(head=>{
   head.addEventListener('click', e=>{
-    if(e.target.closest('.accToggle')) return;
+    if(e.target.closest('.accToggle') || e.target.closest('.accHideBtn')) return;
     const key = head.dataset.acc;
     if(key) toggleAccordion(key);
   });
@@ -1220,6 +1297,14 @@ document.querySelectorAll('.accToggle[data-acc-toggle]').forEach(btn=>{
     e.stopPropagation();
     const key = btn.dataset.accToggle;
     if(key) toggleAccordion(key);
+  });
+});
+// NY: Lyssna på göm-knapparna
+document.querySelectorAll('.accHideBtn').forEach(btn=>{
+  btn.addEventListener('click', e=>{
+    e.stopPropagation();
+    const key = btn.dataset.accHide;
+    if(key) toggleAccordionHide(key, btn);
   });
 });
 
@@ -1488,7 +1573,12 @@ function openGroupPicker(channel){
   backdrop.onclick = e => { if(e.target === backdrop) close(); };
   const modal = document.createElement('div');
   modal.className = 'groupPickerModal';
+  
+  // UPPDATERAD HTML: Klar-knapp flyttad till toppen, rundare design
   modal.innerHTML = `
+    <div class="topActions">
+      <button class="miniBtn" id="gpCloseTop">✓ Klar</button>
+    </div>
     <h3>✓ Välj listor för kanal</h3>
     <div class="chanName">${escapeHtml(channel.name)}</div>
     <div class="newRow">
@@ -1512,16 +1602,19 @@ function openGroupPicker(channel){
       💡 <b>Tryck på en lista för att kryssa i/ur kanalen.</b><br>
       Du kan välja flera listor samtidigt.
     </div>
-    <div class="actions">
-      <button class="miniBtn" id="gpClose" style="flex:1;background:var(--accent2);border-color:var(--accent2);color:#fff;font-weight:700">✓ Klar</button>
-    </div>
   `;
+  
   backdrop.appendChild(modal);
   document.body.appendChild(backdrop);
+  
   const close = ()=>{
     document.body.removeChild(backdrop);
     renderChannelList(); renderFavPanel(); renderGroupTabs(); renderGroupPanel(); updateGroupsSummary();
   };
+  
+  // Stäng-knappen i toppen
+  modal.querySelector('#gpCloseTop').onclick = close;
+  
   modal.querySelectorAll('.row').forEach(row=>{
     row.onclick = ()=>{
       toggleChannelInGroup(channel.url, row.dataset.gid);
@@ -1533,6 +1626,7 @@ function openGroupPicker(channel){
       renderGroupTabs(); updateGroupsSummary();
     };
   });
+  
   const doAdd = ()=>{
     const inp = modal.querySelector('#newGroupName');
     const g = createGroup(inp.value);
@@ -1545,12 +1639,13 @@ function openGroupPicker(channel){
     }
   };
   modal.querySelector('#addGroupBtn').onclick = doAdd;
-  modal.querySelector('#gpClose').onclick = close;
+  
   const inp = modal.querySelector('#newGroupName');
   inp.addEventListener('keydown', e=>{
     if(e.key === 'Enter'){ e.preventDefault(); doAdd(); }
     if(e.key === 'ArrowDown'){ e.preventDefault(); inp.blur(); tvNav(0); }
   });
+  
   // TV/fjärrkontroll-navigering i listan
   const rows = ()=>[...modal.querySelectorAll('.row')];
   let tvIdx = -1;
@@ -1566,8 +1661,9 @@ function openGroupPicker(channel){
     tvHighlight();
     rs[tvIdx].click();
   };
+  
   modal.addEventListener('keydown', e=>{
-    if(document.activeElement === inp && e.key !== 'ArrowDown') return; // skriv i fältet som vanligt
+    if(document.activeElement === inp && e.key !== 'ArrowDown') return;
     const rs = rows();
     if(e.key === 'ArrowRight'){ e.preventDefault(); tvIdx = Math.min(tvIdx+1, rs.length-1); tvHighlight(); }
     else if(e.key === 'ArrowLeft'){ e.preventDefault(); tvIdx = Math.max(tvIdx-1, 0); tvHighlight(); }
@@ -1577,7 +1673,7 @@ function openGroupPicker(channel){
     else if(e.key === 'Escape' || e.keyCode === 8 || e.keyCode === 461){ e.preventDefault(); close(); }
     e.stopPropagation();
   });
-  // I TV-läge: fokusera INTE textfältet (annars poppar TV:ns skärmtangentbord upp och täcker listan)
+  
   if(!document.body.classList.contains('tv-player-mode')) setTimeout(()=>inp.focus(), 80);
   else modal.setAttribute('tabindex','0'), setTimeout(()=>modal.focus(), 60);
 }
