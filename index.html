@@ -170,6 +170,22 @@ body.tv-player-mode #video{ width:100% !important; height:100% !important; objec
 @media (hover:none){ .addPlHead:hover{color:var(--muted)} }
 .accToggle.small{width:24px;height:24px;font-size:13px}
 .addPlBody{display:none;padding-top:8px}
+/* TV-läge: flytande rundat fönster högt upp, ovanför TV-tangentbordet */
+body.tv-player-mode .addPlBody.open{
+  position:fixed; top:4vh; left:50%; transform:translateX(-50%);
+  width:min(620px,94vw); max-height:62vh; overflow-y:auto;
+  background:var(--panel2); border:2px solid var(--accent); border-radius:24px;
+  padding:14px 18px 16px; z-index:500; box-shadow:0 24px 70px rgba(0,0,0,.85);
+  display:block;
+}
+.addPlTvBar{display:none}
+body.tv-player-mode .addPlTvBar{
+  display:flex; align-items:center; justify-content:space-between; gap:10px;
+  margin:0 0 12px; padding-bottom:10px; border-bottom:1px solid var(--line);
+}
+body.tv-player-mode .addPlTvBar .ttl{font-weight:800;font-size:15px}
+body.tv-player-mode .addPlBody.open .addPlRow,
+body.tv-player-mode .addPlBody.open input{margin-bottom:8px}
 .addPlBody.open{display:block}
 .addPlRow{display:flex;gap:8px;margin-bottom:8px}
 .addPlRow input{flex:1}
@@ -800,6 +816,13 @@ body.app-fullscreen #layout{height:100dvh}
       </div>
       <div class="accBody" id="accBodyPlaylists">
         <div id="playlistManager"></div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+          <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);cursor:pointer">
+            <input type="checkbox" id="hideInactivePl" style="accent-color:var(--accent)"/>
+            Visa bara aktiva spellistor
+          </label>
+          <span id="hiddenPlCount" style="font-size:11px;color:var(--muted)"></span>
+        </div>
 
         <div class="addPlBox">
           <div class="addPlHead" id="addPlHead">
@@ -807,6 +830,10 @@ body.app-fullscreen #layout{height:100dvh}
             <button class="accToggle small" id="toggleAddPl" aria-label="Öppna/stäng">+</button>
           </div>
           <div class="addPlBody" id="addPlBody">
+            <div class="addPlTvBar">
+              <span class="ttl">➕ Egen spellista</span>
+              <button id="addPlDone" class="miniBtn primary" style="background:var(--accent2);border-color:var(--accent2);color:#fff;font-weight:700">✓ Klar</button>
+            </div>
             <div class="addPlRow">
               <input id="newPlName" placeholder="Namn" maxlength="60"/>
               <input id="newPlFlag" placeholder="🌍" maxlength="4" style="max-width:56px;text-align:center"/>
@@ -828,13 +855,27 @@ body.app-fullscreen #layout{height:100dvh}
           </div>
         </div>
 
+        <div class="addPlBox">
+          <div class="addPlHead" id="singlePlHead">
+            <span>▶ Spela enskild m3u8-länk</span>
+            <button class="accToggle small" id="toggleSinglePl" aria-label="Öppna/stäng">+</button>
+          </div>
+          <div class="addPlBody" id="singlePlBody">
+            <div class="addPlRow">
+              <input id="singleName" placeholder="Kanalnamn (valfritt – fylls i automatiskt)" maxlength="60"/>
+            </div>
+            <input id="singleUrl" placeholder="https://.../stream.m3u8 (klistra in och tryck Enter)" type="url"/>
+            <div class="addPlActions">
+              <button id="testSingleBtn" class="miniBtn primary" title="Spela streamen direkt – hamnar automatiskt i kanallistan" style="border-color:var(--accent);color:#c4b5fd;font-weight:700">▶ Spela nu</button>
+              <button id="singleToListBtn" class="miniBtn" title="Lägg streamen i en av dina listor" style="border-color:var(--accent2);color:#86efac">✓ Lägg i lista</button>
+            </div>
+            <div class="note" id="singlesCount" style="margin-top:6px;font-size:11px">0 sparade egna streams</div>
+          </div>
+        </div>
+
         <div class="mgrBtns">
           <button id="loadBtn" class="primaryBtn">▶️ Ladda kanaler (0 valda)</button>
-          <div class="presetRow">
-            <button data-preset="kurd" class="presetBtn">☀️ Kurdistan</button>
-            <button data-preset="tr" class="presetBtn">🇹🇷 Turkiet</button>
-            <button data-preset="iran" class="presetBtn">🇮🇷 Iran</button>
-            <button data-preset="all" class="presetBtn">🌍 Alla</button>
+          <div class="presetRow" hidden>
           </div>
           <label class="autoLabel"><input type="checkbox" id="autoLoadCheck"/> Ladda valda automatiskt</label>
         </div>
@@ -950,28 +991,6 @@ body.app-fullscreen #layout{height:100dvh}
           <span id="epgStatus" class="epgBadge">EPG ej laddad</span>
           <button id="copyBtn" class="miniBtn">📋 Kopiera</button>
           <span id="toast"></span>
-        </div>
-        <div class="pRow">
-          <details style="font-size:13px;flex:1 0 100%">
-            <summary style="cursor:pointer;color:var(--muted);min-height:44px;display:flex;align-items:center">➕ Lägg till egen M3U-länk / fil</summary>
-            <div class="pRow" style="margin-top:8px">
-              <input id="customUrl" placeholder="https://..." type="url" style="background:var(--panel3);border:2px solid var(--line);border-radius:10px;padding:11px 12px;color:var(--text);font-size:16px;flex:1;min-width:140px;outline:none;min-height:44px"/>
-              <button id="addCustom" class="miniBtn">Lägg till</button>
-              <label class="miniBtn" style="display:inline-flex;align-items:center;cursor:pointer">📁 Fil<input id="fileInput" type="file" accept=".m3u,.m3u8" hidden/></label>
-            </div>
-          </details>
-        </div>
-        <div class="pRow">
-          <details style="font-size:13px;flex:1 0 100%">
-            <summary style="cursor:pointer;color:var(--muted);min-height:44px;display:flex;align-items:center">▶ Spela enskild m3u8-länk (spelas direkt + hamnar i kanallistan)</summary>
-            <div class="pRow" style="margin-top:8px">
-              <input id="singleName" placeholder="Kanalnamn (valfritt – fylls i automatiskt)" style="background:var(--panel3);border:2px solid var(--line);border-radius:10px;padding:11px 12px;color:var(--text);font-size:16px;flex:0 0 170px;min-width:0;outline:none;min-height:44px"/>
-              <input id="singleUrl" placeholder="https://.../stream.m3u8 (klistra in och tryck Enter)" type="url" style="background:var(--panel3);border:2px solid var(--line);border-radius:10px;padding:11px 12px;color:var(--text);font-size:16px;flex:1;min-width:140px;outline:none;min-height:44px"/>
-              <button id="testSingleBtn" class="miniBtn" title="Spela streamen direkt – hamnar automatiskt i kanallistan" style="border-color:var(--accent);color:#c4b5fd;font-weight:700">▶ Spela nu</button>
-              <button id="singleToListBtn" class="miniBtn" title="Lägg streamen i en av dina listor" style="border-color:var(--accent2);color:#86efac">✓ Lägg i lista</button>
-            </div>
-            <div class="note" id="singlesCount" style="font-size:11px;margin-top:4px">0 sparade egna streams</div>
-          </details>
         </div>
         <div class="tvHint">
           <b style="color:#facc15">🎮 TV:</b>
@@ -1884,9 +1903,13 @@ function deleteCustomPlaylist(id){
 }
 
 function renderManager(){
+  const hideInactive = $('hideInactivePl')?.checked;
   els.playlistManager.innerHTML='';
-  const list = PLAYLISTS.filter(p=>!removed.has(p.id));
-  if(!list.length){ els.playlistManager.innerHTML+='<div class="note" style="padding:8px">Alla listor borttagna.</div>'; }
+  const all = PLAYLISTS.filter(p=>!removed.has(p.id));
+  const list = hideInactive ? all.filter(p=>active.has(p.id)) : all;
+  const hid = $('hiddenPlCount');
+  if(hid) hid.textContent = (all.length - list.length) ? (all.length - list.length) + ' dolda' : '';
+  if(!all.length){ els.playlistManager.innerHTML+='<div class="note" style="padding:8px">Alla listor borttagna.</div>'; }
   for(const p of list){
     const isActive = active.has(p.id);
     const isLoaded = loaded.has(p.id);
@@ -3422,6 +3445,29 @@ $('addPlHead').addEventListener('click', e=>{
   if(e.target.closest('#toggleAddPl')) return;
   $('toggleAddPl').click();
 });
+$('addPlDone').onclick = ()=> $('toggleAddPl').click();
+$('toggleSinglePl').onclick = e=>{
+  e.stopPropagation();
+  const body = $('singlePlBody');
+  const toggle = $('toggleSinglePl');
+  const open = body.classList.toggle('open');
+  toggle.classList.toggle('open', open);
+  toggle.textContent = open ? '−' : '+';
+  tvNav.refresh();
+};
+$('singlePlHead').addEventListener('click', e=>{
+  if(e.target.closest('#toggleSinglePl')) return;
+  $('toggleSinglePl').click();
+});
+(function initHideInactive(){
+  const cb = $('hideInactivePl');
+  if(!cb) return;
+  cb.checked = localStorage.getItem('iptv_hide_inactive_pl') === '1';
+  cb.addEventListener('change', ()=>{
+    localStorage.setItem('iptv_hide_inactive_pl', cb.checked ? '1' : '0');
+    renderManager();
+  });
+})();
 
 $('addNewPl').onclick = async ()=>{
   const name = $('newPlName').value;
@@ -3472,30 +3518,6 @@ $('restoreRemoved').onclick = ()=>{
   );
 };
 
-els.addCustom.onclick = async ()=>{
-  const url = els.customUrl.value.trim();
-  if(!url) return;
-  const id = await addCustomPlaylist({
-    name: 'Snabbval ' + new Date().toLocaleTimeString('sv-SE',{hour:'2-digit',minute:'2-digit'}),
-    url, flag: '🔗', country: 'Egen'
-  });
-  if(id) els.customUrl.value = '';
-};
-els.fileInput.onchange = async e=>{
-  const file=e.target.files[0]; if(!file) return;
-  const id='file_'+Date.now();
-  try{
-    const chans = parseM3U(await file.text(), {id, country:'Fil', flag:'📁'});
-    channelsByPlaylist[id]=chans; loaded.add(id); active.add(id);
-    PLAYLISTS.push({id, name:file.name, country:'Fil', flag:'📁', url:'', custom:true});
-    savePlaylistMeta(); saveCustomPlaylists(); save();
-    renderManager(); rebuildAll();
-    showToast(chans.length+' kanaler från fil');
-  }catch(err){
-    showToast('Kunde inte läsa filen');
-  }
-  e.target.value = '';
-};
 els.autoLoadCheck.onchange = e=>localStorage.setItem(LS.autoload, e.target.checked?'1':'0');
 els.autoLoadCheck.checked = localStorage.getItem(LS.autoload)==='1';
 $('clearFilters').onclick = ()=>{
