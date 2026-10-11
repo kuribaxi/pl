@@ -3462,11 +3462,14 @@ $('singlePlHead').addEventListener('click', e=>{
 (function initHideInactive(){
   const cb = $('hideInactivePl');
   if(!cb) return;
-  cb.checked = localStorage.getItem('iptv_hide_inactive_pl') === '1';
+  // Dölj inaktiva spellistor som standard
+  const saved = localStorage.getItem('iptv_hide_inactive_pl');
+  cb.checked = saved === null ? true : saved === '1';
   cb.addEventListener('change', ()=>{
     localStorage.setItem('iptv_hide_inactive_pl', cb.checked ? '1' : '0');
     renderManager();
   });
+  renderManager();
 })();
 
 $('addNewPl').onclick = async ()=>{
