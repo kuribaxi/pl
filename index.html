@@ -80,6 +80,20 @@ header{height:64px;flex-shrink:0;display:flex;align-items:center;justify-content
   padding:9px 14px;border-radius:11px;cursor:pointer;min-height:44px;min-width:44px}
 .hbtn:hover{background:#26264a}
 @media (hover:none){ .hbtn:hover{background:#1e1e33} }
+/* NY: Visa alla-knappen */
+#showAllAccBtn {
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+  border-color: #16a34a;
+  color: #fff;
+  font-weight: 800;
+  display: none;
+  animation: pulseShowAll 2s infinite;
+}
+#showAllAccBtn.show { display: inline-block; }
+@keyframes pulseShowAll {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(34,197,94,.7); }
+  50% { box-shadow: 0 0 0 10px rgba(34,197,94,0); }
+}
 body.tv-player-mode header{ display:none !important; }
 #layout{display:flex;height:calc(100dvh - 64px);min-height:0}
 #leftPanel{width:460px;flex:0 0 auto;display:flex;flex-direction:column;background:var(--panel);
@@ -130,7 +144,7 @@ body.tv-player-mode #video{ width:100% !important; height:100% !important; objec
 .accBody{display:none;padding:10px}
 .accBody.open{display:block}
 
-/* NYTT: Göm-funktion styling */
+/* Göm-funktion styling */
 .accHideBtn {
   background: none;
   border: none;
@@ -151,7 +165,7 @@ body.tv-player-mode #video{ width:100% !important; height:100% !important; objec
 .accHideBtn.hidden {
   color: #ef4444;
 }
-/* NYTT: Göm hela fönstret helt */
+/* Göm hela fönstret helt */
 .acc.collapsed {
   display: none !important;
 }
@@ -393,7 +407,7 @@ body.multi-mode .channelRow .favStar, body.multi-mode .channelRow .listStar{ dis
   padding:20px;max-width:560px;width:100%;max-height:80vh;overflow-y:auto;
   box-shadow:0 20px 60px rgba(0,0,0,.9)}
 
-/* ===== NY: TV-läge – avlång rektangel högst upp, ovanför tangentbordet ===== */
+/* TV-läge: avlång rektangel högst upp, ovanför tangentbordet */
 body.tv-player-mode .groupPickerBackdrop {
   align-items: flex-start;
   padding-top: 1vh;
@@ -829,6 +843,7 @@ body.app-fullscreen #layout{height:100dvh}
       <div class="clockTime" id="clockTime">--:--<span class="sec">--</span></div>
       <div class="clockDate" id="clockDate">--</div>
     </div>
+    <button id="showAllAccBtn" class="hbtn" title="Visa alla gömda fönster">👁️ <span class="lbl">Visa alla</span></button>
     <button id="tvModeBtn" class="hbtn" title="TV-läge">🖥️ <span class="lbl">TV-läge</span></button>
     <button id="fullscreenBtn" class="hbtn" title="Fullskärm (F)">⛶ <span class="lbl">Fullskärm</span></button>
     <button id="openAllBtn" class="hbtn" title="Öppna alla synliga">🔗 <span class="lbl">Öppna alla</span></button>
@@ -1263,6 +1278,15 @@ function save(){
   saveCustomPlaylists();
 }
 
+/* NY: Uppdaterar "Visa alla"-knappens synlighet */
+function updateShowAllBtn(){
+  const btn = $('showAllAccBtn');
+  if(!btn) return;
+  const hiddenCount = Object.values(accHidden).filter(v => v).length;
+  btn.classList.toggle('show', hiddenCount > 0);
+  btn.textContent = `👁️ Visa alla (${hiddenCount})`;
+}
+
 function applyAccordion(){
   document.querySelectorAll('.acc').forEach(acc=>{
     const key = acc.querySelector('[data-acc]')?.dataset.acc;
@@ -1288,6 +1312,7 @@ function applyAccordion(){
       hideBtn.classList.toggle('hidden', isHidden);
     }
   });
+  updateShowAllBtn(); // NY
 }
 function toggleAccordion(key){
   accOpen[key] = !accOpen[key];
@@ -1300,6 +1325,14 @@ function toggleAccordionHide(key, btn) {
   localStorage.setItem('iptv_acc_hidden', JSON.stringify(accHidden));
   applyAccordion();
   tvNav.refresh();
+}
+// NY: Visa alla gömda fönster
+function showAllAccordions(){
+  accHidden = {};
+  localStorage.setItem('iptv_acc_hidden', '{}');
+  applyAccordion();
+  tvNav.refresh();
+  showToast('👁️ Alla fönster visas igen');
 }
 document.querySelectorAll('.acc > .accHead').forEach(head=>{
   head.addEventListener('click', e=>{
@@ -1323,6 +1356,7 @@ document.querySelectorAll('.accHideBtn').forEach(btn=>{
     if(key) toggleAccordionHide(key, btn);
   });
 });
+$('showAllAccBtn').onclick = showAllAccordions;
 
 function escapeHtml(s){ return String(s??'').replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
 function fmtTime(d){ return new Intl.DateTimeFormat('sv-SE',{hour:'2-digit',minute:'2-digit'}).format(d); }
@@ -1589,7 +1623,6 @@ function openGroupPicker(channel){
   const modal = document.createElement('div');
   modal.className = 'groupPickerModal';
   
-  // UPPDATERAD HTML: Klar-knapp längst ner, avlång design
   modal.innerHTML = `
     <h3>✓ Välj listor för kanal</h3>
     <div class="chanName">${escapeHtml(channel.name)}</div>
@@ -1627,7 +1660,6 @@ function openGroupPicker(channel){
     renderChannelList(); renderFavPanel(); renderGroupTabs(); renderGroupPanel(); updateGroupsSummary();
   };
   
-  // Klar-knappen längst ner
   modal.querySelector('#gpClose').onclick = close;
   
   modal.querySelectorAll('.row').forEach(row=>{
