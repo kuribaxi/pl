@@ -80,7 +80,7 @@ header{height:64px;flex-shrink:0;display:flex;align-items:center;justify-content
   padding:9px 14px;border-radius:11px;cursor:pointer;min-height:44px;min-width:44px}
 .hbtn:hover{background:#26264a}
 @media (hover:none){ .hbtn:hover{background:#1e1e33} }
-/* NY: Visa alla-knappen */
+/* Visa alla-knappen */
 #showAllAccBtn {
   background: linear-gradient(135deg, #22c55e, #16a34a);
   border-color: #16a34a;
@@ -144,7 +144,7 @@ body.tv-player-mode #video{ width:100% !important; height:100% !important; objec
 .accBody{display:none;padding:10px}
 .accBody.open{display:block}
 
-/* Göm-funktion styling */
+/* Göm-funktion */
 .accHideBtn {
   background: none;
   border: none;
@@ -165,7 +165,6 @@ body.tv-player-mode #video{ width:100% !important; height:100% !important; objec
 .accHideBtn.hidden {
   color: #ef4444;
 }
-/* Göm hela fönstret helt */
 .acc.collapsed {
   display: none !important;
 }
@@ -407,7 +406,7 @@ body.multi-mode .channelRow .favStar, body.multi-mode .channelRow .listStar{ dis
   padding:20px;max-width:560px;width:100%;max-height:80vh;overflow-y:auto;
   box-shadow:0 20px 60px rgba(0,0,0,.9)}
 
-/* TV-läge: avlång rektangel högst upp, ovanför tangentbordet */
+/* === TV-läge: mycket lägre höjd, bredare, Klar-knapp bredvid Skapa === */
 body.tv-player-mode .groupPickerBackdrop {
   align-items: flex-start;
   padding-top: 1vh;
@@ -416,36 +415,78 @@ body.tv-player-mode .groupPickerBackdrop {
   z-index: 300;
 }
 body.tv-player-mode .groupPickerModal {
-  max-height: 45vh;
+  max-height: 32vh;
   width: 96vw;
-  max-width: 1200px;
+  max-width: 1400px;
   border-radius: 20px;
   border: 2px solid var(--accent2);
   box-shadow: 0 10px 40px rgba(0,0,0,.8);
-  padding: 16px 20px;
+  padding: 14px 20px;
   display: flex;
   flex-direction: column;
 }
 body.tv-player-mode .groupPickerModal .list {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 6px;
   justify-content: center;
   overflow-y: auto;
-  padding-bottom: 8px;
+  padding-bottom: 6px;
+  flex: 1;
 }
-body.tv-player-mode .groupPickerModal .actions {
-  display: flex;
-  justify-content: center;
-  margin-top: 10px;
+body.tv-player-mode .groupPickerModal .list .row {
+  min-height: 70px;
+  padding: 8px 6px 6px;
+  border-radius: 10px;
+  flex: 0 0 auto;
+  width: 100px;
 }
-body.tv-player-mode .groupPickerModal .actions .miniBtn {
-  padding: 12px 30px;
+body.tv-player-mode .groupPickerModal .list .row .ico {
+  width: 34px;
+  height: 34px;
   font-size: 16px;
-  border-radius: 12px;
-  min-width: 200px;
+  border-radius: 9px;
+}
+body.tv-player-mode .groupPickerModal .list .row .nm {
+  font-size: 11px;
+}
+body.tv-player-mode .groupPickerModal .list .row .cnt {
+  font-size: 9px;
 }
 
+/* Klar-knappen bredvid Skapa-knappen */
+body.tv-player-mode .groupPickerModal .newRow {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+  align-items: center;
+}
+body.tv-player-mode .groupPickerModal .newRow input {
+  min-height: 38px;
+  padding: 8px 12px;
+  font-size: 15px;
+}
+body.tv-player-mode .groupPickerModal .newRow .miniBtn {
+  min-height: 38px;
+  padding: 8px 16px;
+  font-size: 14px;
+  white-space: nowrap;
+}
+body.tv-player-mode .groupPickerModal .newRow #gpCloseInline {
+  background: var(--accent2);
+  border-color: var(--accent2);
+  color: #fff;
+  font-weight: 800;
+}
+body.tv-player-mode .groupPickerModal .actions {
+  display: none;
+}
+body.tv-player-mode .groupPickerModal .note {
+  font-size: 11px;
+  margin-bottom: 6px;
+}
+
+/* === Vanligt läge (icke-TV) – behåll vanliga stilen === */
 .groupPickerModal .row.tvFocus{outline:3px solid var(--accent2);outline-offset:1px;
   border-color:var(--accent2);background:#1e1e33}
 .groupPickerModal h3{margin:0 0 12px 0;font-size:17px;font-weight:800;display:flex;align-items:center;gap:8px;color:#86efac}
@@ -1109,6 +1150,7 @@ body.app-fullscreen #layout{height:100dvh}
 
 <script>
 const PLAYLISTS = [
+ // ===== Befintliga spellistor =====
  {id:'iran', name:'Iran (shayanline)', country:'Iran', flag:'🇮🇷', url:'https://raw.githubusercontent.com/shayanline/iptv-iran/main/playlists/iran.m3u'},
  {id:'iranmom', name:'Iran (Momo, geo-fri)', country:'Iran', flag:'🇮🇷', url:'https://raw.githubusercontent.com/Momo1530/iptv-iran/main/playlists/momo-verified.m3u'},
  {id:'movies', name:'Filmer', country:'Internationell', flag:'🎬', url:'https://iptv-org.github.io/iptv/categories/movies.m3u'},
@@ -1126,6 +1168,16 @@ const PLAYLISTS = [
  {id:'turk1', name:'Turkiet - ilyswch', country:'Turkiet', flag:'🇹🇷', url:'https://raw.githubusercontent.com/ilyswch/turk-iptv/main/index.m3u'},
  {id:'turk2', name:'Turkiet - Uzun', country:'Turkiet', flag:'🇹🇷', url:'https://streams.uzunmuhalefet.com/lists/tr.m3u'},
  {id:'ukgeo', name:'UK - Geo (ungeouk)', country:'UK', flag:'🇬🇧', url:'https://tinyurl.com/ungeouk'},
+ 
+ // ===== Nya spellistor (dubbletter borttagna) =====
+ {id:'documentary', name:'Dokumentär', country:'Internationell', flag:'📖', url:'https://iptv-org.github.io/iptv/categories/documentary.m3u'},
+ {id:'science', name:'Vetenskap', country:'Internationell', flag:'🔬', url:'https://iptv-org.github.io/iptv/categories/science.m3u'},
+ {id:'education', name:'Utbildning', country:'Internationell', flag:'🎓', url:'https://iptv-org.github.io/iptv/categories/education.m3u'},
+ {id:'iptvorg_all', name:'iptv-org Alla', country:'Internationell', flag:'🌐', url:'https://iptv-org.github.io/iptv/index.m3u'},
+ {id:'classic', name:'Klassiska filmer', country:'Internationell', flag:'🎞️', url:'https://iptv-org.github.io/iptv/categories/classic.m3u'},
+ {id:'comedy_org', name:'Komedi (iptv-org)', country:'Internationell', flag:'😂', url:'https://iptv-org.github.io/iptv/categories/comedy.m3u'},
+ {id:'hayatiptv', name:'Hayat IPTV (Turkiet)', country:'Turkiet', flag:'🇹🇷', url:'https://raw.githubusercontent.com/hayatiptv/iptv/master/index.m3u'},
+ {id:'turk_tr', name:'IPTV Turk TR', country:'Turkiet', flag:'🇹🇷', url:'https://raw.githubusercontent.com/iptv-turk-tr/iptv/main/list.m3u'},
 ];
 const LS = {
   active:'iptv_active_playlists', removed:'iptv_removed_playlists',
@@ -1278,7 +1330,7 @@ function save(){
   saveCustomPlaylists();
 }
 
-/* NY: Uppdaterar "Visa alla"-knappens synlighet */
+/* Uppdaterar "Visa alla"-knappens synlighet */
 function updateShowAllBtn(){
   const btn = $('showAllAccBtn');
   if(!btn) return;
@@ -1312,7 +1364,7 @@ function applyAccordion(){
       hideBtn.classList.toggle('hidden', isHidden);
     }
   });
-  updateShowAllBtn(); // NY
+  updateShowAllBtn();
 }
 function toggleAccordion(key){
   accOpen[key] = !accOpen[key];
@@ -1326,7 +1378,6 @@ function toggleAccordionHide(key, btn) {
   applyAccordion();
   tvNav.refresh();
 }
-// NY: Visa alla gömda fönster
 function showAllAccordions(){
   accHidden = {};
   localStorage.setItem('iptv_acc_hidden', '{}');
@@ -1629,6 +1680,7 @@ function openGroupPicker(channel){
     <div class="newRow">
       <input id="newGroupName" placeholder="Skapa ny lista…" maxlength="40" autocomplete="off"/>
       <button class="miniBtn primary" id="addGroupBtn" style="background:var(--accent2);border-color:var(--accent2);color:#fff;font-weight:700">➕ Skapa</button>
+      <button class="miniBtn" id="gpCloseInline" style="background:var(--accent2);border-color:var(--accent2);color:#fff;font-weight:800">✓ Klar</button>
     </div>
     <div class="list" id="groupPickList" style="flex:1; overflow-y:auto;">
       ${groups.length ? groups.map(g=>{
@@ -1647,9 +1699,6 @@ function openGroupPicker(channel){
       💡 <b>Tryck på en lista för att kryssa i/ur kanalen.</b><br>
       Du kan välja flera listor samtidigt.
     </div>
-    <div class="actions" style="margin-top:auto; padding-top:10px; border-top:1px solid var(--line);">
-      <button class="miniBtn" id="gpClose" style="flex:1;background:var(--accent2);border-color:var(--accent2);color:#fff;font-weight:700">✓ Klar</button>
-    </div>
   `;
   
   backdrop.appendChild(modal);
@@ -1660,7 +1709,7 @@ function openGroupPicker(channel){
     renderChannelList(); renderFavPanel(); renderGroupTabs(); renderGroupPanel(); updateGroupsSummary();
   };
   
-  modal.querySelector('#gpClose').onclick = close;
+  modal.querySelector('#gpCloseInline').onclick = close;
   
   modal.querySelectorAll('.row').forEach(row=>{
     row.onclick = ()=>{
