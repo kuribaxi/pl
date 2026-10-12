@@ -111,7 +111,7 @@ body.tv-player-mode .playerWrap{ width:100% !important; height:100% !important; 
 body.tv-player-mode #video{ width:100% !important; height:100% !important; object-fit:contain;
   background:linear-gradient(180deg,#0a0f33,#0d1440); }
 .acc{background:rgba(21,21,37,.75);border:1px solid var(--line);border-radius:12px;
-  margin:4px 8px;overflow:hidden;flex-shrink:0; backdrop-filter:blur(6px)}
+  margin:4px 8px;overflow:hidden;flex-shrink:0; backdrop-filter:blur(6px); transition:opacity .2s}
 .accHead{display:flex;align-items:center;justify-content:space-between;gap:8px;
   padding:6px 10px;cursor:pointer;background:#16162a;user-select:none;
   border-bottom:1px solid transparent;transition:background .15s}
@@ -151,7 +151,8 @@ body.tv-player-mode #video{ width:100% !important; height:100% !important; objec
 .accHideBtn.hidden {
   color: #ef4444;
 }
-.accBody.collapsed {
+/* NYTT: Göm hela fönstret helt */
+.acc.collapsed {
   display: none !important;
 }
 
@@ -391,32 +392,51 @@ body.multi-mode .channelRow .favStar, body.multi-mode .channelRow .listStar{ dis
 .groupPickerModal{background:var(--panel2);border:2px solid var(--accent2);border-radius:16px;
   padding:20px;max-width:560px;width:100%;max-height:80vh;overflow-y:auto;
   box-shadow:0 20px 60px rgba(0,0,0,.9)}
-/* TV-läge: håll dialogen uppe, ovanför eventuell skärmtangentbord */
-body.tv-player-mode .groupPickerBackdrop{align-items:flex-start;padding-top:2vh;z-index:300}
-body.tv-player-mode .groupPickerModal{max-height:50vh; border-radius:28px; border:3px solid var(--accent2); box-shadow:0 0 0 6px rgba(34,197,94,.2), 0 20px 60px rgba(0,0,0,.9);}
+
+/* ===== NY: TV-läge – avlång rektangel högst upp, ovanför tangentbordet ===== */
+body.tv-player-mode .groupPickerBackdrop {
+  align-items: flex-start;
+  padding-top: 1vh;
+  padding-left: 2vw;
+  padding-right: 2vw;
+  z-index: 300;
+}
+body.tv-player-mode .groupPickerModal {
+  max-height: 45vh;
+  width: 96vw;
+  max-width: 1200px;
+  border-radius: 20px;
+  border: 2px solid var(--accent2);
+  box-shadow: 0 10px 40px rgba(0,0,0,.8);
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+}
+body.tv-player-mode .groupPickerModal .list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  overflow-y: auto;
+  padding-bottom: 8px;
+}
+body.tv-player-mode .groupPickerModal .actions {
+  display: flex;
+  justify-content: center;
+  margin-top: 10px;
+}
+body.tv-player-mode .groupPickerModal .actions .miniBtn {
+  padding: 12px 30px;
+  font-size: 16px;
+  border-radius: 12px;
+  min-width: 200px;
+}
+
 .groupPickerModal .row.tvFocus{outline:3px solid var(--accent2);outline-offset:1px;
   border-color:var(--accent2);background:#1e1e33}
 .groupPickerModal h3{margin:0 0 12px 0;font-size:17px;font-weight:800;display:flex;align-items:center;gap:8px;color:#86efac}
 .groupPickerModal .chanName{font-size:13px;color:var(--muted);margin-bottom:14px;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-
-/* NYTT: Klar-knapp högst upp */
-.groupPickerModal .topActions {
-  display: flex;
-  justify-content: flex-end;
-  margin-bottom: 12px;
-}
-.groupPickerModal .topActions .miniBtn {
-  background: var(--accent2);
-  border-color: var(--accent2);
-  color: #fff;
-  font-weight: 800;
-  padding: 10px 20px;
-  border-radius: 12px;
-  min-height: 44px;
-  font-size: 15px;
-  cursor: pointer;
-}
 
 .groupPickerModal .list{ display:grid; grid-template-columns:repeat(auto-fill, minmax(110px, 1fr));
   gap:8px; margin-bottom:14px; }
@@ -911,7 +931,7 @@ body.app-fullscreen #layout{height:100dvh}
       </div>
     </div>
 
-    <!-- 2. SPELA ENSKILD M3U8-LÄNK (Flyttad ut hit) -->
+    <!-- 2. SPELA ENSKILD M3U8-LÄNK -->
     <div class="acc" id="accSingle">
       <div class="accHead" data-acc="single">
         <div class="accTitle">▶ <span>Spela enskild m3u8-länk</span>
@@ -1109,7 +1129,7 @@ let groups   = JSON.parse(localStorage.getItem(LS.groups) || '[]');
 let groupMembers = JSON.parse(localStorage.getItem(LS.groupMembers) || '{}');
 let extOnly  = new Set(JSON.parse(localStorage.getItem(LS.extOnly) ||'[]'));
 let accOpen  = JSON.parse(localStorage.getItem(LS.accOpen) || '{"playlists":false,"single":false,"filters":false,"favs":false,"groups":true}');
-let accHidden = JSON.parse(localStorage.getItem('iptv_acc_hidden') || '{}'); // NY: Hanterar gömda fönster
+let accHidden = JSON.parse(localStorage.getItem('iptv_acc_hidden') || '{}');
 let customPlaylists = JSON.parse(localStorage.getItem(LS.customPls) || '[]');
 let channelsByPlaylist = {};
 let loaded = new Set();
@@ -1140,7 +1160,6 @@ function saveSingleStreams(){
   localStorage.setItem(LS.singles, JSON.stringify(singleStreams));
 }
 function syncSinglesPlaylist(){
-  /* Egna streams läggs direkt i kanallistan (builtin) – ingen separat spellista */
   channelsByPlaylist[BUILTIN_ID] = singleStreams.map(s=>({
     name: s.name, url: s.url, logo: s.logo||'',
     group: s.group||'Egen stream', tvgId: s.tvgId||'', lang: s.lang||'unknown',
@@ -1151,7 +1170,6 @@ function syncSinglesPlaylist(){
 syncSinglesPlaylist();
 active.delete(BUILTIN_ID);
 
-/* ===== KLASSISKA FILMER & WESTERN (inbäddade kanaler) ===== */
 const MANUAL_CW_ID = 'manualcw';
 PLAYLISTS.push({id:MANUAL_CW_ID, name:'Klassiska filmer & Western', country:'Internationell', flag:'🤠', url:''});
 channelsByPlaylist[MANUAL_CW_ID] = [
@@ -1238,7 +1256,7 @@ function save(){
   localStorage.setItem(LS.extOnly, JSON.stringify([...extOnly]));
   localStorage.setItem(LS.proxyMode, proxyMode);
   localStorage.setItem(LS.accOpen, JSON.stringify(accOpen));
-  localStorage.setItem('iptv_acc_hidden', JSON.stringify(accHidden)); // NY
+  localStorage.setItem('iptv_acc_hidden', JSON.stringify(accHidden));
   if(activeGroupId) localStorage.setItem(LS.activeGroup, activeGroupId);
   else localStorage.removeItem(LS.activeGroup);
   savePlaylistMeta();
@@ -1256,15 +1274,13 @@ function applyAccordion(){
     const isOpen = !!accOpen[key];
     const isHidden = !!accHidden[key];
 
+    acc.classList.toggle('collapsed', isHidden);
+
     head.classList.toggle('open', isOpen);
     body.classList.toggle('open', isOpen);
     toggle.classList.toggle('open', isOpen);
     toggle.textContent = isOpen ? '−' : '+';
 
-    // Hantera göm-funktionen
-    body.classList.toggle('collapsed', isHidden);
-    
-    // Uppdatera göm-knappens utseende om den finns
     const hideBtn = head.querySelector('.accHideBtn');
     if (hideBtn) {
       hideBtn.textContent = isHidden ? '🙈' : '👁️';
@@ -1299,10 +1315,10 @@ document.querySelectorAll('.accToggle[data-acc-toggle]').forEach(btn=>{
     if(key) toggleAccordion(key);
   });
 });
-// NY: Lyssna på göm-knapparna
 document.querySelectorAll('.accHideBtn').forEach(btn=>{
   btn.addEventListener('click', e=>{
     e.stopPropagation();
+    e.preventDefault();
     const key = btn.dataset.accHide;
     if(key) toggleAccordionHide(key, btn);
   });
@@ -1463,7 +1479,6 @@ function multiSelectAddToGroup(){
     applyTo(gids, true);
   };
   modal.querySelector('#multiCancel').onclick = close;
-  // TV/fjärrkontroll-navigering
   const mRows = ()=>[...modal.querySelectorAll('.row')];
   let mIdx = -1;
   const mHi = ()=>{
@@ -1574,18 +1589,15 @@ function openGroupPicker(channel){
   const modal = document.createElement('div');
   modal.className = 'groupPickerModal';
   
-  // UPPDATERAD HTML: Klar-knapp flyttad till toppen, rundare design
+  // UPPDATERAD HTML: Klar-knapp längst ner, avlång design
   modal.innerHTML = `
-    <div class="topActions">
-      <button class="miniBtn" id="gpCloseTop">✓ Klar</button>
-    </div>
     <h3>✓ Välj listor för kanal</h3>
     <div class="chanName">${escapeHtml(channel.name)}</div>
     <div class="newRow">
       <input id="newGroupName" placeholder="Skapa ny lista…" maxlength="40" autocomplete="off"/>
       <button class="miniBtn primary" id="addGroupBtn" style="background:var(--accent2);border-color:var(--accent2);color:#fff;font-weight:700">➕ Skapa</button>
     </div>
-    <div class="list" id="groupPickList">
+    <div class="list" id="groupPickList" style="flex:1; overflow-y:auto;">
       ${groups.length ? groups.map(g=>{
         const isOn = isChannelInGroup(channel.url, g.id);
         const ico = getGroupIcon(g.name);
@@ -1598,9 +1610,12 @@ function openGroupPicker(channel){
         </div>`;
       }).join('') : '<div class="note" style="padding:14px;text-align:center;grid-column:1/-1">Inga listor än – skapa en ovan 👆</div>'}
     </div>
-    <div class="note" style="font-size:12px;color:#94a3b8;margin-bottom:12px;line-height:1.6">
+    <div class="note" style="font-size:12px;color:#94a3b8;margin-bottom:12px;line-height:1.6;text-align:center;">
       💡 <b>Tryck på en lista för att kryssa i/ur kanalen.</b><br>
       Du kan välja flera listor samtidigt.
+    </div>
+    <div class="actions" style="margin-top:auto; padding-top:10px; border-top:1px solid var(--line);">
+      <button class="miniBtn" id="gpClose" style="flex:1;background:var(--accent2);border-color:var(--accent2);color:#fff;font-weight:700">✓ Klar</button>
     </div>
   `;
   
@@ -1612,8 +1627,8 @@ function openGroupPicker(channel){
     renderChannelList(); renderFavPanel(); renderGroupTabs(); renderGroupPanel(); updateGroupsSummary();
   };
   
-  // Stäng-knappen i toppen
-  modal.querySelector('#gpCloseTop').onclick = close;
+  // Klar-knappen längst ner
+  modal.querySelector('#gpClose').onclick = close;
   
   modal.querySelectorAll('.row').forEach(row=>{
     row.onclick = ()=>{
@@ -1646,7 +1661,6 @@ function openGroupPicker(channel){
     if(e.key === 'ArrowDown'){ e.preventDefault(); inp.blur(); tvNav(0); }
   });
   
-  // TV/fjärrkontroll-navigering i listan
   const rows = ()=>[...modal.querySelectorAll('.row')];
   let tvIdx = -1;
   const tvHighlight = ()=>{
@@ -2347,7 +2361,6 @@ function playChannel(c){
   if(document.body.classList.contains('tv-overlay-open')) renderTvOverlay();
 
   if(isExternalOnly(c.url)){
-    // Ge kanalen en ny chans i spelaren vid varje klick
     extOnly.delete(c.url); save();
   }
   const candidates = buildStreamCandidates(c.url);
@@ -2360,7 +2373,6 @@ function safePlay(){
   try{ p = v.play(); }catch(e){ p = Promise.reject(e); }
   if(p && p.catch){
     p.catch(err=>{
-      // Autoplay blockerad av webbläsaren: försök tystat, visa tipps
       if(err && (err.name === 'NotAllowedError' || err.name === 'AbortError')){
         v.muted = true;
         v.play().then(()=>{
@@ -2374,7 +2386,6 @@ function safePlay(){
 function tryNextCandidate(c, candidates, idx){
   if(idx >= candidates.length){
     const tried = playChannel._attempts.map(a=>a.id).join(' → ');
-    // Svartlista INTE kanalen automatiskt – nästa klick försöker igen från början
     showOverlay(
         '🚫 <b>Kanalen kunde inte spelas just nu.</b><br>'+
         `<span style="color:#94a3b8;font-size:13px">Testade: ${escapeHtml(tried)}</span><br><br>`+
@@ -2927,7 +2938,6 @@ function closeTvOverlay(){
   tvNav.refresh();
 }
 
-/* ===== TV-LÄGE: NY LISTA / LÄGG KANAL I LISTA ===== */
 function tvListDialog(channel){
   const c = channel || currentChannel;
   const chanHtml = c
@@ -3390,7 +3400,6 @@ function guessSingleName(url){
     return n || 'Enskild stream';
   }catch(e){ return 'Enskild stream'; }
 }
-/* Spela en enskild m3u8-länk DIREKT – och lägg den direkt i kanallistan */
 function playSingleNow(){
   const url = ($('singleUrl').value || '').trim();
   if(!/^https?:\/\//i.test(url)){ showToast('Klistra in en giltig länk (http/https)'); return; }
@@ -3547,7 +3556,6 @@ $('addPlDone').onclick = ()=> $('toggleAddPl').click();
 (function initHideInactive(){
   const cb = $('hideInactivePl');
   if(!cb) return;
-  // Dölj inaktiva spellistor som standard
   const saved = localStorage.getItem('iptv_hide_inactive_pl');
   cb.checked = saved === null ? true : saved === '1';
   cb.addEventListener('change', ()=>{
