@@ -70,6 +70,7 @@ header{height:64px;flex-shrink:0;display:flex;align-items:center;justify-content
   background:linear-gradient(90deg,#9f8cff, #6ec3ff);
   -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
   filter:drop-shadow(0 0 8px rgba(110,140,255,.65));
+  transition:filter .5s ease;
 }
 #clockWidget .clockTime .sec{ font-size:12px;font-weight:700; color:#8fa3ff; -webkit-text-fill-color:#8fa3ff; }
 #clockWidget .clockDate{ font-size:10.5px;font-weight:700;color:#b8c3ff;text-transform:capitalize; white-space:nowrap; }
@@ -80,7 +81,6 @@ header{height:64px;flex-shrink:0;display:flex;align-items:center;justify-content
   padding:9px 14px;border-radius:11px;cursor:pointer;min-height:44px;min-width:44px}
 .hbtn:hover{background:#26264a}
 @media (hover:none){ .hbtn:hover{background:#1e1e33} }
-/* Visa alla-knappen */
 #showAllAccBtn {
   background: linear-gradient(135deg, #22c55e, #16a34a);
   border-color: #16a34a;
@@ -144,7 +144,6 @@ body.tv-player-mode #video{ width:100% !important; height:100% !important; objec
 .accBody{display:none;padding:10px}
 .accBody.open{display:block}
 
-/* Göm-funktion */
 .accHideBtn {
   background: none;
   border: none;
@@ -210,7 +209,6 @@ body.tv-player-mode #video{ width:100% !important; height:100% !important; objec
 @media (hover:none){ .addPlHead:hover{color:var(--muted)} }
 .accToggle.small{width:24px;height:24px;font-size:13px}
 .addPlBody{display:none;padding-top:8px}
-/* TV-läge: flytande rundat fönster högt upp, ovanför TV-tangentbordet */
 body.tv-player-mode .addPlBody.open{
   position:fixed; top:4vh; left:50%; transform:translateX(-50%);
   width:min(620px,94vw); max-height:62vh; overflow-y:auto;
@@ -384,18 +382,28 @@ body.multi-mode .channelRow .favStar, body.multi-mode .channelRow .listStar{ dis
 .listStar .cnt{ position:absolute; bottom:-2px; right:-2px; font-size:8px; font-weight:900;
   background:var(--accent2); color:#000; border-radius:999px; padding:0 3px; min-width:12px;
   text-align:center; line-height:12px; height:12px; }
+/* NY: Delete-knapp i kanallistan */
 .channelRow > .msCheck{ order:0; }
 .channelRow > .favStar{ order:1; }
 .channelRow > .listStar{ order:2; }
 .channelRow > .cLogo{ order:3; }
 .channelRow > .cMeta{ order:4; }
 .channelRow > .extIcon{ order:5; }
+.channelRow > .delIcon{ order:6; }
 .extIcon{
   background:none; border:2px solid transparent; font-size:14px; cursor:pointer; color:var(--focus);
   padding:3px; flex:0 0 auto; border-radius:9px; width:30px; height:30px;
   display:flex; align-items:center; justify-content:center;
 }
 .extIcon:hover{color:#fff;background:rgba(125,211,252,.1)}
+/* NY: Delete-knapp styling */
+.delIcon{
+  background:none; border:2px solid transparent; font-size:16px; cursor:pointer; color:#ef4444;
+  padding:3px; flex:0 0 auto; border-radius:9px; width:30px; height:30px;
+  display:flex; align-items:center; justify-content:center; transition:.15s;
+}
+.delIcon:hover{ color:#fff; background:rgba(239,68,68,.35); }
+@media (hover:none){ .delIcon:hover{ background:none; color:#ef4444; } }
 .groupBadgeRow{display:flex;flex-wrap:wrap;gap:3px;margin-top:4px}
 .groupBadge{font-size:9px;padding:2px 6px;border-radius:5px;font-weight:700;
   background:rgba(139,92,246,.18);color:#c4b5fd}
@@ -406,7 +414,6 @@ body.multi-mode .channelRow .favStar, body.multi-mode .channelRow .listStar{ dis
   padding:20px;max-width:560px;width:100%;max-height:80vh;overflow-y:auto;
   box-shadow:0 20px 60px rgba(0,0,0,.9)}
 
-/* === TV-läge: mycket lägre höjd, bredare, Klar-knapp bredvid Skapa === */
 body.tv-player-mode .groupPickerBackdrop {
   align-items: flex-start;
   padding-top: 1vh;
@@ -454,7 +461,6 @@ body.tv-player-mode .groupPickerModal .list .row .cnt {
   font-size: 9px;
 }
 
-/* Klar-knappen bredvid Skapa-knappen */
 body.tv-player-mode .groupPickerModal .newRow {
   display: flex;
   gap: 8px;
@@ -486,7 +492,6 @@ body.tv-player-mode .groupPickerModal .note {
   margin-bottom: 6px;
 }
 
-/* === Vanligt läge (icke-TV) – behåll vanliga stilen === */
 .groupPickerModal .row.tvFocus{outline:3px solid var(--accent2);outline-offset:1px;
   border-color:var(--accent2);background:#1e1e33}
 .groupPickerModal h3{margin:0 0 12px 0;font-size:17px;font-weight:800;display:flex;align-items:center;gap:8px;color:#86efac}
@@ -676,6 +681,7 @@ body.tv-player-mode .groupPickerModal .note {
   .cName{ font-size:13px; }
   .cSub{ font-size:10px; gap:4px; }
   .extIcon{ width:28px; height:28px; font-size:12px; }
+  .delIcon{ width:28px; height:28px; font-size:14px; }
   .acc{margin:4px 6px}
   .accHead{padding:6px 10px}
   .accTitle{font-size:13px}
@@ -717,13 +723,14 @@ body.tv-player-mode .groupPickerModal .note {
   .cLogo{ width:34px; height:34px; }
   .channelRow{ padding:6px; gap:4px; }
   .extIcon{ width:26px; height:26px; font-size:11px; }
+  .delIcon{ width:26px; height:26px; font-size:12px; }
 }
 @media (max-height:480px) and (max-width:900px){
   .playerWrap{aspect-ratio:auto;height:38vh}
 }
 @media (hover:none) and (pointer:coarse){
   .channelRow,.favItem,.progCard,.gridCell.left{touch-action:manipulation}
-  .plRemove,.favItemRemove,.extIcon,.favStar,.listStar{touch-action:manipulation}
+  .plRemove,.favItemRemove,.extIcon,.delIcon,.favStar,.listStar{touch-action:manipulation}
 }
 .acc, .playerCard, .card{position:relative}
 #tvChannelOverlay{
@@ -853,7 +860,7 @@ body.tv-player-mode.tv-idle #tvChanName{
 body.tv-player-mode #tvClock{ display:flex; }
 #tvClock .tvClockTime{ font-family:'Courier New',monospace; font-weight:800; font-size:1.4rem;
   letter-spacing:2px; color:var(--tv-focus); white-space:nowrap; line-height:1.1;
-  transition:font-size .4s ease, letter-spacing .4s ease; }
+  transition:font-size .4s ease, letter-spacing .4s ease, color .5s ease; }
 #tvClock .tvClockDate{ font-size:0.8rem; font-weight:700; color:#e0e7ff; white-space:nowrap; }
 body.tv-player-mode.tv-clock-off #tvClock{ display:none !important; }
 body.tv-player-mode.tv-idle #tvClock .tvClockDate{ display:none; }
@@ -1330,7 +1337,6 @@ function save(){
   saveCustomPlaylists();
 }
 
-/* Uppdaterar "Visa alla"-knappens synlighet */
 function updateShowAllBtn(){
   const btn = $('showAllAccBtn');
   if(!btn) return;
@@ -2296,6 +2302,7 @@ function renderChannelList(){
         ${progs ? `<div class="nowline">${nowP?'<b>Nu:</b> '+escapeHtml(nowP.title):'Nu: ingen EPG-data'}${nextP?' · Nästa: '+escapeHtml(nextP.title):''}</div>` : ''}
       </div>
       <button class="extIcon" data-extkey="${escapeHtml(channelKey(c))}" title="Öppna externt" tabindex="-1">🔗</button>
+      <button class="delIcon" data-delkey="${escapeHtml(channelKey(c))}" title="Ta bort kanal" tabindex="-1">✕</button>
     </div>`;
   }).join('');
 
@@ -2310,6 +2317,7 @@ function renderChannelList(){
       if(e.target.classList.contains('favStar') ||
          e.target.classList.contains('listStar') ||
          e.target.classList.contains('extIcon') ||
+         e.target.classList.contains('delIcon') ||
          e.target.classList.contains('msCheck')) return;
       const ch = findChannelByKey(row.dataset.key); if(ch) playChannel(ch);
     };
@@ -2347,6 +2355,14 @@ function renderChannelList(){
       if(ch) openStreamExternal(ch);
     };
   });
+  // NY: Delete-knapp
+  els.channelList.querySelectorAll('.delIcon').forEach(b=>{
+    b.onclick = e=>{
+      e.stopPropagation();
+      const ch = findChannelByKey(b.dataset.delkey);
+      if(ch) deleteChannel(ch);
+    };
+  });
   requestAnimationFrame(()=>{ els.channelList.scrollTop = prevScrollTop; });
 }
 function updateActiveChannelRow(){
@@ -2355,6 +2371,61 @@ function updateActiveChannelRow(){
     row.classList.toggle('active', isActive);
   });
   updateTvChannelBadge();
+}
+
+/* NY: Ta bort kanal från spellista/egen stream */
+function deleteChannel(c){
+  if(!c) return;
+  showOverlay(
+    `🗑️ <b>Ta bort "${escapeHtml(c.name)}"?</b><br><br>`+
+    `<span style="font-size:13px;color:#94a3b8">Kanalen tas bort från listan.<br>Detta kan inte ångras.</span>`,
+    true,
+    [
+      {label:'🗑️ Ja, ta bort', primary:true, action:()=>{
+        // Om det är en egen stream (single) – ta bort från singleStreams
+        if(c.single){
+          const idx = singleStreams.findIndex(s=>s.url===c.url);
+          if(idx >= 0){
+            singleStreams.splice(idx, 1);
+            saveSingleStreams();
+            syncSinglesPlaylist();
+          }
+        } else {
+          // Ta bort från spellistan (channelsByPlaylist)
+          for(const plId in channelsByPlaylist){
+            if(plId === BUILTIN_ID) continue;
+            const arr = channelsByPlaylist[plId];
+            if(!arr) continue;
+            const idx = arr.findIndex(x=>x.url===c.url);
+            if(idx >= 0){
+              arr.splice(idx, 1);
+              break;
+            }
+          }
+        }
+        // Ta bort från favoriter och grupper
+        favs.delete(c.url);
+        for(const gid in groupMembers){
+          const idx = groupMembers[gid].indexOf(c.url);
+          if(idx >= 0) groupMembers[gid].splice(idx, 1);
+        }
+        extOnly.delete(c.url);
+        save();
+        if(currentChannel && currentChannel.url === c.url){
+          stopPlayer();
+          currentChannel = null;
+          els.nowName.textContent = 'Ingen kanal vald';
+          els.nowGroup.textContent = '';
+          els.nowUrl.textContent = '';
+        }
+        rebuildAll();
+        renderManager();
+        hideOverlay();
+        showToast('🗑️ Kanal borttagen');
+      }},
+      {label:'✖ Avbryt', action:()=>hideOverlay()}
+    ]
+  );
 }
 
 function renderFavPanel(){
@@ -3209,6 +3280,31 @@ $('tvListBtn').onclick = openTvOverlay;
 $('tvOvClose').onclick = closeTvOverlay;
 $('createGroupBtn').onclick = openCreateGroupModal;
 
+/* NY: Klocka med färgbyte varje minut */
+const CLOCK_COLORS = [
+  '#ffd54a', // gul
+  '#7dd3fc', // ljusblå
+  '#86efac', // ljusgrön
+  '#fca5a5', // ljusrosa
+  '#c4b5fd', // ljuslila
+  '#fdba74', // orange
+  '#f9a8d4', // rosa
+  '#a5f3fc'  // cyan
+];
+let lastClockMinute = -1;
+function applyClockColor(minute){
+  const color = CLOCK_COLORS[minute % CLOCK_COLORS.length];
+  const tvClock = document.querySelector('#tvClock .tvClockTime');
+  if(tvClock){ tvClock.style.color = color; }
+  const headerClock = document.querySelector('#clockWidget .clockTime');
+  if(headerClock){
+    headerClock.style.background = `linear-gradient(90deg, ${color}, #ffffff)`;
+    headerClock.style.webkitBackgroundClip = 'text';
+    headerClock.style.backgroundClip = 'text';
+    headerClock.style.webkitTextFillColor = 'transparent';
+    headerClock.style.filter = `drop-shadow(0 0 8px ${color})`;
+  }
+}
 function updateTvClockDisplay(){
   const timeEl = $('tvClockDisplay');
   const dateEl = $('tvClockDateTv');
@@ -3222,6 +3318,11 @@ function updateTvClockDisplay(){
     const daysShort = ['Sön','Mån','Tis','Ons','Tor','Fre','Lör'];
     const monthsShort = ['jan','feb','mar','apr','maj','jun','jul','aug','sep','okt','nov','dec'];
     dateEl.textContent = `${daysShort[now.getDay()]} ${now.getDate()} ${monthsShort[now.getMonth()]} ${now.getFullYear()}`;
+  }
+  // NY: byt färg varje minut
+  if(now.getMinutes() !== lastClockMinute){
+    lastClockMinute = now.getMinutes();
+    applyClockColor(lastClockMinute);
   }
 }
 updateTvClockDisplay();
