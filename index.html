@@ -794,17 +794,24 @@ body.tv-player-mode.tv-overlay-open #tvChannelOverlay{ transform:translateY(0); 
 .tvOvEmpty{ grid-column:1/-1; text-align:center; padding:40px 16px; color:var(--muted); font-size:14px; }
 /* ==== VERTIKAL TV-TOOLBAR (höger sida, ej centrerad) ==== */
 #tvNavBar{
-  position:fixed; right:14px; top:110px; bottom:110px; display:none; gap:10px;
-  padding:14px 10px; background:rgba(10,15,51,.92); border:3px solid var(--tv-focus); border-radius:18px;
+  position:fixed; right:14px; top:110px; bottom:110px; display:none;
+  background:rgba(10,15,51,.92); border:3px solid var(--tv-focus); border-radius:18px;
   box-shadow:0 10px 40px rgba(0,0,0,.8), 0 0 20px rgba(250,204,21,.25);
-  z-index:75; transition:transform .28s ease, opacity .28s; flex-wrap:nowrap; justify-content:center;
-  flex-direction:column; align-items:center; overflow-y:auto; overflow-x:hidden;
+  z-index:75; transition:transform .28s ease, opacity .28s;
+  align-items:center; justify-content:center; overflow:hidden;
   -webkit-overflow-scrolling:touch; scrollbar-width:none; backdrop-filter:blur(10px);
   opacity:0; pointer-events:none; box-sizing:border-box; max-height:none; max-width:none;
 }
 #tvNavBar::-webkit-scrollbar{ display:none; }
 body.tv-player-mode #tvNavBar{ display:flex; transform:translate(0,0); opacity:1; pointer-events:auto; }
 body.tv-player-mode.tv-overlay-open #tvNavBar{ transform:translate(130%,0); opacity:0; pointer-events:none; }
+/* Inre wrapper – skalas automatiskt så att ALLT syns oavsett zoom */
+#tvNavInner{
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  gap:10px; flex:0 0 auto; padding:12px 8px;
+  transform:scale(1); transform-origin:center center;
+  transition:transform .2s ease; box-sizing:border-box;
+}
 .tvNavBtn{
   display:flex; align-items:center; gap:8px; background:#1e1e33; color:var(--text);
   border:2px solid var(--line); border-radius:999px; padding:10px 16px;
@@ -834,8 +841,9 @@ body.tv-player-mode.tv-overlay-open #tvNavBar{ transform:translate(130%,0); opac
   #tvNavBar{
     right:8px !important; left:auto !important; top:80px !important; bottom:80px !important;
     width:auto !important; max-width:none !important; transform:none !important;
-    border-radius:16px; padding:10px 6px; gap:6px; box-sizing:border-box;
+    border-radius:16px; box-sizing:border-box;
   }
+  #tvNavInner{ gap:6px; padding:8px 6px; }
   .tvNavBtn{ padding:9px 12px; font-size:12px; min-height:44px; min-width:44px; gap:6px; }
   .tvNavBtn .kbd{ display:none !important; }
   .tvNavBtn > span:not(.kbd):not(.ntb-icon){ display:none !important; }
@@ -934,6 +942,7 @@ body.app-fullscreen #layout{height:100dvh}
 </div>
 
 <div id="tvNavBar" role="toolbar" aria-label="TV navigering">
+ <div id="tvNavInner">
   <button class="tvNavBtn" id="tvPrevBtn" title="Föregående kanal">⏮ <span class="kbd">◀</span></button>
   <button class="tvNavBtn primary" id="tvListBtn" title="Öppna kanallista">📺 <span>Kanaler</span> <span class="kbd">OK</span></button>
   <button class="tvNavBtn" id="tvAddBtn" title="Ny lista / lägg kanalen i lista">➕ <span class="kbd">A</span></button>
@@ -948,6 +957,7 @@ body.app-fullscreen #layout{height:100dvh}
   </div>
   <button class="tvNavBtn" id="tvFsBtn" title="Fullskärm av/på">⛶ <span class="kbd">F</span></button>
   <button class="tvNavBtn" id="tvExitBtn" title="Avsluta TV-läge">✖ <span class="kbd">Esc</span></button>
+ </div>
 </div>
 
 <div id="layout">
@@ -3354,6 +3364,32 @@ $('tvVolLevel').onclick = tvVolToggleMute;
 tvVolApply();
 setInterval(tvVolUpdate, 1000);
 
+/* ==== Auto-skala toolbaren så ALLT syns oavsett zoom ==== */
+function fitTvNavBar(){
+  const bar = $('tvNavBar'), inner = $('tvNavInner');
+  if(!bar || !inner) return;
+  if(!document.body.classList.contains('tv-player-mode')) return;
+  inner.style.transform = 'scale(1)';
+  const availH = bar.clientHeight - 4;
+  const availW = bar.clientWidth - 4;
+  if(availH <= 0) return;
+  const needH = inner.offsetHeight;
+  const needW = inner.offsetWidth;
+  let s = 1;
+  if(needH > availH) s = Math.min(s, availH / needH);
+  if(needW > availW) s = Math.min(s, availW / needW);
+  s = Math.max(0.3, Math.round(s * 100) / 100);
+  inner.style.transform = 'scale(' + s + ')';
+}
+window.addEventListener('resize', ()=>{ fitTvNavBar(); });
+window.addEventListener('orientationchange', ()=> setTimeout(fitTvNavBar, 300));
+setInterval(fitTvNavBar, 1000);
+document.addEventListener('fullscreenchange', ()=> setTimeout(fitTvNavBar, 200));
+document.addEventListener('webkitfullscreenchange', ()=> setTimeout(fitTvNavBar, 200));
+if(window.visualViewport){
+  window.visualViewport.addEventListener('resize', fitTvNavBar);
+}
+
 /* NY: Klocka med färgbyte varje minut */
 const CLOCK_COLORS = [
   '#ffd54a', // gul
@@ -3434,8 +3470,9 @@ function toggleTvMode(){
   if(on){
     tvNav.currentZone = 1;
     tvNav.focusIndex = 0;
-    setTimeout(()=>{ tvNav.refresh(); updateTvChannelBadge(); }, 50);
+    setTimeout(()=>{ tvNav.refresh(); updateTvChannelBadge(); fitTvNavBar(); }, 50);
   }
+  setTimeout(fitTvNavBar, 150);
   updateStickyPlayerLayout();
   setTimeout(updateStickyPlayerLayout, 100);
   const off = document.body.classList.contains('tv-clock-off');
