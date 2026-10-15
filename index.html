@@ -445,7 +445,7 @@ body.tv-player-mode .groupPickerModal .list .row {
   min-height: 70px;
   padding: 8px 6px 6px;
   border-radius: 10px;
-  flex: 0 0 auto;
+  flex:0 0 auto;
   width: 100px;
 }
 body.tv-player-mode .groupPickerModal .list .row .ico {
@@ -508,7 +508,7 @@ body.tv-player-mode .groupPickerModal .note {
   background:linear-gradient(180deg, rgba(34,197,94,.18), rgba(34,197,94,.06));
   box-shadow:0 0 0 2px rgba(34,197,94,.25); }
 .groupPickerModal .row .ico{ width:42px; height:42px; border-radius:11px;
-  background:linear-gradient(135deg,#8b5cf6,#22d3ee); display:flex; align-items:center; justify-content:center;
+  background:linear-gradient(135deg,#8b5cf6,#22d3ee); display:flex;align-items:center;justify-content:center;
   font-size:20px; font-weight:900; color:#fff; flex:0 0 auto; box-shadow:0 2px 8px rgba(0,0,0,.4); }
 .groupPickerModal .row.on .ico{ background:linear-gradient(135deg,#22c55e,#16a34a); }
 .groupPickerModal .row .nm{ font-size:12px; font-weight:700; min-width:0;
@@ -761,7 +761,7 @@ body.tv-player-mode.tv-overlay-open #tvChannelOverlay{ transform:translateY(0); 
   box-shadow:0 0 0 2px rgba(139,92,246,.5), 0 0 20px rgba(139,92,246,.3); transform:translateY(-1px);
 }
 .tvOvTab .ico{ width:34px; height:34px; border-radius:9px;
-  background:linear-gradient(135deg,#8b5cf6,#22d3ee); display:flex; align-items:center; justify-content:center;
+  background:linear-gradient(135deg,#8b5cf6,#22d3ee); display:flex;align-items:center;justify-content:center;
   font-size:18px; flex:0 0 auto; color:#fff; font-weight:900; }
 .tvOvTab.favTab .ico{ background:linear-gradient(135deg,#facc15,#f97316); }
 .tvOvTab.allTab .ico{ background:linear-gradient(135deg,#38bdf8,#0ea5e9); }
@@ -792,17 +792,19 @@ body.tv-player-mode.tv-overlay-open #tvChannelOverlay{ transform:translateY(0); 
 .tvOvItem .grpBadges .gb{ font-size:9px; padding:1px 6px; border-radius:5px;
   background:rgba(139,92,246,.22); color:#c4b5fd; font-weight:700; }
 .tvOvEmpty{ grid-column:1/-1; text-align:center; padding:40px 16px; color:var(--muted); font-size:14px; }
+/* ==== VERTIKAL TV-TOOLBAR (höger sida, ej centrerad) ==== */
 #tvNavBar{
-  position:fixed; left:50%; bottom:18px; transform:translateX(-50%); display:none; gap:10px;
-  padding:10px 14px; background:rgba(10,15,51,.92); border:3px solid var(--tv-focus); border-radius:999px;
+  position:fixed; right:14px; top:110px; bottom:110px; display:none; gap:10px;
+  padding:14px 10px; background:rgba(10,15,51,.92); border:3px solid var(--tv-focus); border-radius:18px;
   box-shadow:0 10px 40px rgba(0,0,0,.8), 0 0 20px rgba(250,204,21,.25);
-  z-index:75; transition:transform .28s ease, opacity .28s; flex-wrap:nowrap; justify-content:flex-start;
-  max-width:min(96vw, 1100px); overflow-x:auto; overflow-y:hidden; -webkit-overflow-scrolling:touch;
-  scrollbar-width:none; backdrop-filter:blur(10px); opacity:0; pointer-events:none; box-sizing:border-box;
+  z-index:75; transition:transform .28s ease, opacity .28s; flex-wrap:nowrap; justify-content:center;
+  flex-direction:column; align-items:center; overflow-y:auto; overflow-x:hidden;
+  -webkit-overflow-scrolling:touch; scrollbar-width:none; backdrop-filter:blur(10px);
+  opacity:0; pointer-events:none; box-sizing:border-box; max-height:none; max-width:none;
 }
 #tvNavBar::-webkit-scrollbar{ display:none; }
-body.tv-player-mode #tvNavBar{ display:flex; transform:translateX(-50%) translateY(0); opacity:1; pointer-events:auto; }
-body.tv-player-mode.tv-overlay-open #tvNavBar{ transform:translateX(-50%) translateY(140%); opacity:0; pointer-events:none; }
+body.tv-player-mode #tvNavBar{ display:flex; transform:translate(0,0); opacity:1; pointer-events:auto; }
+body.tv-player-mode.tv-overlay-open #tvNavBar{ transform:translate(130%,0); opacity:0; pointer-events:none; }
 .tvNavBtn{
   display:flex; align-items:center; gap:8px; background:#1e1e33; color:var(--text);
   border:2px solid var(--line); border-radius:999px; padding:10px 16px;
@@ -814,21 +816,35 @@ body.tv-player-mode.tv-overlay-open #tvNavBar{ transform:translateX(-50%) transl
 .tvNavBtn .kbd{ font-family:monospace; font-size:11px; color:var(--muted); background:#0f0f1a;
   border:1px solid var(--line); border-radius:6px; padding:2px 6px; }
 .tvNavBtn.primary .kbd{ background:rgba(255,255,255,.15); color:#fff; }
+/* Volymgrupp i vertikal toolbar */
+#tvVolGroup{
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px;
+  background:#0f0f1a; border:2px solid var(--line); border-radius:14px;
+  padding:6px 4px; flex:0 0 auto; flex-shrink:0; box-sizing:border-box;
+}
+#tvVolLevel{
+  font-size:11px; font-weight:800; color:var(--tv-focus); background:none;
+  border:none; border-radius:8px; padding:5px 7px; min-height:32px; min-width:40px;
+  cursor:pointer; letter-spacing:.5px; font-family:inherit; white-space:nowrap;
+  transition:background .15s;
+}
+#tvVolLevel:hover{ background:rgba(250,204,21,.12); }
+#tvVolLevel.muted{ color:#fca5a5; }
 @media (max-width: 768px){
   #tvNavBar{
-    left:0 !important; right:0 !important; bottom:8px !important; width:100% !important;
-    max-width:100% !important; transform:none !important; border-radius:0;
-    border-left:none; border-right:none; padding:8px 10px; gap:6px;
-    justify-content:flex-start; box-sizing:border-box;
+    right:8px !important; left:auto !important; top:80px !important; bottom:80px !important;
+    width:auto !important; max-width:none !important; transform:none !important;
+    border-radius:16px; padding:10px 6px; gap:6px; box-sizing:border-box;
   }
   .tvNavBtn{ padding:9px 12px; font-size:12px; min-height:44px; min-width:44px; gap:6px; }
   .tvNavBtn .kbd{ display:none !important; }
   .tvNavBtn > span:not(.kbd):not(.ntb-icon){ display:none !important; }
   .tvNavBtn.primary > span:not(.kbd){ display:inline !important; }
-  body.tv-player-mode.tv-idle #tvNavBar{ transform:translateY(140%) !important; }
+  #tvVolLevel{ font-size:10px; min-height:30px; min-width:36px; padding:4px 5px; }
+  body.tv-player-mode.tv-idle #tvNavBar{ transform:translate(130%,0) !important; }
 }
 #tvChanName{
-  position:fixed; top:14px; right:16px; z-index:5200;
+  position:fixed; top:14px; right:16px; z-index:5700;
   background:rgba(6,20,25,.85);
   border:2px solid var(--tv-focus);
   border-radius:14px;
@@ -866,10 +882,7 @@ body.tv-player-mode.tv-clock-off #tvClock{ display:none !important; }
 body.tv-player-mode.tv-idle #tvClock .tvClockDate{ display:none; }
 body.tv-player-mode.tv-idle #tvClockBtn{ opacity:.55; }
 body.tv-player-mode.tv-idle #tvClock .tvClockTime{ font-size:2.8rem; letter-spacing:4px; }
-body.tv-player-mode.tv-idle #tvNavBar{ opacity:0; pointer-events:none; transform:translateY(140%); }
-@media (min-width: 769px){
-  body.tv-player-mode.tv-idle #tvNavBar{ transform:translateX(-50%) translateY(140%); }
-}
+body.tv-player-mode.tv-idle #tvNavBar{ opacity:0; pointer-events:none; transform:translate(130%,0); }
 body.tv-player-mode.tv-idle #stickyPlayerWrap video{ cursor:none; }
 #tvNavBar{transition:transform .28s ease, opacity .28s}
 :fullscreen body, body:fullscreen{width:100%;height:100%}
@@ -928,6 +941,11 @@ body.app-fullscreen #layout{height:100dvh}
   <button class="tvNavBtn" id="tvJsBtn" title="hls.js-motorn av/på">⚡ <span class="kbd">J</span></button>
   <button class="tvNavBtn" id="tvReloadBtn" title="Ladda om kanal">🔄 <span class="kbd">R</span></button>
   <button class="tvNavBtn" id="tvClockBtn" title="Visa/göm klockan">🕐 <span class="kbd">K</span></button>
+  <div id="tvVolGroup" title="Ljudkontroll">
+    <button class="tvNavBtn" id="tvVolUpBtn" title="Öka volym 10% ( + )">🔊</button>
+    <button id="tvVolLevel" title="Ljud av/på ( M )">100%</button>
+    <button class="tvNavBtn" id="tvVolDownBtn" title="Minska volym 10% ( − )">🔉</button>
+  </div>
   <button class="tvNavBtn" id="tvFsBtn" title="Fullskärm av/på">⛶ <span class="kbd">F</span></button>
   <button class="tvNavBtn" id="tvExitBtn" title="Avsluta TV-läge">✖ <span class="kbd">Esc</span></button>
 </div>
@@ -1137,6 +1155,7 @@ body.app-fullscreen #layout{height:100dvh}
           <kbd>OK</kbd> kanallista <kbd>◀ ▶</kbd> förra/nästa kanal
           <kbd>▲ ▼</kbd> navigera <kbd>R</kbd> ladda om
           <kbd>G</kbd> listor <kbd>K</kbd> klocka <kbd>0-9</kbd> favorit <kbd>⌫</kbd> stäng/av
+          <kbd>+</kbd>/<kbd>−</kbd> volym <kbd>M</kbd> ljud av
         </div>
       </div>
 
@@ -1165,7 +1184,7 @@ const PLAYLISTS = [
  {id:'comedy', name:'Komedifilmer (TMDB)', country:'Internationell', flag:'😂', url:'https://aymrgknetzpucldhpkwm.supabase.co/storage/v1/object/public/tmdb/comedy-movies.m3u'},
  {id:'series', name:'Serier', country:'Internationell', flag:'📺', url:'https://iptv-org.github.io/iptv/categories/series.m3u'},
  {id:'kids', name:'Barn', country:'Internationell', flag:'🧒', url:'https://iptv-org.github.io/iptv/categories/kids.m3u'},
- {id:'kurdistan', name:'Kurdistan IPTV', country:'Kurdistan', flag:'☀️', url:'https://raw.githubusercontent.com/kurdishiptvchannels/KURDISTANIPTV/refs/heads/main/KURDISTAN%20IPTV.m3u'},
+ {id:'kurdistan', name:'Kurdistan IPTV', country:'Kurdistan', flag:'☀️', url:'https://raw.githubusercontent.com/kurdishiptvchannels/KURDISTANIPTV/refs/heads/main/KURDISTANIPTV.m3u'},
  {id:'sdh', name:'Södra kurdiska', country:'Kurdistan', flag:'☀️', url:'https://iptv-org.github.io/iptv/languages/sdh.m3u'},
  {id:'enigma', name:'Enigma - Kurdish', country:'Kurdistan', flag:'☀️', url:'https://raw.githubusercontent.com/Enigma402/Iptv/refs/heads/main/2.m3u'},
  {id:'irorg', name:'Iran (iptv-org)', country:'Iran', flag:'🇮🇷', url:'https://iptv-org.github.io/iptv/countries/ir.m3u'},
@@ -2515,6 +2534,7 @@ function playChannel(c){
   if(isExternalOnly(c.url)){
     extOnly.delete(c.url); save();
   }
+  tvVolApply(els.video);
   const candidates = buildStreamCandidates(c.url);
   playChannel._attempts = [];
   tryNextCandidate(c, candidates, 0);
@@ -2596,6 +2616,7 @@ function tryNextCandidate(c, candidates, idx){
     hls.loadSource(url); hls.attachMedia(els.video);
     hls.on(Hls.Events.MANIFEST_PARSED, ()=>{
       try{ if(hls.liveSyncPosition !== undefined && els.video.seekable.length) els.video.currentTime = hls.liveSyncPosition; }catch(e){}
+      tvVolApply(els.video);
       safePlay().then(success).catch(success);
     });
     hls.on(Hls.Events.ERROR, (_, d)=>{
@@ -2612,6 +2633,7 @@ function tryNextCandidate(c, candidates, idx){
     }, idx===0 ? 8000 : 12000);
   } else if(url.includes('.mpd')){
     els.video.src = url;
+    tvVolApply(els.video);
     safePlay().then(success).catch(()=>{});
     els.video.onplaying = success;
     els.video.onerror = ()=>failNext('DASH-fel');
@@ -2619,6 +2641,7 @@ function tryNextCandidate(c, candidates, idx){
     playChannel._timeout = setTimeout(()=>{ if(els.video.readyState < 2) failNext('timeout DASH'); }, 10000);
   } else if(url){
     els.video.src = url;
+    tvVolApply(els.video);
     safePlay().then(success).catch(()=>{});
     els.video.onplaying = success;
     els.video.onerror = ()=>{
@@ -3280,6 +3303,57 @@ $('tvListBtn').onclick = openTvOverlay;
 $('tvOvClose').onclick = closeTvOverlay;
 $('createGroupBtn').onclick = openCreateGroupModal;
 
+/* ============ VOLUMKONTROLL (samma som i övriga appar) ============ */
+const TVVOL_KEY = 'xom_tvvol';
+function tvGetMedia(){ return els.video || document.getElementById('video'); }
+function tvVolRestore(){
+  try{
+    const o = JSON.parse(localStorage.getItem(TVVOL_KEY));
+    if(o && typeof o.pct === 'number'){
+      return { pct: Math.min(100, Math.max(0, Math.round(o.pct))), muted: !!o.muted };
+    }
+  }catch(e){}
+  return { pct: 100, muted: false };
+}
+function tvVolSave(pct, muted){
+  try{ localStorage.setItem(TVVOL_KEY, JSON.stringify({ pct, muted })); }catch(e){}
+}
+function tvVolApply(m){
+  m = m || tvGetMedia();
+  if(!m) return;
+  const s = tvVolRestore();
+  m.volume = s.pct / 100;
+  m.muted = s.muted;
+  tvVolUpdate();
+}
+function tvVolUpdate(){
+  const el = $('tvVolLevel');
+  if(!el) return;
+  const s = tvVolRestore();
+  el.textContent = s.muted ? '🔇' : s.pct + '%';
+  el.classList.toggle('muted', s.muted);
+  el.title = s.muted ? 'Ljud av – klicka för ljud på (M)' : 'Klicka för ljud av (M)';
+}
+function tvVolAdj(delta){
+  const s = tvVolRestore();
+  const pct = Math.min(100, Math.max(0, s.pct + delta));
+  const muted = delta > 0 ? false : s.muted;
+  tvVolSave(pct, muted);
+  tvVolApply();
+  showToast(muted ? '🔇 Ljud av · ' + pct + '%' : '🔊 Volym ' + pct + '%');
+}
+function tvVolToggleMute(){
+  const s = tvVolRestore();
+  tvVolSave(s.pct, !s.muted);
+  tvVolApply();
+  showToast(s.muted ? '🔊 Ljud på · ' + s.pct + '%' : '🔇 Ljud av');
+}
+$('tvVolUpBtn').onclick = ()=> tvVolAdj(10);
+$('tvVolDownBtn').onclick = ()=> tvVolAdj(-10);
+$('tvVolLevel').onclick = tvVolToggleMute;
+tvVolApply();
+setInterval(tvVolUpdate, 1000);
+
 /* NY: Klocka med färgbyte varje minut */
 const CLOCK_COLORS = [
   '#ffd54a', // gul
@@ -3434,6 +3508,9 @@ document.addEventListener('keydown', e=>{
       else showToast('Ingen kanal vald');
       return;
     }
+    if(key === '+' || key === '='){ e.preventDefault(); tvVolAdj(10); return; }
+    if(key === '-' || key === '_'){ e.preventDefault(); tvVolAdj(-10); return; }
+    if(key === 'm' || key === 'M'){ e.preventDefault(); tvVolToggleMute(); return; }
     if(key === 'Enter' || code === 13){ e.preventDefault(); openTvOverlay(); return; }
     if(key === 'Escape' || code === 8 || code === 461){ e.preventDefault(); toggleTvMode(); return; }
     if(code === 415){ e.preventDefault(); if(currentChannel) playChannel(currentChannel); return; }
